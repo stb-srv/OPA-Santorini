@@ -34,250 +34,81 @@
             padding: 24px;
             color: var(--text);
         }
-
-        .wizard {
-            width: 100%;
-            max-width: 680px;
-        }
-
-        /* --- Logo --- */
-        .logo-area {
-            text-align: center;
-            margin-bottom: 36px;
-        }
-        .logo-area h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-        }
+        .wizard { width: 100%; max-width: 680px; }
+        .logo-area { text-align: center; margin-bottom: 36px; }
+        .logo-area h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
         .logo-area h1 span { color: var(--primary); }
         .logo-area p { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
-
-        /* --- Progress --- */
-        .progress-bar {
-            display: flex;
-            align-items: center;
-            gap: 0;
-            margin-bottom: 32px;
-            padding: 0 4px;
-        }
-        .progress-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-            position: relative;
-        }
+        .progress-bar { display: flex; align-items: center; gap: 0; margin-bottom: 32px; padding: 0 4px; }
+        .progress-step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
         .progress-step:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            top: 16px;
-            left: 50%;
-            width: 100%;
-            height: 2px;
-            background: var(--border);
-            z-index: 0;
-            transition: background 0.4s;
+            content: ''; position: absolute; top: 16px; left: 50%; width: 100%; height: 2px;
+            background: var(--border); z-index: 0; transition: background 0.4s;
         }
         .progress-step.done:not(:last-child)::after { background: var(--primary); }
         .step-dot {
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            border: 2px solid var(--border);
-            background: var(--bg);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.75rem; font-weight: 700;
-            color: var(--muted);
-            position: relative; z-index: 1;
-            transition: all 0.3s;
+            width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border);
+            background: var(--bg); display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700; color: var(--muted); position: relative; z-index: 1; transition: all 0.3s;
         }
-        .progress-step.active .step-dot {
-            border-color: var(--primary);
-            background: rgba(99,102,241,0.15);
-            color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
-        }
-        .progress-step.done .step-dot {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-        }
-        .step-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--muted);
-            margin-top: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            white-space: nowrap;
-        }
+        .progress-step.active .step-dot { border-color: var(--primary); background: rgba(99,102,241,0.15); color: var(--primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.15); }
+        .progress-step.done .step-dot { background: var(--primary); border-color: var(--primary); color: white; }
+        .step-label { font-size: 0.65rem; font-weight: 600; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
         .progress-step.active .step-label { color: var(--primary); }
         .progress-step.done .step-label { color: var(--text); }
-
-        /* --- Card --- */
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 40px;
-            backdrop-filter: blur(20px);
-        }
-        .card-title {
-            font-size: 1.4rem;
-            font-weight: 800;
-            margin-bottom: 4px;
-        }
-        .card-subtitle {
-            color: var(--muted);
-            font-size: 0.85rem;
-            margin-bottom: 28px;
-        }
-
-        /* --- Steps --- */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 40px; backdrop-filter: blur(20px); }
+        .card-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }
+        .card-subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 28px; }
         .step { display: none; }
-        .step.active {
-            display: block;
-            animation: fadeSlide 0.35s ease-out;
-        }
-        @keyframes fadeSlide {
-            from { opacity: 0; transform: translateX(16px); }
-            to   { opacity: 1; transform: translateX(0); }
-        }
-
-        /* --- Form --- */
+        .step.active { display: block; animation: fadeSlide 0.35s ease-out; }
+        @keyframes fadeSlide { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
         .form-group { margin-bottom: 20px; }
         .form-row { display: flex; gap: 16px; }
         .form-row .form-group { flex: 1; }
-        label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--muted);
-            margin-bottom: 7px;
-        }
+        label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 7px; }
         input, select, textarea {
-            width: 100%;
-            padding: 12px 14px;
-            background: rgba(0,0,0,0.25);
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            color: var(--text);
-            font-family: inherit;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            appearance: none;
+            width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.25); border: 1.5px solid var(--border);
+            border-radius: 12px; color: var(--text); font-family: inherit; font-size: 0.9rem; font-weight: 500;
+            transition: border-color 0.2s, box-shadow 0.2s; appearance: none;
         }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
         input::placeholder { color: var(--muted); }
         select option { background: #1e1e2e; }
-
-        .hint {
-            font-size: 0.75rem;
-            color: var(--muted);
-            margin-top: 5px;
-        }
+        .hint { font-size: 0.75rem; color: var(--muted); margin-top: 5px; }
         .hint i { color: var(--warning); margin-right: 4px; }
-
-        /* --- Info Box --- */
-        .info-box {
-            padding: 14px 16px;
-            border-radius: 12px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            border: 1px solid;
-        }
+        .info-box { padding: 14px 16px; border-radius: 12px; font-size: 0.82rem; font-weight: 600; margin-bottom: 20px; border: 1px solid; }
         .info-box.blue  { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #a5b4fc; }
         .info-box.green { background: rgba(34,197,94,0.1);  border-color: rgba(34,197,94,0.3);  color: #86efac; }
         .info-box.warn  { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); color: #fcd34d; }
-
-        /* --- License Check --- */
-        .lic-status {
-            display: flex; align-items: center; gap: 10px;
-            padding: 12px 16px; border-radius: 12px;
-            margin-top: 10px; font-size: 0.85rem; font-weight: 600;
-            border: 1.5px solid var(--border);
-            transition: all 0.3s;
-        }
+        .lic-status { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 12px; margin-top: 10px; font-size: 0.85rem; font-weight: 600; border: 1.5px solid var(--border); transition: all 0.3s; }
         .lic-status.checking { border-color: var(--warning); color: var(--warning); }
         .lic-status.ok       { border-color: var(--success); color: var(--success); background: rgba(34,197,94,0.07); }
         .lic-status.error    { border-color: var(--danger);  color: var(--danger);  background: rgba(239,68,68,0.07); }
-
-        /* --- Password strength --- */
         .pw-strength { height: 4px; border-radius: 2px; margin-top: 8px; transition: all 0.3s; }
-
-        /* --- Toggle Password --- */
         .input-wrap { position: relative; }
         .input-wrap input { padding-right: 44px; }
-        .toggle-pw {
-            position: absolute; right: 14px; top: 50%;
-            transform: translateY(-50%);
-            background: none; border: none; color: var(--muted);
-            cursor: pointer; font-size: 0.9rem;
-        }
-
-        /* --- Buttons --- */
+        .toggle-pw { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; }
         .btn-row { display: flex; gap: 12px; margin-top: 32px; }
-        .btn {
-            flex: 1; padding: 13px 20px; border: none; border-radius: 12px;
-            font-family: inherit; font-size: 0.9rem; font-weight: 700;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 8px 24px rgba(99,102,241,0.3);
-        }
+        .btn { flex: 1; padding: 13px 20px; border: none; border-radius: 12px; font-family: inherit; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 8px 24px rgba(99,102,241,0.3); }
         .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-ghost {
-            background: var(--surface-hover);
-            color: var(--text);
-            border: 1px solid var(--border);
-            flex: 0 0 auto;
-            padding: 13px 24px;
-        }
+        .btn-ghost { background: var(--surface-hover); color: var(--text); border: 1px solid var(--border); flex: 0 0 auto; padding: 13px 24px; }
         .btn-ghost:hover { background: rgba(255,255,255,0.1); }
-
-        /* --- Success Screen --- */
-        .success-screen {
-            display: none;
-            text-align: center;
-            padding: 20px 0;
-        }
-        .success-icon {
-            width: 80px; height: 80px; border-radius: 50%;
-            background: rgba(34,197,94,0.15);
-            border: 2px solid var(--success);
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 24px;
-            font-size: 2rem; color: var(--success);
-        }
+        .success-screen { display: none; text-align: center; padding: 20px 0; }
+        .success-icon { width: 80px; height: 80px; border-radius: 50%; background: rgba(34,197,94,0.15); border: 2px solid var(--success); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 2rem; color: var(--success); }
         .success-screen h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
         .success-screen p { color: var(--muted); margin-bottom: 28px; }
-
-        /* --- Spinner --- */
         @keyframes spin { to { transform: rotate(360deg); } }
         .spin { animation: spin 1s linear infinite; display: inline-block; }
     </style>
 </head>
 <body>
 <div class="wizard">
-
-    <!-- Logo -->
     <div class="logo-area">
         <h1>OPA! <span>Santorini</span></h1>
         <p>Restaurant CMS – Ersteinrichtung</p>
     </div>
-
-    <!-- Progress -->
     <div class="progress-bar" id="progress-bar">
         <div class="progress-step active" id="ps1"><div class="step-dot">1</div><span class="step-label">Lizenz</span></div>
         <div class="progress-step" id="ps2"><div class="step-dot">2</div><span class="step-label">Restaurant</span></div>
@@ -285,213 +116,110 @@
         <div class="progress-step" id="ps4"><div class="step-dot">4</div><span class="step-label">E-Mail</span></div>
         <div class="progress-step" id="ps5"><div class="step-dot">5</div><span class="step-label">Admin</span></div>
     </div>
-
     <div class="card">
-
-        <!-- Step 1: Lizenz & Server -->
+        <!-- Step 1: Lizenz -->
         <div class="step active" id="step1">
             <div class="card-title">🔑 Lizenz & Verbindung</div>
             <div class="card-subtitle">Verbinde das CMS mit dem Lizenzserver und gib deinen Lizenzschlüssel ein.</div>
-
             <div class="form-group">
                 <label>Lizenzserver URL</label>
-                <input type="url" id="licenseUrl" value="http://localhost:4000" placeholder="https://license.meinservice.de">
-                <div class="hint"><i class="fas fa-circle-info"></i>URL des OPA Lizenzservers</div>
+                <input type="url" id="licenseUrl" value="https://licens-prod.stb-srv.de" placeholder="https://licens-prod.stb-srv.de">
+                <div class="hint"><i class="fas fa-circle-info"></i> Trailing Slash wird automatisch entfernt</div>
             </div>
-
             <div class="form-group">
                 <label>Lizenzschlüssel</label>
                 <div class="input-wrap">
                     <input type="text" id="licenseKey" placeholder="OPA-PRO-XXXX-2026" autocomplete="off" style="font-family:monospace;letter-spacing:0.05em">
                 </div>
                 <div id="lic-status" class="lic-status" style="display:none"></div>
-                <div class="hint">Schlüssel leer lassen = Free-Plan (10 Speisen)</div>
+                <div class="hint">Schlüssel leer lassen = 30 Tage Trial (FREE-Plan)</div>
             </div>
-
             <div class="form-group">
                 <label>Admin Secret <span style="opacity:.6;font-weight:400;text-transform:none">(JWT-Schlüssel)</span></label>
                 <div class="input-wrap">
                     <input type="password" id="adminSecret" placeholder="Sicherer zufälliger Schlüssel">
                     <button class="toggle-pw" type="button" onclick="togglePw('adminSecret',this)"><i class="fas fa-eye"></i></button>
                 </div>
-                <div class="hint"><i class="fas fa-triangle-exclamation"></i>Niemals teilen. Wird für Session-Tokens genutzt.</div>
+                <div class="hint"><i class="fas fa-triangle-exclamation"></i> Niemals teilen. Wird für Session-Tokens genutzt.</div>
             </div>
-
             <div class="btn-row">
                 <button class="btn btn-primary" onclick="validateLicenseAndNext()">Weiter <i class="fas fa-arrow-right"></i></button>
             </div>
         </div>
-
-        <!-- Step 2: Restaurant-Profil -->
+        <!-- Step 2: Restaurant -->
         <div class="step" id="step2">
             <div class="card-title">🍽️ Restaurant-Profil</div>
             <div class="card-subtitle">Grundlegende Informationen zu deinem Restaurant.</div>
-
             <div class="form-row">
-                <div class="form-group">
-                    <label>Restaurantname</label>
-                    <input type="text" id="restName" placeholder="Santorini Taverna">
-                </div>
-                <div class="form-group">
-                    <label>Telefon</label>
-                    <input type="tel" id="restPhone" placeholder="+49 123 456789">
-                </div>
+                <div class="form-group"><label>Restaurantname</label><input type="text" id="restName" placeholder="Santorini Taverna"></div>
+                <div class="form-group"><label>Telefon</label><input type="tel" id="restPhone" placeholder="+49 123 456789"></div>
             </div>
-
-            <div class="form-group">
-                <label>Adresse</label>
-                <input type="text" id="restAddress" placeholder="Musterstraße 1, 12345 Musterstadt">
-            </div>
-
+            <div class="form-group"><label>Adresse</label><input type="text" id="restAddress" placeholder="Musterstraße 1, 12345 Musterstadt"></div>
             <div class="form-row">
-                <div class="form-group">
-                    <label>Standard-Sprache</label>
-                    <select id="restLang">
-                        <option value="de">Deutsch</option>
-                        <option value="en">English</option>
-                        <option value="el">Ελληνικά</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Zeitzone</label>
-                    <select id="restTz">
-                        <option value="Europe/Berlin">Europe/Berlin</option>
-                        <option value="Europe/Vienna">Europe/Vienna</option>
-                        <option value="Europe/Zurich">Europe/Zurich</option>
-                        <option value="Europe/Athens">Europe/Athens</option>
-                    </select>
-                </div>
+                <div class="form-group"><label>Standard-Sprache</label><select id="restLang"><option value="de">Deutsch</option><option value="en">English</option><option value="el">Ελληνικά</option></select></div>
+                <div class="form-group"><label>Zeitzone</label><select id="restTz"><option value="Europe/Berlin">Europe/Berlin</option><option value="Europe/Vienna">Europe/Vienna</option><option value="Europe/Zurich">Europe/Zurich</option><option value="Europe/Athens">Europe/Athens</option></select></div>
             </div>
-
-            <div class="form-group">
-                <label>Website (optional)</label>
-                <input type="url" id="restWebsite" placeholder="https://www.meinrestaurant.de">
-            </div>
-
+            <div class="form-group"><label>Website (optional)</label><input type="url" id="restWebsite" placeholder="https://www.meinrestaurant.de"></div>
             <div class="btn-row">
                 <button class="btn btn-ghost" onclick="goStep(1)"><i class="fas fa-arrow-left"></i> Zurück</button>
                 <button class="btn btn-primary" onclick="goStep(3)">Weiter <i class="fas fa-arrow-right"></i></button>
             </div>
         </div>
-
         <!-- Step 3: Datenbank -->
         <div class="step" id="step3">
             <div class="card-title">🗄️ Datenbank</div>
             <div class="card-subtitle">Wähle die Datenbankart für das CMS.</div>
-
             <div class="form-group">
                 <label>Datenbank-Typ</label>
                 <select id="dbType" onchange="onDbTypeChange()">
-                    <option value="sqlite">SQLite – Lokal (empfohlen für Einzel-Restaurants)</option>
+                    <option value="sqlite">SQLite – Lokal (empfohlen)</option>
                     <option value="mysql">MySQL / MariaDB</option>
                 </select>
             </div>
-
-            <div id="sqlite-info" class="info-box blue">
-                <i class="fas fa-circle-info"></i>
-                SQLite speichert alle Daten in einer einzelnen Datei (<code>server/database.sqlite</code>).
-                Keine weitere Konfiguration nötig.
-            </div>
-
+            <div id="sqlite-info" class="info-box blue"><i class="fas fa-circle-info"></i> SQLite speichert alle Daten in einer einzelnen Datei (<code>server/database.sqlite</code>). Keine weitere Konfiguration nötig.</div>
             <div id="mysql-fields" style="display:none">
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Host</label>
-                        <input type="text" id="dbHost" value="127.0.0.1">
-                    </div>
-                    <div class="form-group" style="flex:0 0 100px">
-                        <label>Port</label>
-                        <input type="number" id="dbPort" value="3306">
-                    </div>
+                    <div class="form-group"><label>Host</label><input type="text" id="dbHost" value="127.0.0.1"></div>
+                    <div class="form-group" style="flex:0 0 100px"><label>Port</label><input type="number" id="dbPort" value="3306"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Datenbank</label>
-                        <input type="text" id="dbName" placeholder="opa_santorini">
-                    </div>
-                    <div class="form-group">
-                        <label>Benutzer</label>
-                        <input type="text" id="dbUser" placeholder="root">
-                    </div>
+                    <div class="form-group"><label>Datenbank</label><input type="text" id="dbName" placeholder="opa_santorini"></div>
+                    <div class="form-group"><label>Benutzer</label><input type="text" id="dbUser" placeholder="root"></div>
                 </div>
-                <div class="form-group">
-                    <label>Passwort</label>
-                    <input type="password" id="dbPass" placeholder="••••••••">
-                </div>
+                <div class="form-group"><label>Passwort</label><input type="password" id="dbPass" placeholder="••••••••"></div>
             </div>
-
             <div class="btn-row">
                 <button class="btn btn-ghost" onclick="goStep(2)"><i class="fas fa-arrow-left"></i> Zurück</button>
                 <button class="btn btn-primary" onclick="goStep(4)">Weiter <i class="fas fa-arrow-right"></i></button>
             </div>
         </div>
-
-        <!-- Step 4: E-Mail / SMTP -->
+        <!-- Step 4: SMTP -->
         <div class="step" id="step4">
             <div class="card-title">📧 E-Mail Konfiguration</div>
-            <div class="card-subtitle">SMTP-Einstellungen für Reservierungsbestätigungen und Benachrichtigungen.</div>
-
-            <div class="info-box warn">
-                <i class="fas fa-triangle-exclamation"></i>
-                E-Mail kann auch später im CMS unter <strong>Einstellungen → SMTP</strong> konfiguriert werden.
-            </div>
-
+            <div class="card-subtitle">SMTP-Einstellungen für Reservierungsbestätigungen.</div>
+            <div class="info-box warn"><i class="fas fa-triangle-exclamation"></i> E-Mail kann auch später im CMS unter <strong>Einstellungen → SMTP</strong> konfiguriert werden.</div>
             <div class="form-row">
-                <div class="form-group" style="flex:2">
-                    <label>SMTP Host</label>
-                    <input type="text" id="smtpHost" placeholder="smtp.gmail.com">
-                </div>
-                <div class="form-group" style="flex:0 0 100px">
-                    <label>Port</label>
-                    <input type="number" id="smtpPort" value="465">
-                </div>
-                <div class="form-group" style="flex:0 0 120px">
-                    <label>Verschlüsselung</label>
-                    <select id="smtpSecure">
-                        <option value="true">SSL/TLS</option>
-                        <option value="false">STARTTLS</option>
-                    </select>
-                </div>
+                <div class="form-group" style="flex:2"><label>SMTP Host</label><input type="text" id="smtpHost" placeholder="smtp.gmail.com"></div>
+                <div class="form-group" style="flex:0 0 100px"><label>Port</label><input type="number" id="smtpPort" value="465"></div>
+                <div class="form-group" style="flex:0 0 120px"><label>Verschlüsselung</label><select id="smtpSecure"><option value="true">SSL/TLS</option><option value="false">STARTTLS</option></select></div>
             </div>
-
             <div class="form-row">
-                <div class="form-group">
-                    <label>Benutzername / E-Mail</label>
-                    <input type="text" id="smtpUser" placeholder="noreply@meinrestaurant.de">
-                </div>
-                <div class="form-group">
-                    <label>Passwort</label>
-                    <div class="input-wrap">
-                        <input type="password" id="smtpPass" placeholder="••••••••">
-                        <button class="toggle-pw" type="button" onclick="togglePw('smtpPass',this)"><i class="fas fa-eye"></i></button>
-                    </div>
-                </div>
+                <div class="form-group"><label>Benutzername / E-Mail</label><input type="text" id="smtpUser" placeholder="noreply@meinrestaurant.de"></div>
+                <div class="form-group"><label>Passwort</label><div class="input-wrap"><input type="password" id="smtpPass" placeholder="••••••••"><button class="toggle-pw" type="button" onclick="togglePw('smtpPass',this)"><i class="fas fa-eye"></i></button></div></div>
             </div>
-
-            <div class="form-group">
-                <label>Absendername</label>
-                <input type="text" id="smtpFrom" placeholder="Santorini Taverna">
-                <div class="hint">Wird als Absender in E-Mails angezeigt</div>
-            </div>
-
+            <div class="form-group"><label>Absendername</label><input type="text" id="smtpFrom" placeholder="Santorini Taverna"><div class="hint">Wird als Absender in E-Mails angezeigt</div></div>
             <div class="btn-row">
                 <button class="btn btn-ghost" onclick="goStep(3)"><i class="fas fa-arrow-left"></i> Zurück</button>
                 <button class="btn btn-primary" onclick="goStep(5)">Weiter <i class="fas fa-arrow-right"></i></button>
             </div>
         </div>
-
-        <!-- Step 5: Admin-Account -->
+        <!-- Step 5: Admin -->
         <div class="step" id="step5">
             <div class="card-title">👤 Admin-Account</div>
             <div class="card-subtitle">Erstelle den ersten Administrator-Zugang für das CMS.</div>
-
             <div class="form-row">
-                <div class="form-group">
-                    <label>Benutzername</label>
-                    <input type="text" id="adminUser" placeholder="admin" autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label>Passwort</label>
+                <div class="form-group"><label>Benutzername</label><input type="text" id="adminUser" placeholder="admin" autocomplete="off"></div>
+                <div class="form-group"><label>Passwort</label>
                     <div class="input-wrap">
                         <input type="password" id="adminPass" placeholder="Sicheres Passwort" oninput="checkPwStrength(this.value)">
                         <button class="toggle-pw" type="button" onclick="togglePw('adminPass',this)"><i class="fas fa-eye"></i></button>
@@ -500,42 +228,29 @@
                     <div class="hint" id="pw-hint">Mind. 8 Zeichen, Groß-/Kleinbuchstaben, Zahlen</div>
                 </div>
             </div>
-
-            <div class="form-group">
-                <label>Passwort bestätigen</label>
-                <input type="password" id="adminPassConfirm" placeholder="Passwort wiederholen">
-            </div>
-
-            <div class="info-box green" style="margin-top:4px">
-                <i class="fas fa-shield-halved"></i>
-                Weitere Admin-Accounts können später im CMS unter <strong>Benutzer</strong> angelegt werden.
-            </div>
-
+            <div class="form-group"><label>Passwort bestätigen</label><input type="password" id="adminPassConfirm" placeholder="Passwort wiederholen"></div>
+            <div class="info-box green" style="margin-top:4px"><i class="fas fa-shield-halved"></i> Weitere Admin-Accounts können später im CMS unter <strong>Benutzer</strong> angelegt werden.</div>
             <div class="btn-row">
                 <button class="btn btn-ghost" onclick="goStep(4)"><i class="fas fa-arrow-left"></i> Zurück</button>
-                <button class="btn btn-primary" id="btn-finish" onclick="finishSetup()">
-                    <i class="fas fa-check"></i> Setup abschließen
-                </button>
+                <button class="btn btn-primary" id="btn-finish" onclick="finishSetup()"><i class="fas fa-check"></i> Setup abschließen</button>
             </div>
         </div>
-
         <!-- Success -->
         <div class="success-screen" id="success-screen">
             <div class="success-icon"><i class="fas fa-check"></i></div>
             <h2>Bereit!</h2>
             <p>Das CMS wurde erfolgreich eingerichtet.<br>Du wirst jetzt zum Dashboard weitergeleitet.</p>
-            <button class="btn btn-primary" style="max-width:220px;margin:0 auto" onclick="location.href='/admin'">
-                <i class="fas fa-arrow-right"></i> Zum Dashboard
-            </button>
+            <button class="btn btn-primary" style="max-width:220px;margin:0 auto" onclick="location.href='/admin'"><i class="fas fa-arrow-right"></i> Zum Dashboard</button>
         </div>
-
     </div>
 </div>
-
 <script>
 let currentStep = 1;
 const TOTAL = 5;
 let licenseData = null;
+
+// Trailing Slash immer entfernen
+const cleanUrl = (url) => url.trim().replace(/\/+$/, '');
 
 function goStep(n) {
     document.getElementById(`step${currentStep}`).classList.remove('active');
@@ -550,13 +265,8 @@ function goStep(n) {
 function togglePw(id, btn) {
     const inp = document.getElementById(id);
     const icon = btn.querySelector('i');
-    if (inp.type === 'password') {
-        inp.type = 'text';
-        icon.className = 'fas fa-eye-slash';
-    } else {
-        inp.type = 'password';
-        icon.className = 'fas fa-eye';
-    }
+    if (inp.type === 'password') { inp.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+    else { inp.type = 'password'; icon.className = 'fas fa-eye'; }
 }
 
 function checkPwStrength(pw) {
@@ -576,14 +286,12 @@ function checkPwStrength(pw) {
 
 async function validateLicenseAndNext() {
     const key = document.getElementById('licenseKey').value.trim();
-    const url = document.getElementById('licenseUrl').value.trim();
+    const url = cleanUrl(document.getElementById('licenseUrl').value);
+    // Cleaned URL zurückschreiben
+    document.getElementById('licenseUrl').value = url;
     const statusEl = document.getElementById('lic-status');
 
-    if (!key) {
-        // Free Plan – kein Key nötig
-        goStep(2);
-        return;
-    }
+    if (!key) { goStep(2); return; }
 
     statusEl.style.display = 'flex';
     statusEl.className = 'lic-status checking';
@@ -607,9 +315,7 @@ async function validateLicenseAndNext() {
         }
     } catch(e) {
         statusEl.className = 'lic-status error';
-        statusEl.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Lizenzserver nicht erreichbar. Weiter ohne Lizenz?';
-        statusEl.style.cursor = 'pointer';
-        statusEl.onclick = () => goStep(2);
+        statusEl.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Lizenzserver nicht erreichbar. <span style="text-decoration:underline;cursor:pointer" onclick="goStep(2)">Trotzdem weiter (Trial)</span>';
     }
 }
 
@@ -623,10 +329,9 @@ async function finishSetup() {
     const user  = document.getElementById('adminUser').value.trim();
     const pass  = document.getElementById('adminPass').value;
     const pass2 = document.getElementById('adminPassConfirm').value;
-
     if (!user || !pass) return alert('Benutzername und Passwort sind erforderlich.');
     if (pass !== pass2) return alert('Passwörter stimmen nicht überein.');
-    if (pass.length < 8)  return alert('Passwort muss mindestens 8 Zeichen haben.');
+    if (pass.length < 8) return alert('Passwort muss mindestens 8 Zeichen haben.');
 
     const btn = document.getElementById('btn-finish');
     btn.disabled = true;
@@ -642,11 +347,10 @@ async function finishSetup() {
     } : {};
 
     const payload = {
-        licenseServer: document.getElementById('licenseUrl').value,
+        licenseServer: cleanUrl(document.getElementById('licenseUrl').value),
         licenseKey:    document.getElementById('licenseKey').value.trim(),
         adminSecret:   document.getElementById('adminSecret').value,
-        dbType,
-        dbDetails,
+        dbType, dbDetails,
         smtp: {
             host:   document.getElementById('smtpHost').value,
             port:   parseInt(document.getElementById('smtpPort').value) || 465,
@@ -674,7 +378,6 @@ async function finishSetup() {
         });
         const result = await res.json();
         if (result.success) {
-            // Mark all steps done
             for (let i = 1; i <= TOTAL; i++) {
                 document.getElementById(`ps${i}`).classList.remove('active');
                 document.getElementById(`ps${i}`).classList.add('done');
@@ -693,7 +396,6 @@ async function finishSetup() {
     }
 }
 
-// Auto-generate admin secret on load
 window.addEventListener('DOMContentLoaded', () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
     let secret = '';

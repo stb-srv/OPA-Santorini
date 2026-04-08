@@ -21,6 +21,9 @@ app.set('trust proxy', 1);
 const PORT = CONFIG.PORT || 5000;
 const ADMIN_SECRET = CONFIG.ADMIN_SECRET;
 
+// Trailing Slash aus LICENSE_SERVER_URL entfernen (defensiv)
+const LICENSE_SERVER = (CONFIG.LICENSE_SERVER_URL || 'https://licens-prod.stb-srv.de').replace(/\/+$/, '');
+
 // --- CORS ---
 const rawOrigins = process.env.CORS_ORIGINS || '';
 const allowedOrigins = rawOrigins
@@ -29,7 +32,6 @@ const allowedOrigins = rawOrigins
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (same-origin, server-to-server)
         if (!origin) return callback(null, true);
         if (allowedOrigins.includes(origin)) return callback(null, true);
         console.warn(`CORS blocked: ${origin}`);
@@ -381,7 +383,7 @@ app.get('/api/license/info', requireAuth, (req, res) => {
 
 app.post('/api/license/validate', async (req, res) => {
     try {
-        const response = await fetch(`${CONFIG.LICENSE_SERVER_URL}/api/v1/validate`, {
+        const response = await fetch(`${LICENSE_SERVER}/api/v1/validate`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ license_key: req.body.key, domain: req.headers.host || 'localhost' })
         });
@@ -461,39 +463,28 @@ app.post('/api/setup', async (req, res) => {
     if (CONFIG.SETUP_COMPLETE) return res.status(403).json({ success: false, reason: 'Already configured' });
     try {
         const { restaurantName, licenseServer, adminSecret, smtp, adminUser, adminPass } = req.body;
-        const licenseServerUrl = licenseServer || 'https://licens-prod.stb-srv.de';
+        // Trailing Slash immer entfernen
+        const licenseServerUrl = (licenseServer || 'https://licens-prod.stb-srv.de').replace(/\/+$/, '');
 
         // --- Auto-generate 30-day trial license ---
         let trialLicense = null;
         try {
-            const trialKey = 'OPA-TRIAL-' + crypto.randomBytes(4).toString('hex').toUpperCase() + '-' + new Date().getFullYear();
-            const trialResp = await fetch(`${licenseServerUrl}/api/v1/validate`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ license_key: trialKey, domain: req.headers.host || 'localhost' })
-            });
-            // If not found, we create a local trial license directly
             const trialPlan = PLAN_DEFINITIONS['FREE'];
             trialLicense = {
-                key: trialKey,
-                status: 'trial',
-                customer: restaurantName || 'Trial',
-                type: 'FREE',
-                label: trialPlan.label,
+                key: 'OPA-TRIAL-' + crypto.randomBytes(4).toString('hex').toUpperCase() + '-' + new Date().getFullYear(),
+                status: 'trial', customer: restaurantName || 'Trial',
+                type: 'FREE', label: trialPlan.label,
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                 modules: trialPlan.modules,
                 limits: { max_dishes: trialPlan.menu_items, max_tables: trialPlan.max_tables },
                 isTrial: true
             };
         } catch(e) {
-            // Lizenzserver nicht erreichbar - lokale Trial-Lizenz erstellen
             const trialPlan = PLAN_DEFINITIONS['FREE'];
             trialLicense = {
                 key: 'OPA-TRIAL-OFFLINE-' + crypto.randomBytes(4).toString('hex').toUpperCase(),
-                status: 'trial',
-                customer: restaurantName || 'Trial',
-                type: 'FREE',
-                label: trialPlan.label,
+                status: 'trial', customer: restaurantName || 'Trial',
+                type: 'FREE', label: trialPlan.label,
                 expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                 modules: trialPlan.modules,
                 limits: { max_dishes: trialPlan.menu_items, max_tables: trialPlan.max_tables },
@@ -501,7 +492,7 @@ app.post('/api/setup', async (req, res) => {
             };
         }
 
-        // --- Save config ---
+        // --- Save config (trailing slash bereits entfernt) ---
         const newConfig = {
             LICENSE_SERVER_URL: licenseServerUrl,
             ADMIN_SECRET: adminSecret || crypto.randomBytes(32).toString('hex'),
@@ -517,7 +508,7 @@ app.post('/api/setup', async (req, res) => {
         settings.license = trialLicense;
         DB.setKV('settings', settings);
 
-        // --- Create admin user if provided ---
+        // --- Create admin user ---
         if (adminUser && adminPass) {
             const hash = await bcrypt.hash(adminPass, 10);
             DB.saveUsers([{ user: adminUser, pass: hash, role: 'admin' }]);
@@ -532,7 +523,7 @@ app.post('/api/setup', async (req, res) => {
 
 app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, 'cms', 'setup.html')));
 
-// --- Trial license cleanup job (runs every hour) ---
+// --- Trial license cleanup job ---
 setInterval(() => {
     const settings = DB.getKV('settings', {});
     const lic = settings.license;
@@ -545,6 +536,6 @@ setInterval(() => {
 
 server.listen(PORT, () => {
     console.log(`\n🚀 RESTAURANT-CMS ONLINE ON PORT ${PORT}`);
-    console.log(`🔒 LICENSE SERVER: ${CONFIG.LICENSE_SERVER_URL}`);
+    console.log(`🔒 LICENSE SERVER: ${LICENSE_SERVER}`);
     console.log(`🌐 CORS ORIGINS: ${allowedOrigins.join(', ')}\n`);
 });
