@@ -1,58 +1,12 @@
 {
   "licenses": [
     {
-      "license_key": "OPA-FREE-DEMO-2026",
-      "type": "FREE",
-      "customer_name": "Demo Restaurant",
-      "status": "active",
-      "associated_domain": "*",
-      "expires_at": "2099-12-31T23:59:59Z",
-      "allowed_modules": {
-        "menu_edit": true,
-        "orders_kitchen": false,
-        "reservations": false,
-        "custom_design": false,
-        "analytics": false,
-        "qr_pay": false
-      },
-      "limits": {
-        "max_dishes": 10,
-        "max_tables": 5
-      },
-      "usage_count": 0,
-      "last_validated": null,
-      "created_at": "2026-04-08T00:00:00Z"
-    },
-    {
-      "license_key": "OPA-START-DEMO-2026",
-      "type": "STARTER",
-      "customer_name": "Cafe Mustermann",
-      "status": "active",
-      "associated_domain": "*",
-      "expires_at": "2027-04-08T23:59:59Z",
-      "allowed_modules": {
-        "menu_edit": true,
-        "orders_kitchen": true,
-        "reservations": true,
-        "custom_design": false,
-        "analytics": false,
-        "qr_pay": false
-      },
-      "limits": {
-        "max_dishes": 40,
-        "max_tables": 10
-      },
-      "usage_count": 0,
-      "last_validated": null,
-      "created_at": "2026-04-08T00:00:00Z"
-    },
-    {
-      "license_key": "OPA-PRO-DEMO-2026",
+      "license_key": "OPA-PRO-CB57EDF4-2026",
       "type": "PRO",
-      "customer_name": "Restaurant Bella Italia",
+      "customer_name": "Test",
       "status": "active",
       "associated_domain": "*",
-      "expires_at": "2027-04-08T23:59:59Z",
+      "expires_at": "2026-12-31T00:00:00.000Z",
       "allowed_modules": {
         "menu_edit": true,
         "orders_kitchen": true,
@@ -67,53 +21,8 @@
       },
       "usage_count": 0,
       "last_validated": null,
-      "created_at": "2026-04-08T00:00:00Z"
-    },
-    {
-      "license_key": "OPA-PROPLUS-DEMO-2026",
-      "type": "PRO_PLUS",
-      "customer_name": "Steakhaus am See",
-      "status": "active",
-      "associated_domain": "*",
-      "expires_at": "2027-04-08T23:59:59Z",
-      "allowed_modules": {
-        "menu_edit": true,
-        "orders_kitchen": true,
-        "reservations": true,
-        "custom_design": true,
-        "analytics": true,
-        "qr_pay": false
-      },
-      "limits": {
-        "max_dishes": 200,
-        "max_tables": 50
-      },
-      "usage_count": 0,
-      "last_validated": null,
-      "created_at": "2026-04-08T00:00:00Z"
-    },
-    {
-      "license_key": "OPA-ENT-DEMO-2026",
-      "type": "ENTERPRISE",
-      "customer_name": "Hotel Grand Palace",
-      "status": "active",
-      "associated_domain": "*",
-      "expires_at": "2027-04-08T23:59:59Z",
-      "allowed_modules": {
-        "menu_edit": true,
-        "orders_kitchen": true,
-        "reservations": true,
-        "custom_design": true,
-        "analytics": true,
-        "qr_pay": true
-      },
-      "limits": {
-        "max_dishes": 500,
-        "max_tables": 999
-      },
-      "usage_count": 0,
-      "last_validated": null,
-      "created_at": "2026-04-08T00:00:00Z"
+      "validated_domain": null,
+      "created_at": "2026-04-08T11:48:50.296Z"
     }
   ]
 }
