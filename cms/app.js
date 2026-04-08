@@ -22,8 +22,6 @@ const logoutBtn = document.getElementById('btn-logout');
 const contentView = document.getElementById('content-view');
 const viewTitle = document.getElementById('view-title');
 const dashboardToolbar = document.getElementById('dashboard-toolbar');
-const navItems = document.querySelectorAll('.nav-item');
-const navSubItems = document.querySelectorAll('.nav-subitem');
 
 let currentView = 'stats';
 
@@ -37,17 +35,14 @@ async function init() {
     loginContainer.style.display = 'none';
     adminDashboard.style.display = 'flex';
 
-    // Initial View
     switchView('stats');
 
-    // Sidebar Branding Update
     const branding = await apiGet('branding');
     if (branding) {
         document.getElementById('disp-res-name').textContent = branding.name || 'OPA! CMS';
         document.getElementById('disp-res-slogan').textContent = branding.slogan || 'Restaurant Management';
     }
 
-    // Sidebar Visibility Check
     const settings = await apiGet('settings') || {};
     updateSidebarVisibility(settings);
 }
@@ -60,20 +55,40 @@ export function updateSidebarVisibility(settings) {
     }
 }
 
-async function switchView(view, tab = null) {
-    currentView = view;
-    console.log(`Switching to view: ${view}, tab: ${tab}`);
-    
-    // Update Sidebar UI
-    navItems.forEach(item => item.classList.remove('active'));
-    document.querySelectorAll(`[data-view="${view}"]`).forEach(item => {
-        if (!item.classList.contains('nav-subitem')) item.classList.add('active');
+function setActiveNavItem(view, tab) {
+    // Remove active from all
+    document.querySelectorAll('.nav-item, .nav-subitem').forEach(el => el.classList.remove('active'));
+
+    // Highlight matching subitem first
+    let matched = false;
+    document.querySelectorAll('.nav-subitem').forEach(el => {
+        if (el.dataset.view === view && (!tab || el.dataset.tab === tab)) {
+            el.classList.add('active');
+            // Open parent group
+            const group = el.closest('.nav-group');
+            if (group) group.classList.add('open');
+            matched = true;
+        }
     });
 
-    // Reset Toolbar
+    // If no subitem matched, highlight top-level nav-item
+    if (!matched) {
+        document.querySelectorAll('.nav-item').forEach(el => {
+            if (el.dataset.view === view) {
+                el.classList.add('active');
+                const group = el.closest('.nav-group');
+                if (group) group.classList.add('open');
+            }
+        });
+    }
+}
+
+async function switchView(view, tab = null) {
+    currentView = view;
+
+    setActiveNavItem(view, tab);
     dashboardToolbar.style.display = 'none';
 
-    // Render Logic
     switch (view) {
         case 'stats':
             await renderDashboard(contentView, viewTitle, dashboardToolbar);
@@ -107,60 +122,58 @@ async function switchView(view, tab = null) {
     }
 }
 
-// Event Listeners
+// Login
 if (loginForm) {
     loginForm.onsubmit = async (e) => {
         e.preventDefault();
         const res = await login(loginForm.username.value, loginForm.password.value);
-        if (res.success) {
-            init();
-        } else {
-            showToast(res.reason, 'error');
-        }
+        if (res.success) init();
+        else showToast(res.reason, 'error');
     };
 }
 
-if (logoutBtn) {
-    logoutBtn.onclick = () => logout();
-}
+if (logoutBtn) logoutBtn.onclick = () => logout();
 
-navItems.forEach(item => {
-    item.onclick = (e) => {
-        const view = item.dataset.view;
-        const group = item.closest('.nav-group');
-        
-        // If it's a group header, toggle the group
-        if (group && !item.classList.contains('nav-subitem')) {
-            // Keep open logic: Multiple groups can be open
-            group.classList.toggle('open');
-            
-            // Only switch view if it's not JUST a toggle (some items are both)
-            if (view) switchView(view);
+// Sidebar click handlers
+document.querySelectorAll('.nav-group-header').forEach(header => {
+    header.addEventListener('click', (e) => {
+        const group = header.closest('.nav-group');
+        if (!group) return;
+
+        // If header has a view, navigate to it
+        const view = header.dataset.view;
+        const tab  = header.dataset.tab;
+        if (view) {
+            e.preventDefault();
+            switchView(view, tab || null);
         } else {
-            // Standard link
-            if (view) {
-                e.preventDefault();
-                switchView(view);
-            }
+            e.preventDefault();
         }
-    };
+
+        // Always toggle group open/close
+        group.classList.toggle('open');
+    });
 });
 
-navSubItems.forEach(item => {
-    item.onclick = (e) => {
+document.querySelectorAll('.nav-subitem').forEach(item => {
+    item.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        // Highlight active subitem
-        navSubItems.forEach(si => si.classList.remove('active'));
-        item.classList.add('active');
-        
-        switchView(item.dataset.view, item.dataset.tab);
-    };
+        const view = item.dataset.view;
+        const tab  = item.dataset.tab || null;
+        if (view) switchView(view, tab);
+    });
 });
 
-// Global Helpers (Keeping for sidebar/legacy compatibility)
-window.switchTab = switchView;
+document.querySelectorAll('.nav-item:not(.nav-group-header)').forEach(item => {
+    item.addEventListener('click', (e) => {
+        const view = item.dataset.view;
+        if (view) {
+            e.preventDefault();
+            switchView(view);
+        }
+    });
+});
 
-// Initialize
+window.switchTab = switchView;
 init();
