@@ -14,14 +14,13 @@ import { renderSettings } from './modules/settings.js';
 import { renderOpeningHours } from './modules/opening.js';
 import { renderOrders } from './modules/orders.js';
 
-// DOM Elements
-const loginContainer = document.getElementById('login-container');
-const adminDashboard = document.getElementById('admin-dashboard');
-const loginForm = document.getElementById('login-form');
-const logoutBtn = document.getElementById('btn-logout');
-const contentView = document.getElementById('content-view');
-const viewTitle = document.getElementById('view-title');
-const dashboardToolbar = document.getElementById('dashboard-toolbar');
+const loginContainer    = document.getElementById('login-container');
+const adminDashboard    = document.getElementById('admin-dashboard');
+const loginForm         = document.getElementById('login-form');
+const logoutBtn         = document.getElementById('btn-logout');
+const contentView       = document.getElementById('content-view');
+const viewTitle         = document.getElementById('view-title');
+const dashboardToolbar  = document.getElementById('dashboard-toolbar');
 
 let currentView = 'stats';
 
@@ -39,8 +38,8 @@ async function init() {
 
     const branding = await apiGet('branding');
     if (branding) {
-        document.getElementById('disp-res-name').textContent = branding.name || 'OPA! CMS';
-        document.getElementById('disp-res-slogan').textContent = branding.slogan || 'Restaurant Management';
+        document.getElementById('disp-res-name').textContent    = branding.name   || 'OPA! CMS';
+        document.getElementById('disp-res-slogan').textContent  = branding.slogan || 'Restaurant Management';
     }
 
     const settings = await apiGet('settings') || {};
@@ -48,44 +47,33 @@ async function init() {
 }
 
 export function updateSidebarVisibility(settings) {
+    // Küchen-Monitor im Restaurant-Submenü ein-/ausblenden
     const ordersItem = document.getElementById('nav-orders');
     if (ordersItem) {
-        const showOrders = settings.activeModules?.orders !== false;
-        ordersItem.style.display = showOrders ? 'flex' : 'none';
+        ordersItem.style.display = settings.activeModules?.orders !== false ? 'flex' : 'none';
     }
 }
 
 function setActiveNavItem(view, tab) {
-    // Remove active from all
     document.querySelectorAll('.nav-item, .nav-subitem').forEach(el => el.classList.remove('active'));
 
-    // Highlight matching subitem first
     let matched = false;
     document.querySelectorAll('.nav-subitem').forEach(el => {
         if (el.dataset.view === view && (!tab || el.dataset.tab === tab)) {
             el.classList.add('active');
-            // Open parent group
-            const group = el.closest('.nav-group');
-            if (group) group.classList.add('open');
             matched = true;
         }
     });
 
-    // If no subitem matched, highlight top-level nav-item
     if (!matched) {
         document.querySelectorAll('.nav-item').forEach(el => {
-            if (el.dataset.view === view) {
-                el.classList.add('active');
-                const group = el.closest('.nav-group');
-                if (group) group.classList.add('open');
-            }
+            if (el.dataset.view === view) el.classList.add('active');
         });
     }
 }
 
 async function switchView(view, tab = null) {
     currentView = view;
-
     setActiveNavItem(view, tab);
     dashboardToolbar.style.display = 'none';
 
@@ -134,27 +122,19 @@ if (loginForm) {
 
 if (logoutBtn) logoutBtn.onclick = () => logout();
 
-// Sidebar click handlers
+// Gruppen-Header: Toggle + optional navigieren
 document.querySelectorAll('.nav-group-header').forEach(header => {
     header.addEventListener('click', (e) => {
+        e.preventDefault();
         const group = header.closest('.nav-group');
-        if (!group) return;
-
-        // If header has a view, navigate to it
+        if (group) group.classList.toggle('open');
         const view = header.dataset.view;
-        const tab  = header.dataset.tab;
-        if (view) {
-            e.preventDefault();
-            switchView(view, tab || null);
-        } else {
-            e.preventDefault();
-        }
-
-        // Always toggle group open/close
-        group.classList.toggle('open');
+        const tab  = header.dataset.tab || null;
+        if (view) switchView(view, tab);
     });
 });
 
+// Sub-Items
 document.querySelectorAll('.nav-subitem').forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
@@ -165,13 +145,11 @@ document.querySelectorAll('.nav-subitem').forEach(item => {
     });
 });
 
+// Direkt-Links (Dashboard)
 document.querySelectorAll('.nav-item:not(.nav-group-header)').forEach(item => {
     item.addEventListener('click', (e) => {
         const view = item.dataset.view;
-        if (view) {
-            e.preventDefault();
-            switchView(view);
-        }
+        if (view) { e.preventDefault(); switchView(view); }
     });
 });
 

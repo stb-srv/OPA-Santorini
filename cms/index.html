@@ -55,25 +55,25 @@
                     </a>
 
                     <!-- Website -->
-                    <div class="nav-group" id="group-website">
+                    <div class="nav-group open" id="group-website">
                         <a href="#home-editor" class="nav-item nav-group-header" data-view="home-editor">
                             <i class="fas fa-globe"></i>
                             <span>Website</span>
                             <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.65rem; opacity:.4;"></i>
                         </a>
                         <div class="nav-submenu">
-                            <a class="nav-subitem" data-view="home-editor" data-tab="visuals"   href="#visuals">Startseite &amp; Bilder</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="pages"     href="#pages">Seiten verwalten</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="legal"     href="#legal">Impressum &amp; Datenschutz</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="cookies"   href="#cookies">Cookie Banner</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="location"  href="#location">Standort &amp; Karte</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="vacation"  href="#vacation">Urlaub</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="holiday"   href="#holiday">Feiertage</a>
+                            <a class="nav-subitem" data-view="home-editor" data-tab="visuals"  href="#visuals">Startseite &amp; Bilder</a>
+                            <a class="nav-subitem" data-view="home-editor" data-tab="pages"    href="#pages">Seiten verwalten</a>
+                            <a class="nav-subitem" data-view="home-editor" data-tab="legal"    href="#legal">Impressum &amp; Datenschutz</a>
+                            <a class="nav-subitem" data-view="home-editor" data-tab="cookies"  href="#cookies">Cookie Banner</a>
+                            <a class="nav-subitem" data-view="home-editor" data-tab="location" href="#location">Standort &amp; Karte</a>
+                            <a class="nav-subitem" data-view="home-editor" data-tab="vacation" href="#vacation">Urlaub</a>
+                            <a class="nav-subitem" data-view="home-editor" data-tab="holiday"  href="#holiday">Feiertage</a>
                         </div>
                     </div>
 
                     <!-- Restaurant -->
-                    <div class="nav-group" id="group-restaurant">
+                    <div class="nav-group open" id="group-restaurant">
                         <a href="#" class="nav-item nav-group-header" data-group="group-restaurant">
                             <i class="fas fa-utensils"></i>
                             <span>Restaurant</span>
@@ -81,13 +81,15 @@
                         </a>
                         <div class="nav-submenu">
                             <a class="nav-subitem" data-view="reservations" href="#reservations">Reservierungen</a>
-                            <a class="nav-subitem" data-view="tables"       href="#tables">Tische</a>
-                            <a class="nav-subitem" data-view="opening"      href="#opening">Öffnungszeiten</a>
+                            <a class="nav-subitem" data-view="archive"       href="#archive" style="padding-left:68px; font-size:.75rem; opacity:.75;">Archiv</a>
+                            <a class="nav-subitem" data-view="tables"        href="#tables">Tische</a>
+                            <a class="nav-subitem" data-view="opening"       href="#opening">Öffnungszeiten</a>
+                            <a class="nav-subitem" data-view="orders"        href="#orders" id="nav-orders">🔔 Küchen-Monitor</a>
                         </div>
                     </div>
 
                     <!-- Speisekarte -->
-                    <div class="nav-group" id="group-menu">
+                    <div class="nav-group open" id="group-menu">
                         <a href="#menu" class="nav-item nav-group-header" data-view="menu" data-tab="dishes">
                             <i class="fas fa-book-open"></i>
                             <span>Speisekarte</span>
@@ -101,20 +103,15 @@
                         </div>
                     </div>
 
-                    <!-- Küchen-Monitor (versteckt wenn deaktiviert) -->
-                    <a href="#orders" class="nav-item" data-view="orders" id="nav-orders">
-                        <i class="fas fa-concierge-bell"></i> Küchen-Monitor
-                    </a>
-
                     <!-- System -->
-                    <div class="nav-group" id="group-system">
+                    <div class="nav-group open" id="group-system">
                         <a href="#" class="nav-item nav-group-header" data-group="group-system">
                             <i class="fas fa-cog"></i>
                             <span>System</span>
                             <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.65rem; opacity:.4;"></i>
                         </a>
                         <div class="nav-submenu">
-                            <a class="nav-subitem" data-view="settings"       href="#settings">Einstellungen</a>
+                            <a class="nav-subitem" data-view="settings"        href="#settings">Einstellungen</a>
                             <a class="nav-subitem" data-view="plugins-manager" href="#plugins">Erweiterungen</a>
                             <div id="plugin-nav-items"></div>
                         </div>
