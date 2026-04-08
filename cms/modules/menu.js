@@ -370,6 +370,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
              URL.revokeObjectURL(url);
         };
 
+        // Import nutzt /api/menu/import – kein requireLicense, nur requireAuth + Limit-Check
         container.querySelector('#btn-import-menu').onclick = () => {
              const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
              inp.onchange = async (e) => {
@@ -379,13 +380,14 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
                      try {
                          const data = JSON.parse(ev.target.result);
                          if (await showConfirm('Wiederherstellen?', 'Dies überschreibt Ihre aktuelle Speisekarte unwiderruflich.')) {
-                             if (data.menu) await apiPost('menu', data.menu);
-                             if (data.categories) await apiPost('categories', data.categories);
-                             if (data.allergens) await apiPost('allergens', data.allergens);
-                             if (data.additives) await apiPost('additives', data.additives);
-                             cachedMenuData = null;
-                             showToast('Sicherung geladen!');
-                             renderMenu(container, document.getElementById('view-title'), 'dishes', true);
+                             const res = await apiPost('menu/import', data);
+                             if (res && res.success) {
+                                 cachedMenuData = null;
+                                 showToast('Sicherung geladen!');
+                                 renderMenu(container, document.getElementById('view-title'), 'dishes', true);
+                             } else {
+                                 showToast(res?.reason || 'Import fehlgeschlagen.', 'error');
+                             }
                          }
                      } catch (err) { showToast('Ungültige Datei', 'error'); }
                  };

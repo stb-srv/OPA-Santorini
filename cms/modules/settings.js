@@ -19,6 +19,7 @@ export async function renderSettings(container, titleEl) {
         <div class="glass-panel" style="padding:40px;">
             <div class="designer-tabs" style="margin-bottom:30px;">
                 <button class="tab-btn ${settingsTab === 'license' ? 'active' : ''}" id="tab-btn-license">Lizenz & Hub</button>
+                <button class="tab-btn ${settingsTab === 'plan_modules' ? 'active' : ''}" id="tab-btn-plan_modules">Plan-Module</button>
                 <button class="tab-btn ${settingsTab === 'branding' ? 'active' : ''}" id="tab-btn-branding">Restaurant-Info</button>
                 <button class="tab-btn ${settingsTab === 'visibility' ? 'active' : ''}" id="tab-btn-visibility">CMS-Ansicht</button>
                 <button class="tab-btn ${settingsTab === 'reservations' ? 'active' : ''}" id="tab-btn-reservations">Reservierungen</button>
@@ -29,7 +30,7 @@ export async function renderSettings(container, titleEl) {
                 ${renderSettingsTab(settings, branding, users, licInfo)}
             </div>
 
-            <div id="settings-save-bar" style="display:${settingsTab === 'license' ? 'none' : 'flex'}; justify-content:flex-end; margin-top:30px;">
+            <div id="settings-save-bar" style="display:${(settingsTab === 'license' || settingsTab === 'plan_modules') ? 'none' : 'flex'}; justify-content:flex-end; margin-top:30px;">
                 <button class="btn-primary" id="save-settings"><i class="fas fa-save"></i> Einstellungen speichern</button>
             </div>
         </div>
@@ -37,6 +38,15 @@ export async function renderSettings(container, titleEl) {
 
     attachSettingsHandlers(container, settings, branding, users, licInfo, titleEl);
 }
+
+const MODULE_LABELS = {
+    menu_edit:      { label: 'Speisekarte bearbeiten', icon: 'utensils', desc: 'Gerichte hinzufügen, bearbeiten & löschen' },
+    orders_kitchen: { label: 'Küchen-Monitor',         icon: 'concierge-bell', desc: 'Bestellungen in Echtzeit anzeigen' },
+    reservations:   { label: 'Online-Reservierung',    icon: 'calendar-check', desc: 'Gäste können online reservieren' },
+    custom_design:  { label: 'Design anpassen',        icon: 'paint-brush', desc: 'Farben, Logo & Homepage bearbeiten' },
+    analytics:      { label: 'Statistiken',             icon: 'chart-bar', desc: 'Umsatz- und Bestellstatistiken' },
+    qr_pay:         { label: 'QR-Pay',                  icon: 'qrcode', desc: 'Bezahlung per QR-Code am Tisch' },
+};
 
 function renderSettingsTab(settings, branding, users, licInfo) {
     if (settingsTab === 'license') {
@@ -47,18 +57,15 @@ function renderSettingsTab(settings, branding, users, licInfo) {
         const daysLeft = expiresAt ? Math.ceil((expiresAt - new Date()) / (1000 * 60 * 60 * 24)) : null;
         const expired = daysLeft !== null && daysLeft <= 0;
 
-        // Status Badge
         let badgeColor = '#6b7280', badgeText = 'Unbekannt';
         if (isTrial && !expired)  { badgeColor = '#f59e0b'; badgeText = `Trial • noch ${daysLeft} Tage`; }
         if (isTrial && expired)   { badgeColor = '#ef4444'; badgeText = 'Trial abgelaufen'; }
         if (isActive)             { badgeColor = '#10b981'; badgeText = 'Aktiv'; }
 
-        // Plan features
         const plans = licInfo.plans || {};
         const planKeys = Object.keys(plans);
 
         return `
-            <!-- Aktueller Status -->
             <div style="background:rgba(37,99,235,.05); border:1px solid rgba(37,99,235,.15); border-radius:12px; padding:24px; margin-bottom:28px;">
                 <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
                     <div style="width:56px;height:56px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;flex-shrink:0;">
@@ -86,7 +93,6 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                 </div>` : ''}
             </div>
 
-            <!-- Lizenz aktivieren -->
             <div style="background:rgba(16,185,129,.05); border:1px solid rgba(16,185,129,.15); border-radius:12px; padding:24px; margin-bottom:28px;">
                 <h4 style="margin:0 0 16px; display:flex; align-items:center; gap:8px;">
                     <i class="fas fa-key" style="color:#10b981;"></i> Lizenz aktivieren / wechseln
@@ -105,7 +111,6 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                 <div id="license-activate-result" style="margin-top:12px;"></div>
             </div>
 
-            <!-- Plan-Übersicht -->
             <h4 style="margin-bottom:16px;"><i class="fas fa-th-large"></i> Verfügbare Pläne</h4>
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:12px;">
                 ${planKeys.map(key => {
@@ -131,6 +136,46 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                         </div>
                     </div>`;
                 }).join('')}
+            </div>
+        `;
+    }
+
+    if (settingsTab === 'plan_modules') {
+        const l = settings.license || {};
+        const activeModules = l.modules || {};
+        const allModuleKeys = Object.keys(MODULE_LABELS);
+        return `
+            <div style="margin-bottom:20px;">
+                <h4 style="margin:0 0 6px;"><i class="fas fa-sliders-h"></i> Plan-Module verwalten</h4>
+                <p style="color:var(--text-muted); font-size:.85rem; margin:0;">
+                    Hier kannst du einzelne Features für die aktive Lizenz manuell aktivieren oder deaktivieren.
+                    Änderungen gelten sofort – unabhängig vom zugewiesenen Plan.
+                </p>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
+                ${allModuleKeys.map(key => {
+                    const m = MODULE_LABELS[key];
+                    const isOn = activeModules[key] === true;
+                    return `
+                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(0,0,0,0.06); border-radius:14px; padding:18px; display:flex; align-items:center; gap:16px;">
+                        <div style="width:40px;height:40px;border-radius:10px;background:${isOn ? 'rgba(16,185,129,.15)' : 'rgba(107,114,128,.1)'}; display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-${m.icon}" style="color:${isOn ? '#10b981' : '#9ca3af'};"></i>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:700; font-size:.9rem;">${m.label}</div>
+                            <div style="color:var(--text-muted); font-size:.78rem; margin-top:2px;">${m.desc}</div>
+                        </div>
+                        <label class="switch small" style="flex-shrink:0;">
+                            <input type="checkbox" class="module-toggle" data-module="${key}" ${isOn ? 'checked' : ''}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>`;
+                }).join('')}
+            </div>
+            <div style="display:flex; justify-content:flex-end; margin-top:24px;">
+                <button class="btn-primary" id="btn-save-modules" style="background:var(--accent);">
+                    <i class="fas fa-save"></i> Module speichern
+                </button>
             </div>
         `;
     }
@@ -207,11 +252,30 @@ function renderSettingsTab(settings, branding, users, licInfo) {
 }
 
 function attachSettingsHandlers(container, settings, branding, users, licInfo, titleEl) {
-    container.querySelector('#tab-btn-license').onclick    = () => { settingsTab = 'license';      renderSettings(container, titleEl); };
-    container.querySelector('#tab-btn-branding').onclick   = () => { settingsTab = 'branding';     renderSettings(container, titleEl); };
-    container.querySelector('#tab-btn-visibility').onclick = () => { settingsTab = 'visibility';   renderSettings(container, titleEl); };
+    container.querySelector('#tab-btn-license').onclick      = () => { settingsTab = 'license';      renderSettings(container, titleEl); };
+    container.querySelector('#tab-btn-plan_modules').onclick = () => { settingsTab = 'plan_modules'; renderSettings(container, titleEl); };
+    container.querySelector('#tab-btn-branding').onclick     = () => { settingsTab = 'branding';     renderSettings(container, titleEl); };
+    container.querySelector('#tab-btn-visibility').onclick   = () => { settingsTab = 'visibility';   renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-reservations').onclick = () => { settingsTab = 'reservations'; renderSettings(container, titleEl); };
-    container.querySelector('#tab-btn-users').onclick      = () => { settingsTab = 'users';        renderSettings(container, titleEl); };
+    container.querySelector('#tab-btn-users').onclick        = () => { settingsTab = 'users';        renderSettings(container, titleEl); };
+
+    // --- Plan-Module speichern ---
+    const btnSaveModules = container.querySelector('#btn-save-modules');
+    if (btnSaveModules) {
+        btnSaveModules.onclick = async () => {
+            const modules = {};
+            container.querySelectorAll('.module-toggle').forEach(cb => {
+                modules[cb.dataset.module] = cb.checked;
+            });
+            const res = await apiPost('license/modules', { modules });
+            if (res && res.success) {
+                showToast('Module gespeichert!');
+                renderSettings(container, titleEl);
+            } else {
+                showToast(res?.reason || 'Fehler beim Speichern.', 'error');
+            }
+        };
+    }
 
     // --- Lizenz aktivieren ---
     const btnActivate = container.querySelector('#btn-activate-license');
@@ -250,7 +314,6 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
             }
         };
 
-        // Enter-Taste im Input
         container.querySelector('#license-key-input').onkeydown = (e) => {
             if (e.key === 'Enter') btnActivate.click();
         };

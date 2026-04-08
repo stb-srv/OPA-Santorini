@@ -401,6 +401,39 @@ app.post('/api/license/validate', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, reason: 'Lizenzserver nicht erreichbar.' }); }
 });
 
+// --- License Module Override (Admin) ---
+// Erlaubt es einzelne Module pro Lizenz manuell zu aktivieren/deaktivieren
+app.post('/api/license/modules', requireAuth, (req, res) => {
+    const { modules } = req.body;
+    if (!modules || typeof modules !== 'object') {
+        return res.status(400).json({ success: false, reason: 'Ungültige Module-Daten.' });
+    }
+    const settings = DB.getKV('settings', {});
+    if (!settings.license) return res.status(400).json({ success: false, reason: 'Keine Lizenz aktiv.' });
+    settings.license.modules = { ...settings.license.modules, ...modules };
+    DB.setKV('settings', settings);
+    res.json({ success: true, modules: settings.license.modules });
+});
+
+// --- Menu Import (kein requireLicense – Import ist für alle Pläne erlaubt) ---
+app.post('/api/menu/import', requireAuth, (req, res) => {
+    const { menu, categories, allergens, additives } = req.body;
+    const lic = getCurrentLicense(DB);
+    const maxDishes = lic.limits?.max_dishes ?? 10;
+    if (menu && Array.isArray(menu) && menu.length > maxDishes) {
+        return res.status(403).json({
+            success: false,
+            reason: `Ihr ${lic.label || lic.type}-Plan erlaubt maximal ${maxDishes} Speisen. Die Backup-Datei enthält ${menu.length} Einträge – bitte upgraden oder Backup kürzen.`,
+            limit: maxDishes, current: menu.length
+        });
+    }
+    if (menu && Array.isArray(menu)) DB.saveMenu(menu);
+    if (categories && Array.isArray(categories)) DB.saveCategories(categories);
+    if (allergens && typeof allergens === 'object') DB.setKV('allergens', allergens);
+    if (additives && typeof additives === 'object') DB.setKV('additives', additives);
+    res.json({ success: true });
+});
+
 // --- Image Upload API ---
 app.post('/api/upload', requireAuth, upload.single('image'), (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, reason: 'Keine Datei hochgeladen.' });
@@ -463,10 +496,8 @@ app.post('/api/setup', async (req, res) => {
     if (CONFIG.SETUP_COMPLETE) return res.status(403).json({ success: false, reason: 'Already configured' });
     try {
         const { restaurantName, licenseServer, adminSecret, smtp, adminUser, adminPass } = req.body;
-        // Trailing Slash immer entfernen
         const licenseServerUrl = (licenseServer || 'https://licens-prod.stb-srv.de').replace(/\/+$/, '');
 
-        // --- Auto-generate 30-day trial license ---
         let trialLicense = null;
         try {
             const trialPlan = PLAN_DEFINITIONS['FREE'];
@@ -492,7 +523,6 @@ app.post('/api/setup', async (req, res) => {
             };
         }
 
-        // --- Save config (trailing slash bereits entfernt) ---
         const newConfig = {
             LICENSE_SERVER_URL: licenseServerUrl,
             ADMIN_SECRET: adminSecret || crypto.randomBytes(32).toString('hex'),
@@ -503,12 +533,10 @@ app.post('/api/setup', async (req, res) => {
         fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 4));
         Object.assign(CONFIG, newConfig);
 
-        // --- Save trial license to DB ---
         const settings = DB.getKV('settings', {});
         settings.license = trialLicense;
         DB.setKV('settings', settings);
 
-        // --- Create admin user ---
         if (adminUser && adminPass) {
             const hash = await bcrypt.hash(adminPass, 10);
             DB.saveUsers([{ user: adminUser, pass: hash, role: 'admin' }]);
