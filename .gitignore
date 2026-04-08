@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Database files
+server/database.sqlite
+server/database.sqlite-shm
+server/database.sqlite-wal
+server/db.json
+
+# Config & Secrets
+config.json
+.env
+
+# Uploads & Temp
+uploads/
+tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
