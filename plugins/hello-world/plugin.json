@@ -1,0 +1,14 @@
+{
+  "id": "hello-world",
+  "name": "Opa! Extra",
+  "description": "Ein Beispiel-Plugin, das zeigt wie einfach Erweiterungen erstellt werden können.",
+  "version": "1.0.0",
+  "author": "Antigravity Team",
+  "icon": "fa-star",
+  "enabled": true,
+  "entry": {
+    "cms": "cms.js",
+    "website": "website.js",
+    "server": "server.js"
+  }
+}

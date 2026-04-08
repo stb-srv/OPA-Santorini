@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grieche-CMS | Admin Logic Suite</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="table-planner.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- Real-time Communication -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <!-- Login Screen -->
+    <main class="login-container" id="login-container">
+        <header class="login-header">
+            <div class="logo">
+                <span class="logo-icon">🏛️</span>
+                <h1>Grieche-CMS</h1>
+            </div>
+            <p>Willkommen zurück. Bitte loggen Sie sich ein.</p>
+        </header>
+        
+        <form id="login-form" class="login-form">
+            <h2 style="margin-bottom:24px; font-size:1.4rem; font-weight:700;">Login</h2>
+
+            <div class="input-group">
+                <label for="username">Benutzername</label>
+                <input type="text" name="username" id="username" placeholder="Dein Benutzername" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password">Passwort</label>
+                <input type="password" name="password" id="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn-login">Sicher anmelden</button>
+        </form>
+    </main>
+
+    <!-- Admin Dashboard Container (Hidden by default) -->
+    <main class="admin-dashboard" id="admin-dashboard" style="display: none;">
+        <div class="glass-app-shell">
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2 id="disp-res-name">OPA! CMS</h2>
+                    <p id="disp-res-slogan" style="color: #4a5568; font-size: 0.8rem; font-weight: 600;">Restaurant Management</p>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="#stats" class="nav-item active" data-view="stats"><i class="fas fa-th-large"></i> Dashboard</a>
+                    
+                    <div class="nav-group" id="designer-group">
+                        <a href="#home-editor" class="nav-item" data-view="home-editor">
+                            <i class="fas fa-magic"></i> Website Designer <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.7rem; opacity:.5;"></i>
+                        </a>
+                        <div class="nav-submenu">
+                            <a href="#visuals" class="nav-subitem" data-view="home-editor" data-tab="visuals">Startseite & Bilder</a>
+                            <a href="#pages" class="nav-subitem" data-view="home-editor" data-tab="pages">Seiten verwalten</a>
+                            <a href="#legal" class="nav-subitem" data-view="home-editor" data-tab="legal">Impressum & Datenschutz</a>
+                            <a href="#cookies" class="nav-subitem" data-view="home-editor" data-tab="cookies">Cookie Banner</a>
+                            <a href="#location" class="nav-subitem" data-view="home-editor" data-tab="location">Standort & Karte</a>
+                            <a href="#vacation" class="nav-subitem" data-view="home-editor" data-tab="vacation">Urlaub</a>
+                            <a href="#holiday" class="nav-subitem" data-view="home-editor" data-tab="holiday">Feiertage</a>
+                        </div>
+                    </div>
+                    <div class="nav-group" id="mgmt-group">
+                        <a href="#mgmt" class="nav-item" data-view="mgmt">
+                            <i class="fas fa-store"></i> Restaurant-Verwaltung <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.7rem; opacity:.5;"></i>
+                        </a>
+                        <div class="nav-submenu">
+                            <!-- Reservierungen Group -->
+                            <a href="#reservations" class="nav-subitem" data-view="reservations" style="font-weight:700;"><i class="fas fa-calendar-alt"></i> Reservierungen</a>
+                            <a href="#archive" class="nav-subitem" data-view="archive" style="padding-left:70px; font-size:0.75rem; opacity:0.8;"><i class="fas fa-archive"></i> Archiv</a>
+                            
+                            <!-- Middle Items -->
+                            <a href="#tables" class="nav-subitem" data-view="tables"><i class="fas fa-chair"></i> Tische</a>
+                            <a href="#opening" class="nav-subitem" data-view="opening"><i class="fas fa-clock"></i> Öffnungszeiten</a>
+                            
+                            <!-- Menu Group -->
+                            <a href="#menu" class="nav-subitem" data-view="menu" data-tab="dishes" style="font-weight:700;"><i class="fas fa-utensils"></i> Speisekarte</a>
+                            <div style="padding-left:20px; display:flex; flex-direction:column; gap:2px;">
+                                <a href="#menu" class="nav-subitem" data-view="menu" data-tab="dishes" style="padding-left:50px; font-size:0.75rem;">Gerichte</a>
+                                <a href="#menu" class="nav-subitem" data-view="menu" data-tab="categories" style="padding-left:50px; font-size:0.75rem;">Kategorien</a>
+                                <a href="#menu" class="nav-subitem" data-view="menu" data-tab="allergens" style="padding-left:50px; font-size:0.75rem;">Allergene</a>
+                                <a href="#menu" class="nav-subitem" data-view="menu" data-tab="additives" style="padding-left:50px; font-size:0.75rem;">Zusatzstoffe</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="#orders" class="nav-item" data-view="orders" id="nav-orders"><i class="fas fa-shopping-cart"></i> Küchen-Monitor</a>
+                    
+                    <div class="nav-group">
+                        <a href="#settings" class="nav-item" data-view="settings"><i class="fas fa-cog"></i> Einstellungen</a>
+                    </div>
+                    
+                    <div class="nav-group">
+                        <a href="#plugins-manager" class="nav-item" data-view="plugins-manager">
+                            <i class="fas fa-plug"></i> Erweiterungen <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.7rem; opacity:.5;"></i>
+                        </a>
+                        <div id="plugin-nav-items" class="nav-submenu" style="display:block;"></div>
+                    </div>
+                </nav>
+                
+                <div class="sidebar-footer">
+                    <div class="version-badge">v2.8.0 PRO</div>
+                </div>
+            </aside>
+
+            <section class="main-content">
+                <header class="content-header">
+                    <div class="header-left">
+                        <h2 id="view-title">Dashboard</h2>
+                    </div>
+                    <div class="header-right">
+                        <div class="user-profile">
+                            <span>Willkommen, <strong>Nikos</strong></span>
+                            <img src="https://ui-avatars.com/api/?name=Nikos&background=2b6cb0&color=fff" alt="Avatar" class="avatar">
+                            <button id="btn-logout" style="background:none; border:none; cursor:pointer; color:var(--primary); font-weight:800; margin-left:15px;">Logout</button>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="toolbar" id="dashboard-toolbar" style="display: none; margin-bottom: 30px;">
+                    <div class="glass-panel" style="padding:15px 30px; width:100%; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:700; opacity:0.6;"><i class="fas fa-info-circle"></i> Live-Status: Alle Systeme aktiv</span>
+                        <button class="btn-primary" onclick="window.customizeDashboard()" style="margin-left:auto;margin-right:20px;"><i class="fas fa-cog"></i> Dashboard anpassen</button>
+                        <div class="status-dot green"></div>
+                    </div>
+                </div>
+
+                <!-- Main Dynamic Content -->
+                <div class="content-body" id="content-view" style="display: block; width: 100%;">
+                    <!-- Rendered by app.js -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

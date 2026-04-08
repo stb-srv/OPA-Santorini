@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPA! Santorini – Griechisches Restaurant</title>
+    <meta name="description" content="Authentische griechische Küche im Herzen Münchens. Frische Zutaten, traditionelle Rezepte, modernes Ambiente.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- NAVIGATION -->
+    <nav class="nav" id="main-nav">
+        <a onclick="window.switchTab('home')" class="nav-logo" id="nav-logo" style="cursor:pointer;">OPA!</a>
+        <div class="nav-links" id="nav-links"></div>
+        <button type="button" class="nav-cta" onclick="window.switchTab('reservations')">Tisch reservieren</button>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero" id="hero-section">
+        <div class="hero-img" id="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-center">
+            <p class="hero-label">WILLKOMMEN BEI</p>
+            <h1 id="hero-title">OPA! Santorini</h1>
+            <p class="hero-sub" id="hero-slogan">Authentische Griechische Küche</p>
+            <a class="hero-btn" onclick="window.switchTab('menu')">Speisekarte <i class="fas fa-arrow-down"></i></a>
+        </div>
+    </section>
+
+    <!-- WELCOME -->
+    <section class="section" id="view-home">
+        <div class="container welcome-grid">
+            <div class="welcome-img-wrap">
+                <img id="welcome-img" src="" alt="Restaurant Impression" class="welcome-img">
+            </div>
+            <div class="welcome-text">
+                <span class="label">ÜBER UNS</span>
+                <h2 id="welcome-title">Willkommen</h2>
+                <p id="welcome-text">Genießen Sie die Aromen Griechenlands.</p>
+                <a class="btn" onclick="window.switchTab('menu')">Zur Karte <i class="fas fa-utensils"></i></a>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROMOTION -->
+    <section class="promo-bar" id="promo-section">
+        <div class="container" style="text-align:center;">
+            <span class="label" style="color:rgba(255,255,255,.6)">TAGESEMPFEHLUNG</span>
+            <h3 id="promo-text">Heute: Frischer Oktopus vom Grill</h3>
+        </div>
+    </section>
+
+    <!-- MENU -->
+    <section class="section bg-warm" id="view-menu" style="display:none;">
+        <div class="container">
+            <div style="text-align:center; margin-bottom:50px;">
+                <span class="label">GENUSS ERLEBEN</span>
+                <h2>Unsere Karte</h2>
+            </div>
+            <div class="menu-search-wrap">
+                <i class="fas fa-search menu-search-icon"></i>
+                <input type="text" id="menu-search" class="menu-search" placeholder="Gericht suchen…">
+            </div>
+            <div class="cat-bar" id="categories"></div>
+            <div class="menu-grid" id="menu-list"></div>
+            <p class="menu-empty" id="menu-empty" style="display:none;">Keine Gerichte gefunden.</p>
+        </div>
+    </section>
+
+    <!-- RESERVATIONS -->
+    <section class="section" id="view-reservations" style="display:none;">
+        <div class="container">
+            <div style="text-align:center; margin-bottom:60px;">
+                <span class="label">RESERVIERUNG</span>
+                <h2>Tisch reservieren</h2>
+            </div>
+            
+            <div class="res-stepper-container">
+                <!-- STEP 1: PERSONS -->
+                <div class="res-card res-step" id="res-step-1">
+                    <div class="res-step-header">
+                        <h3>Anzahl der Personen</h3>
+                        <div class="person-selector">
+                            <button type="button" class="btn-circle" onclick="window.adjustGuests(-1)"><i class="fas fa-minus"></i></button>
+                            <div class="person-input-wrap">
+                                <input type="number" id="res-guests" value="2" min="1" max="20" readonly>
+                            </div>
+                            <button type="button" class="btn-circle" onclick="window.adjustGuests(1)"><i class="fas fa-plus"></i></button>
+                            <span class="person-label">Personen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: DATE -->
+                <div class="res-card res-step" id="res-step-2">
+                    <div class="res-step-header">
+                        <h3>Reservierungsdatum</h3>
+                        <div class="calendar-nav">
+                            <button type="button" onclick="window.navCalendar(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <span id="calendar-month-year">Lade...</span>
+                            <button type="button" onclick="window.navCalendar(1)"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                    <div id="res-calendar-grid" class="calendar-grid-modern">
+                        <!-- Rendered by app.js -->
+                    </div>
+                </div>
+
+                <!-- STEP 3: AREA & TIME -->
+                <div class="res-card res-step" id="res-step-3" style="opacity:.3; pointer-events:none;">
+                    <div class="res-area-time-split">
+                        <div class="res-area-sidebar">
+                            <h3>Bereich / Uhrzeit</h3>
+                            <div id="res-area-list" class="area-tab-list">
+                                <!-- Rendered by app.js -->
+                            </div>
+                        </div>
+                        <div class="res-time-main">
+                            <div class="time-nav">
+                                <button type="button" onclick="window.navTime(-1)"><i class="fas fa-chevron-left"></i> Früher</button>
+                                <button type="button" onclick="window.navTime(1)">Später <i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div id="res-time-grid" class="time-grid-modern">
+                                <p style="text-align:center; padding:40px; opacity:.5;">Bitte wählen Sie zuerst ein Datum.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: CONTACT (MODAL/OVERLAY) -->
+                <div id="res-contact-overlay" class="res-overlay" style="display:none;">
+                    <div class="res-modal glass-panel">
+                        <button type="button" class="close-overlay" onclick="window.closeResModal()">&times;</button>
+                        <h3>Kontaktdaten</h3>
+                        <p id="res-summary-text" style="font-size:.9rem; margin-bottom:20px; opacity:.7;"></p>
+                        <form id="res-form" class="form-stack">
+                            <input type="text" placeholder="Ganze Name" id="res-name" required>
+                            <input type="email" placeholder="E-Mail" id="res-email" required>
+                            <input type="tel" placeholder="Telefonnummer" id="res-phone" required>
+                            <textarea placeholder="Anmerkungen (optional)" id="res-note" rows="3"></textarea>
+                            
+                            <div id="res-status-msg" style="display:none; margin-bottom:15px; padding:20px; border-radius:12px; border:1px solid #f59e0b; background:rgba(245,158,11,.05); color:#d97706; font-size:.9rem; text-align:center;">
+                                <i class="fas fa-info-circle"></i> Für diesen Termin ist nur eine Anfrage möglich.
+                            </div>
+
+                            <button type="submit" class="btn full" id="res-submit">Kostenfrei reservieren <i class="fas fa-check"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="res-footer-info" style="text-align:center; margin-top:40px; font-size:.8rem; opacity:.5;">
+                Online Reservierungen mit <span style="font-weight:700;">OPA! SmartPlanner</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOLIDAY MODAL -->
+    <div id="holiday-modal" class="vacation-modal">
+        <div class="vacation-glass">
+            <button class="vacation-close" onclick="window.closeHoliday()">&times;</button>
+            <div class="vac-icon">🎉</div>
+            <h2 id="holiday-title">Feiertagsgrüße</h2>
+            <p id="holiday-text">Wir haben an den Feiertagen für Sie geöffnet!</p>
+            <button class="btn" onclick="window.closeHoliday()">Verstanden</button>
+        </div>
+    </div>
+    <!-- MAP SECTION -->
+    <section class="section" id="view-location" style="display:none; padding-bottom:100px;">
+        <div class="container" id="location-container">
+            <!-- Rendered by app.js -->
+        </div>
+    </section>
+
+    <!-- CUSTOM DYNAMIC PAGES -->
+    <section class="section" id="view-custom" style="display:none; padding-bottom:100px;">
+        <div class="container" id="custom-page-container">
+            <!-- Rendered by app.js -->
+        </div>
+    </section>
+
+    <!-- LEGAL -->
+    <section class="section bg-warm" id="view-legal" style="display:none;">
+        <div class="container" style="max-width:800px;">
+            <div style="display:flex; gap:20px; margin-bottom:40px;">
+                <button class="btn small" onclick="window.setLegalView('impressum')">Impressum</button>
+                <button class="btn small outline" onclick="window.setLegalView('privacy')">Datenschutz</button>
+            </div>
+            <h2 id="legal-title">Impressum</h2>
+            <div id="legal-content" class="legal-body"></div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div>
+                <h4 id="footer-name">Taverna Zeus Powered by OPA! Santorini</h4>
+                <p class="footer-muted">Authentische griechische Küche</p>
+            </div>
+            <div class="footer-links">
+                <a onclick="window.switchTab('legal'); window.setLegalView('impressum')">Impressum</a>
+                <a onclick="window.switchTab('legal'); window.setLegalView('privacy')">Datenschutz</a>
+            </div>
+            <div class="footer-muted" style="text-align:right;">
+                © <span id="footer-year"></span> Alle Rechte vorbehalten.
+            </div>
+        </div>
+    </footer>
+
+    <!-- GDPR COOKIE BAR -->
+    <div id="cookie-settings-trigger" class="cookie-trigger" onclick="window.showCookieBanner(true)">
+        <i class="fas fa-fingerprint"></i>
+    </div>
+
+    <div class="cookie-bar" id="cookie-banner" style="display:none;">
+        <div class="cookie-bar-content glass">
+            <!-- View 1: Overview -->
+            <div id="cookie-view-overview">
+                <div class="cookie-bar-layout">
+                    <div class="cookie-text-area">
+                        <div class="cookie-header-mini">
+                            <i class="fas fa-shield-alt"></i>
+                            <strong>Privatsphäre & Cookies</strong>
+                        </div>
+                        <p id="cookie-text">Wir nutzen Cookies, um das Nutzererlebnis zu verbessern und den Besuch unserer Website so angenehm wie möglich zu machen.</p>
+                    </div>
+                    <div class="cookie-actions-bar">
+                        <button class="btn small" onclick="window.acceptAllCookies()">Alle akzeptieren</button>
+                        <button class="btn small outline" onclick="window.rejectNonEssential()">Nur notwendige</button>
+                        <button class="btn-link" onclick="window.toggleCookieView(true)">Einstellungen</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View 2: Settings -->
+            <div id="cookie-view-settings" style="display:none; padding:10px 0;">
+                <div class="cookie-header">
+                    <i class="fas fa-cog" style="font-size:1.5rem;"></i>
+                    <h2 style="font-size:1.4rem; margin-top:10px;">Cookie-Einstellungen</h2>
+                </div>
+                <div class="cookie-categories">
+                    <div class="cookie-cat-item">
+                        <div class="cat-info">
+                            <strong>Essenziell</strong>
+                            <span>Technisch notwendig für den Betrieb.</span>
+                        </div>
+                        <label class="switch disabled"><input type="checkbox" checked disabled><span class="slider round"></span></label>
+                    </div>
+                    <div class="cookie-cat-item">
+                        <div class="cat-info">
+                            <strong>Funktional</strong>
+                            <span>Speicherung von Präferenzen & Komfort.</span>
+                        </div>
+                        <label class="switch"><input type="checkbox" id="cookie-cat-func"><span class="slider round"></span></label>
+                    </div>
+                    <div class="cookie-cat-item">
+                        <div class="cat-info">
+                            <strong>Analyse</strong>
+                            <span>Besucherstatistik zur Verbesserung der Website.</span>
+                        </div>
+                        <label class="switch"><input type="checkbox" id="cookie-cat-anal"><span class="slider round"></span></label>
+                    </div>
+                </div>
+                <div class="cookie-actions">
+                    <button class="btn small" onclick="window.saveCustomCookies()">Auswahl speichern</button>
+                    <button class="btn-text" onclick="window.toggleCookieView(false)">Zurück zur Übersicht</button>
+                </div>
+            </div>
+            
+            <div class="cookie-footer">
+                <a onclick="window.switchTab('legal'); window.setLegalView('privacy')">Datenschutz</a> • 
+                <a onclick="window.switchTab('legal'); window.setLegalView('impressum')">Impressum</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="vacation-modal" class="vacation-modal"></div>
+    <script src="app.js"></script>
+</body>
+</html>

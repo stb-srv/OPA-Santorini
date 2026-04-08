@@ -1,0 +1,25 @@
+{
+  "name": "grieche-cms-bundle",
+  "version": "1.0.0",
+  "description": "Unified Restaurant CMS and Website Bundle",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "license": "node license-server/server.js",
+    "dev": "concurrently \"npm run start\" \"npm run license\"",
+    "install-all": "npm install && cd license-server && npm install",
+    "export": "powershell -ExecutionPolicy Bypass -File export.ps1"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.8.0",
+    "concurrently": "^8.2.2",
+    "cors": "^2.8.6",
+    "express": "^4.22.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.4",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
+  }
+}

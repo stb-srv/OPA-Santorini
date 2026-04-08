@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPA! Santorini - CMS Setup Wizard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --bg: #0a0e14;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top right, #1a2a44, var(--bg));
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #fff, #999);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: #aaa;
+            margin-bottom: 32px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            margin-bottom: 16px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0072ff);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .step-indicator {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+
+        .step {
+            flex: 1;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .step.active {
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .success-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .check-icon {
+            font-size: 80px;
+            color: #00ff88;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="wizard">
+        <h1>CMS Setup</h1>
+        <p class="subtitle">Willkommen beim OPA! Santorini CMS. Bitte konfiguriere dein System.</p>
+
+        <div class="step-indicator">
+            <div class="step active" id="s1"></div>
+            <div class="step" id="s2"></div>
+            <div class="step" id="s3"></div>
+        </div>
+
+        <!-- Step 1: License & Security -->
+        <div class="section active" id="step1">
+            <label>Lizenz-Server URL</label>
+            <input type="text" id="licenseUrl" value="http://localhost:4000" placeholder="https://license.dein-service.de">
+            
+            <label>Admin Secret (Sicherheitsschlüssel)</label>
+            <input type="text" id="adminSecret" value="opa-2026-premium-access">
+            <p style="font-size: 0.8rem; color: #777;">Dieser Schlüssel wird für die JWT-Verschlüsselung genutzt.</p>
+            
+            <div class="btn-group">
+                <button class="btn-primary" onclick="nextStep(2)">Weiter</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Database -->
+        <div class="section" id="step2">
+            <label>Datenbank-Typ</label>
+            <select id="dbType">
+                <option value="sqlite">SQLite (Lokal, empfohlen für Einzel-Restaurants)</option>
+                <option value="mysql" disabled>MySQL / MariaDB (Coming Soon)</option>
+            </select>
+            
+            <div id="sqliteFields">
+                <label>Datenbank-Pfad</label>
+                <input type="text" id="dbPath" value="./server/database.sqlite" readonly>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="nextStep(1)">Zurück</button>
+                <button class="btn-primary" onclick="nextStep(3)">Weiter</button>
+            </div>
+        </div>
+
+        <!-- Step 3: SMTP Mail -->
+        <div class="section" id="step3">
+            <label>SMTP Host</label>
+            <input type="text" id="smtpHost" placeholder="smtp.gmail.com">
+            
+            <div style="display: flex; gap: 12px;">
+                <div style="flex: 1;">
+                    <label>Port</label>
+                    <input type="number" id="smtpPort" value="465">
+                </div>
+                <div style="flex: 1;">
+                    <label>Secure</label>
+                    <select id="smtpSecure">
+                        <option value="true">Ja (SSL/TLS)</option>
+                        <option value="false">Nein (STARTTLS)</option>
+                    </select>
+                </div>
+            </div>
+
+            <label>Benutzername</label>
+            <input type="text" id="smtpUser" placeholder="ihre-email@provider.de">
+            
+            <label>Passwort</label>
+            <input type="password" id="smtpPass" placeholder="••••••••">
+
+            <div class="btn-group">
+                <button class="btn-secondary" onclick="nextStep(2)">Zurück</button>
+                <button class="btn-primary" onclick="finishSetup()">Setup abschließen</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="success-overlay" id="success">
+        <div class="check-icon">✓</div>
+        <h2>Setup erfolgreich!</h2>
+        <p>Das CMS wurde konfiguriert und ist bereit.</p>
+        <button class="btn-primary" style="max-width: 200px;" onclick="location.href='/admin'">Zum Dashboard</button>
+    </div>
+
+    <script>
+        let currentStep = 1;
+
+        function nextStep(step) {
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.getElementById(`s${currentStep}`).classList.remove('active');
+            
+            currentStep = step;
+            
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            for(let i=1; i<=step; i++) {
+                document.getElementById(`s${i}`).classList.add('active');
+            }
+        }
+
+        async function finishSetup() {
+            const data = {
+                licenseServer: document.getElementById('licenseUrl').value,
+                adminSecret: document.getElementById('adminSecret').value,
+                dbType: document.getElementById('dbType').value,
+                smtp: {
+                    host: document.getElementById('smtpHost').value,
+                    port: parseInt(document.getElementById('smtpPort').value),
+                    secure: document.getElementById('smtpSecure').value === 'true',
+                    user: document.getElementById('smtpUser').value,
+                    pass: document.getElementById('smtpPass').value,
+                    from: `"OPA! Santorini" <${document.getElementById('smtpUser').value}>`
+                }
+            };
+
+            try {
+                const res = await fetch('/api/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    document.getElementById('wizard').style.display = 'none';
+                    document.getElementById('success').style.display = 'flex';
+                } else {
+                    alert('Fehler: ' + result.reason);
+                }
+            } catch (e) {
+                alert('Netzwerkfehler beim Speichern der Konfiguration.');
+            }
+        }
+    </script>
+</body>
+</html>

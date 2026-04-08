@@ -1,0 +1,86 @@
+{
+  "licenses": [
+    {
+      "license_key": "GREEK-PREM-PLUSasdasdasdasdasd",
+      "type": "ENTERPRISE",
+      "max_dishes": "100",
+      "customer_name": "asdasdasd",
+      "status": "active",
+      "associated_domain": "*",
+      "expires_at": "2027-04-05T17:36:22.030Z",
+      "allowed_modules": {
+        "menu_edit": true,
+        "orders_kitchen": true,
+        "reservations": true,
+        "custom_design": true
+      },
+      "limits": {
+        "max_dishes": 100,
+        "max_tables": 50
+      },
+      "usage_count": 1,
+      "last_validated": "2026-04-05T17:36:35.181Z",
+      "validated_domain": "localhost"
+    },
+    {
+      "license_key": "GREEK-FREE-31D",
+      "type": "FREE",
+      "status": "active",
+      "customer_name": "Test User",
+      "expires_at": "2026-05-06T23:59:59Z",
+      "allowed_modules": {
+        "menu_edit": true,
+        "orders_kitchen": true,
+        "reservations": true,
+        "custom_design": true,
+        "qr_pay": true,
+        "analytics": true
+      },
+      "limits": {
+        "max_dishes": 9999,
+        "max_tables": 99
+      }
+    },
+    {
+      "license_key": "GREEK-BASIC-100",
+      "type": "BASIC",
+      "status": "active",
+      "customer_name": "Basic Bistro",
+      "expires_at": "2026-12-31T23:59:59Z",
+      "allowed_modules": {
+        "menu_edit": true,
+        "orders_kitchen": true,
+        "reservations": false,
+        "custom_design": false,
+        "qr_pay": false,
+        "analytics": false
+      },
+      "limits": {
+        "max_dishes": 100,
+        "max_tables": 5
+      }
+    },
+    {
+      "license_key": "GREEK-PREM-PLUS",
+      "type": "PREMIUM_PLUS",
+      "status": "active",
+      "customer_name": "Grand Palace",
+      "expires_at": "2026-12-31T23:59:59Z",
+      "allowed_modules": {
+        "menu_edit": true,
+        "orders_kitchen": true,
+        "reservations": true,
+        "custom_design": true,
+        "qr_pay": true,
+        "analytics": true
+      },
+      "limits": {
+        "max_dishes": 1000,
+        "max_tables": 50
+      },
+      "last_validated": "2026-04-05T17:36:10.354Z",
+      "validated_domain": "localhost",
+      "usage_count": 1
+    }
+  ]
+}
