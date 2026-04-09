@@ -28,9 +28,25 @@ async function init() {
     if (!checkAuth()) {
         loginContainer.style.display = 'flex';
         adminDashboard.style.display = 'none';
+        document.getElementById('password-change-container').style.display = 'none';
         return;
     }
 
+    // Check if password change is required via token payload
+    const token = sessionStorage.getItem('opa_admin_token');
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.requirePasswordChange) {
+                loginContainer.style.display = 'none';
+                adminDashboard.style.display = 'none';
+                document.getElementById('password-change-container').style.display = 'flex';
+                return;
+            }
+        } catch (e) {}
+    }
+
+    document.getElementById('password-change-container').style.display = 'none';
     loginContainer.style.display = 'none';
     adminDashboard.style.display = 'flex';
 
@@ -115,8 +131,39 @@ if (loginForm) {
     loginForm.onsubmit = async (e) => {
         e.preventDefault();
         const res = await login(loginForm.username.value, loginForm.password.value);
-        if (res.success) init();
-        else showToast(res.reason, 'error');
+        if (res.success) {
+            init();
+        } else {
+            showToast(res.reason, 'error');
+        }
+    };
+}
+
+const pwdChangeForm = document.getElementById('password-change-form');
+if (pwdChangeForm) {
+    pwdChangeForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const newPassword = document.getElementById('new-password').value;
+        if (newPassword.length < 6) return showToast('Passwort muss mind. 6 Zeichen haben.', 'error');
+        
+        try {
+            const token = sessionStorage.getItem('opa_admin_token');
+            const res = await fetch('/api/admin/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+                body: JSON.stringify({ newPassword })
+            });
+            const data = await res.json();
+            if (data.success && data.token) {
+                sessionStorage.setItem('opa_admin_token', data.token);
+                showToast('Passwort erfolgreich geändert! Willkommen im Dashboard.', 'success');
+                init();
+            } else {
+                showToast(data.reason || 'Fehler beim Passwort ändern', 'error');
+            }
+        } catch (err) {
+            showToast('Verbindungsfehler', 'error');
+        }
     };
 }
 

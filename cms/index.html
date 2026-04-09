@@ -38,6 +38,24 @@
         </form>
     </main>
 
+    <!-- Force Password Change Screen -->
+    <main class="login-container" id="password-change-container" style="display:none;">
+        <header class="login-header">
+            <div class="logo">
+                <span class="logo-icon">🔒</span>
+                <h1>Sicherheit</h1>
+            </div>
+            <p>Bitte ändern Sie Ihr Passwort für den ersten Zugang.</p>
+        </header>
+        <form id="password-change-form" class="login-form">
+            <div class="input-group">
+                <label for="new-password">Neues Passwort (min. 6 Zeichen)</label>
+                <input type="password" id="new-password" placeholder="Neues Passwort" required minlength="6">
+            </div>
+            <button type="submit" class="btn-login">Passwort speichern & Login</button>
+        </form>
+    </main>
+
     <!-- Admin Dashboard -->
     <main class="admin-dashboard" id="admin-dashboard" style="display:none;">
         <div class="glass-app-shell">

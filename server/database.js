@@ -72,6 +72,11 @@ db.exec(`
     );
 `);
 
+// --- Migrations for users table ---
+try { db.exec("ALTER TABLE users ADD COLUMN email TEXT;"); } catch (e) { /* Ignore if it exists */ }
+try { db.exec("ALTER TABLE users ADD COLUMN last_name TEXT;"); } catch (e) { /* Ignore if it exists */ }
+try { db.exec("ALTER TABLE users ADD COLUMN require_password_change INTEGER DEFAULT 0;"); } catch (e) { /* Ignore if it exists */ }
+
 const safeJsonParse = (str, fallback = null) => {
     try { return str ? JSON.parse(str) : fallback; }
     catch (e) { return fallback; }
@@ -88,14 +93,22 @@ const DB = {
     },
 
     // Users
-    getUsers: () => db.prepare('SELECT * FROM users').all(),
-    setUserPass: (user, hashedPass) => db.prepare('UPDATE users SET pass = ? WHERE user = ?').run(hashedPass, user),
-    saveUsers: (users) => {
-        const insert = db.prepare('INSERT OR REPLACE INTO users (user, pass, name, role) VALUES (?, ?, ?, ?)');
-        db.transaction((list) => {
-            db.prepare('DELETE FROM users').run();
-            list.forEach(u => insert.run(u.user, u.pass, u.name, u.role));
-        })(users);
+    getUsers: () => db.prepare('SELECT user, name, last_name, email, role, require_password_change FROM users').all(),
+    setUserPass: (user, hashedPass) => {
+        db.prepare('UPDATE users SET pass = ?, require_password_change = 0 WHERE user = ?').run(hashedPass, user);
+    },
+    addUser: (u) => {
+        db.prepare('INSERT INTO users (user, pass, name, last_name, email, role, require_password_change) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+            u.user, u.pass, u.name, u.last_name || '', u.email || '', u.role || 'admin', u.require_password_change || 0
+        );
+    },
+    updateUser: (user, u) => {
+        db.prepare('UPDATE users SET name = ?, last_name = ?, email = ?, role = ? WHERE user = ?').run(
+            u.name, u.last_name || '', u.email || '', u.role, user
+        );
+    },
+    deleteUser: (user) => {
+        db.prepare('DELETE FROM users WHERE user = ?').run(user);
     },
 
     // Menu

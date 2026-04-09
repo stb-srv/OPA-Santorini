@@ -216,13 +216,69 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
         DB.setUserPass(user, hashed);
     }
     if (isValid) {
-        const token = jwt.sign({ user: u.user, role: u.role }, ADMIN_SECRET, { expiresIn: '12h' });
-        res.json({ success: true, token, user: u });
+        const requirePasswordChange = !!u.require_password_change;
+        const token = jwt.sign({ user: u.user, role: u.role, requirePasswordChange }, ADMIN_SECRET, { expiresIn: '12h' });
+        res.json({ success: true, token, user: { ...u, pass: undefined }, requirePasswordChange });
     } else res.status(401).json({ success: false });
 });
 
+app.post('/api/admin/change-password', requireAuth, async (req, res) => {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 6) return res.status(400).json({ success: false, reason: 'Passwort zu kurz.' });
+    
+    const hashed = await bcrypt.hash(newPassword, 10);
+    DB.setUserPass(req.admin.user, hashed);
+    
+    // Auto-login with fresh token
+    const token = jwt.sign({ user: req.admin.user, role: req.admin.role, requirePasswordChange: false }, ADMIN_SECRET, { expiresIn: '12h' });
+    res.json({ success: true, token });
+});
+
 app.get('/api/users', requireAuth, (req, res) => res.json(DB.getUsers()));
-app.post('/api/users', requireAuth, (req, res) => { DB.saveUsers(req.body); res.json({ success: true }); });
+app.post('/api/users', requireAuth, async (req, res) => {
+    const u = req.body;
+    const existing = DB.getUsers().find(x => x.user === u.user);
+    if (existing) return res.status(400).json({ success: false, reason: 'Benutzername existiert bereits.' });
+
+    const plainPass = crypto.randomBytes(4).toString('hex');
+    u.pass = await bcrypt.hash(plainPass, 10);
+    u.require_password_change = 1;
+    
+    DB.addUser(u);
+    if (u.email) Mailer.sendUserCredentials(u.email, u.name, u.user, plainPass).catch(e => console.error(e));
+    
+    res.json({ success: true });
+});
+
+app.put('/api/users/:user', requireAuth, (req, res) => {
+    DB.updateUser(req.params.user, req.body);
+    res.json({ success: true });
+});
+
+app.delete('/api/users/:user', requireAuth, (req, res) => {
+    if (req.params.user === req.admin.user) return res.status(400).json({ success: false, reason: 'Kann sich selbst nicht löschen.' });
+    DB.deleteUser(req.params.user);
+    res.json({ success: true });
+});
+
+app.post('/api/users/:user/reset', requireAuth, async (req, res) => {
+    const target = DB.getUsers().find(x => x.user === req.params.user);
+    if (!target) return res.status(404).json({ success: false, reason: 'Benutzer nicht gefunden.' });
+    if (!target.email) return res.status(400).json({ success: false, reason: 'Benutzer hat keine E-Mail Adresse hinterlegt.' });
+    
+    const plainPass = crypto.randomBytes(4).toString('hex');
+    const hashed = await bcrypt.hash(plainPass, 10);
+    DB.setUserPass(target.user, hashed); // Sets require_password_change to 0 by default
+    
+    // Force require change
+    const Database = require('better-sqlite3');
+    const db = new Database(require('path').join(__dirname, 'server', 'database.sqlite'));
+    db.prepare('UPDATE users SET require_password_change = 1 WHERE user = ?').run(target.user);
+    db.close();
+
+    if (target.email) Mailer.sendUserCredentials(target.email, target.name, target.user, plainPass).catch(e => console.error(e));
+    res.json({ success: true });
+});
 
 app.get('/api/menu', (req, res) => res.json(DB.getMenu()));
 app.post('/api/menu', requireAuth, requireLicense('menu_edit'), requireMenuLimit, (req, res) => { DB.saveMenu(req.body); res.json({ success: true }); });

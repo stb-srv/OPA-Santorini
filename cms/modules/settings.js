@@ -233,18 +233,31 @@ function renderSettingsTab(settings, branding, users, licInfo) {
 
     if (settingsTab === 'users') {
         return `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h4 style="margin:0;"><i class="fas fa-users"></i> Nutzerverwaltung</h4>
+                <button class="btn-primary" onclick="window.editUser()"><i class="fas fa-plus"></i> Neuer Nutzer</button>
+            </div>
             <table class="premium-table">
-                <thead><tr><th>Name</th><th>Rolle</th><th>Aktion</th></tr></thead>
+                <thead><tr><th>Benutzername</th><th>Name</th><th>E-Mail</th><th>Rolle</th><th>Aktion</th></tr></thead>
                 <tbody>
-                    ${users.map(u => `
+                    ${users.map(u => {
+                        const fullName = [u.name, u.last_name].filter(Boolean).join(' ') || '-';
+                        return `
                         <tr>
-                            <td><strong>${u.name || u.user}</strong><br><small>${u.user}</small></td>
+                            <td><strong>${u.user}</strong></td>
+                            <td>${fullName}</td>
+                            <td>${u.email || '-'}</td>
                             <td>${u.role}</td>
-                            <td style="text-align:right;"><button class="btn-delete" onclick="window.deleteUser('${u.user}')"><i class="fas fa-trash"></i></button></td>
+                            <td style="text-align:right;">
+                                <button class="btn-edit" onclick='window.editUser(${JSON.stringify(u)})' title="Bearbeiten"><i class="fas fa-pen"></i></button>
+                                <button class="btn-edit" onclick="window.resetUserPassword('${u.user}')" title="Passwort zurücksetzen"><i class="fas fa-key"></i></button>
+                                <button class="btn-delete" onclick="window.deleteUser('${u.user}')" title="Löschen"><i class="fas fa-trash"></i></button>
+                            </td>
                         </tr>
-                    `).join('')}
+                    `}).join('')}
                 </tbody>
             </table>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">Hinweis: Neue Nutzer erhalten ihr Passwort per E-Mail und müssen es beim ersten Login ändern.</p>
         `;
     }
 
@@ -355,8 +368,73 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
     }
 
     window.deleteUser = async (user) => {
-        if (await showConfirm('Nutzer löschen?', `Möchten Sie ${user} wirklich entfernen?`)) {
-            showToast(`${user} gelöscht (Demo)`);
+        if (await showConfirm('Nutzer löschen?', `Möchten Sie den Zugang für ${user} wirklich entfernen?`)) {
+            const res = await fetch(\`/api/users/\${user}\`, { method: 'DELETE', headers: { 'x-admin-token': sessionStorage.getItem('opa_admin_token') }});
+            const data = await res.json();
+            if (data.success) { showToast('Nutzer gelöscht'); renderSettings(container, titleEl); }
+            else showToast(data.reason || 'Fehler beim Löschen', 'error');
         }
+    };
+
+    window.resetUserPassword = async (user) => {
+        if (await showConfirm('Passwort zurücksetzen?', \`Dem Nutzer \${user} wird ein neues Passwort generiert und an seine E-Mail-Adresse gesendet.\`)) {
+            const res = await fetch(\`/api/users/\${user}/reset\`, { method: 'POST', headers: { 'x-admin-token': sessionStorage.getItem('opa_admin_token') }});
+            const data = await res.json();
+            if (data.success) { showToast('Passwort zurückgesetzt & E-Mail gesendet!'); }
+            else showToast(data.reason || 'Senden fehlgeschlagen', 'error');
+        }
+    };
+
+    window.editUser = (u = null) => {
+        const isNew = !u;
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.innerHTML = \`
+            <div class="modal-content glass-panel" style="max-width:500px;">
+                <h3>\${isNew ? 'Neuer Nutzer' : 'Nutzer bearbeiten'}</h3>
+                \${isNew ? \`<div class="form-group"><label>Benutzername</label><input id="mu-user" class="input-styled" required></div>\` : ''}
+                <div class="form-group"><label>Vorname</label><input id="mu-name" class="input-styled" value="\${u?.name || ''}" required></div>
+                <div class="form-group"><label>Nachname</label><input id="mu-last" class="input-styled" value="\${u?.last_name || ''}"></div>
+                <div class="form-group"><label>E-Mail-Adresse</label><input id="mu-email" class="input-styled" type="email" value="\${u?.email || ''}" required></div>
+                <div class="form-group"><label>Rolle</label>
+                    <select id="mu-role" class="input-styled">
+                        <option value="admin" \${u?.role === 'admin' ? 'selected' : ''}>Admin</option>
+                        <option value="manager" \${u?.role === 'manager' ? 'selected' : ''}>Manager</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="mu-cancel">Abbrechen</button>
+                    <button class="btn-primary" id="mu-save">Speichern</button>
+                </div>
+            </div>
+        \`;
+        document.body.appendChild(modal);
+        modal.querySelector('#mu-cancel').onclick = () => modal.remove();
+        modal.querySelector('#mu-save').onclick = async () => {
+            const payload = {
+                user: isNew ? modal.querySelector('#mu-user').value : u.user,
+                name: modal.querySelector('#mu-name').value,
+                last_name: modal.querySelector('#mu-last').value,
+                email: modal.querySelector('#mu-email').value,
+                role: modal.querySelector('#mu-role').value
+            };
+            
+            let res, data;
+            const headers = { 'Content-Type': 'application/json', 'x-admin-token': sessionStorage.getItem('opa_admin_token') };
+            if (isNew) {
+                res = await fetch('/api/users', { method: 'POST', headers, body: JSON.stringify(payload) });
+            } else {
+                res = await fetch(\`/api/users/\${u.user}\`, { method: 'PUT', headers, body: JSON.stringify(payload) });
+            }
+            
+            data = await res.json();
+            if (data.success) {
+                modal.remove();
+                showToast(isNew ? 'Nutzer angelegt & E-Mail gesendet!' : 'Nutzer aktualisiert!');
+                renderSettings(container, titleEl);
+            } else {
+                showToast(data.reason || 'Fehler beim Speichern', 'error');
+            }
+        };
     };
 }

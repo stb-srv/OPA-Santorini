@@ -11,7 +11,7 @@ export async function login(user, pass) {
     if (res.success && res.token) {
         sessionStorage.setItem('opa_admin_token', res.token);
         sessionStorage.setItem('opa_admin_user', JSON.stringify(res.user));
-        return { success: true };
+        return { success: true, requirePasswordChange: res.requirePasswordChange };
     }
     return { success: false, reason: res.reason || 'Benutzername oder Passwort falsch.' };
 }

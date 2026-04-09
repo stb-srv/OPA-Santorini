@@ -126,6 +126,54 @@ const Mailer = {
                 await new Promise(resolve => setTimeout(resolve, 1000 * attempts)); // Backoff
             }
         }
+    },
+
+    /**
+     * Send new user credentials to team members
+     */
+    sendUserCredentials: async (email, name, username, plainPassword) => {
+        if (!email) return;
+
+        const subject = 'Ihre Zugangsdaten für das OPA! CMS';
+        const html = `
+            <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
+                <h2 style="color: #2b6cb0;">Willkommen beim OPA! CMS</h2>
+                <p>Hallo ${name || username},</p>
+                <p>Ein Admin hat soeben einen neuen Account für Sie erstellt oder Ihr Passwort wurde zurückgesetzt.</p>
+                
+                <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <p><strong>Benutzername:</strong> ${username}</p>
+                    <p><strong>Passwort:</strong> ${plainPassword}</p>
+                </div>
+
+                <p><em>Hinweis: Zu Ihrer Sicherheit werden Sie gebeten, dieses Passwort bei Ihrem ersten Login zu ändern!</em></p>
+
+                <p>Herzliche Grüße,<br>Ihr OPA! Team</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+                <p style="font-size: 12px; color: #718096;">Grieche-CMS Verwaltungssystem</p>
+            </div>
+        `;
+
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (attempts < maxAttempts) {
+            try {
+                await transporter.sendMail({
+                    from: CONFIG.SMTP.from,
+                    to: email,
+                    subject: subject,
+                    html: html
+                });
+                console.log(`✉️ Credentials sent to ${email}`);
+                return;
+            } catch (e) {
+                attempts++;
+                console.error(`❌ Credentials mail attempt ${attempts} failed:`, e.message);
+                if (attempts >= maxAttempts) throw e;
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempts)); // Backoff
+            }
+        }
     }
 };
 
