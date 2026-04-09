@@ -54,13 +54,36 @@ CMS_PORT=${CMS_PORT:-5000}
 read -rp "  Domain/IP für Nginx (z.B. meinrestaurant.de oder 1.2.3.4): " SERVER_DOMAIN
 SERVER_DOMAIN=${SERVER_DOMAIN:-localhost}
 
+# --- .env automatisch anlegen wenn nicht vorhanden ---
+log_step ".env Konfiguration"
+if [ ! -f "${INSTALL_DIR}/.env" ]; then
+    log_info "Keine .env gefunden – wird aus .env.example erstellt..."
+    cp "${INSTALL_DIR}/.env.example" "${INSTALL_DIR}/.env"
+
+    # PORT und CORS_ORIGINS direkt aus den Installer-Eingaben befüllen
+    sed -i "s|^PORT=.*|PORT=${CMS_PORT}|" "${INSTALL_DIR}/.env"
+    sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=http://${SERVER_DOMAIN}|" "${INSTALL_DIR}/.env"
+
+    # Zufälligen ADMIN_SECRET generieren (32 Byte hex)
+    GENERATED_SECRET=$(openssl rand -hex 32 2>/dev/null || cat /proc/sys/kernel/random/uuid | tr -d '-')
+    sed -i "s|^ADMIN_SECRET=.*|ADMIN_SECRET=${GENERATED_SECRET}|" "${INSTALL_DIR}/.env"
+
+    log_ok ".env erstellt (PORT=${CMS_PORT}, CORS=${SERVER_DOMAIN}, ADMIN_SECRET=auto-generated)"
+    echo
+    log_warn "SMTP noch nicht konfiguriert – E-Mail-Versand (Reservierungen) funktioniert erst nach Anpassen von:"
+    echo "        ${INSTALL_DIR}/.env"
+    echo
+else
+    log_warn ".env bereits vorhanden – wird nicht überschrieben."
+fi
+
 echo
 log_step "Schritt 1/7: System aktualisieren"
 apt-get update -q && apt-get upgrade -yq
 log_ok "System aktualisiert"
 
 log_step "Schritt 2/7: Basis-Pakete installieren"
-apt-get install -yq curl git build-essential python3 ufw
+apt-get install -yq curl git build-essential python3 ufw openssl
 log_ok "Basis-Pakete installiert"
 
 log_step "Schritt 3/7: Node.js 20 LTS installieren"
@@ -101,7 +124,6 @@ log_ok "Berechtigungen gesetzt"
 
 log_step "Schritt 7/7: PM2 Services starten"
 
-# Bestehende PM2-Prozesse entfernen falls vorhanden
 pm2 delete opa-cms 2>/dev/null || true
 pm2 delete opa-license 2>/dev/null || true
 
@@ -155,7 +177,6 @@ EOF
     nginx -t && systemctl reload nginx
     log_ok "Nginx konfiguriert für: ${SERVER_DOMAIN}"
 
-    # Firewall
     if command -v ufw &>/dev/null; then
         ufw allow 'Nginx Full' --force >>/dev/null 2>&1 || true
         log_ok "Firewall: Port 80/443 freigegeben"
@@ -190,5 +211,6 @@ if [[ "${INSTALL_NGINX,,}" == "j" || "${INSTALL_NGINX,,}" == "y" ]]; then
     echo "    certbot --nginx -d ${SERVER_DOMAIN}"
     echo
 fi
+log_warn "SMTP noch konfigurieren: nano ${INSTALL_DIR}/.env"
 log_ok "Setup-Wizard unter: http://${SERVER_DOMAIN}/setup"
 echo
