@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (hp) { 
             homeData = hp; 
             applyBranding(hp); 
-            renderNav(hp.tabs, hp.activeModules); 
+            renderNav(hp.tabs, hp.activeModules, hp.pages); 
             initConsentEngine(hp.cookieBanner); 
             
             // Handle deactivation info
@@ -220,14 +220,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- NAVIGATION ---
-    function renderNav(tabs, modules = {}) {
+    function renderNav(tabs, modules = {}, pages = []) {
         const c = document.getElementById('nav-links');
-        if (!c || !tabs) return;
+        if (!c) return;
+        
+        if (!tabs || tabs.length === 0) {
+            tabs = [
+                { id: 'home', label: 'Startseite', active: true },
+                { id: 'menu', label: 'Speisekarte', active: true },
+                { id: 'reservations', label: 'Reservierung(Tisch)', active: true },
+                { id: 'location', label: 'Standort', active: true }
+            ];
+        }
+        
         let active = tabs.filter(t => t.active);
         
         // Hide reservations if module is disabled
         if (modules.reservations === false) {
             active = active.filter(t => t.id !== 'reservations');
+        }
+
+        // Füge Custom Pages zur Navigation hinzu
+        if (pages && Array.isArray(pages)) {
+            pages.forEach(p => {
+                if (p.active !== false) {
+                    active.push({ id: `custom-${p.id}`, label: p.title, active: true });
+                }
+            });
         }
 
         c.innerHTML = active.map(t =>
@@ -409,7 +428,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     function renderCustomPage(id) {
-        const p = homeData.pages?.find(pg => pg.id === id);
+        const rawId = id.replace('custom-', '');
+        const p = homeData.pages?.find(pg => pg.id === rawId || pg.id === id);
         const c = document.getElementById('custom-page-container');
         if (!p || !c) return;
         
