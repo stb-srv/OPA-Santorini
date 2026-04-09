@@ -103,7 +103,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 }
 
-            // Load branding for tab, nav and footer
             const br = await get('branding');
             if (br) {
                 const restaurantName = br.name || 'OPA! Santorini';
@@ -114,6 +113,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 const navLogoEl = document.getElementById('nav-logo');
                 if (navLogoEl) navLogoEl.textContent = restaurantName;
+
+                if (br.favicon) {
+                    let link = document.querySelector("link[rel~='icon']");
+                    if (!link) {
+                        link = document.createElement('link');
+                        link.rel = 'icon';
+                        document.head.appendChild(link);
+                    }
+                    link.href = br.favicon;
+                }
             }
 
             // Load Map Info

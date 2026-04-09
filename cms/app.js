@@ -54,8 +54,19 @@ async function init() {
 
     const branding = await apiGet('branding');
     if (branding) {
-        document.getElementById('disp-res-name').textContent    = branding.name   || 'OPA! CMS';
+        document.getElementById('disp-res-name').textContent    = branding.name   || 'OPA! Santorini';
         document.getElementById('disp-res-slogan').textContent  = branding.slogan || 'Restaurant Management';
+        if (branding.name) document.title = branding.name + ' CMS';
+        
+        if (branding.favicon) {
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.head.appendChild(link);
+            }
+            link.href = branding.favicon;
+        }
     }
 
     const settings = await apiGet('settings') || {};

@@ -186,7 +186,30 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                 <div class="form-group full"><label>Restaurant Name</label><input id="br-name" class="input-styled" value="${branding.name || ''}" placeholder="z.B. OPA! Santorini"></div>
                 <div class="form-group"><label>Slogan</label><input id="br-slogan" class="input-styled" value="${branding.slogan || ''}" placeholder="z.B. Griechische Meeresfrüchte"></div>
                 <div class="form-group"><label>Telefon (Gästeansicht)</label><input id="br-phone" class="input-styled" value="${branding.phone || ''}" placeholder="0123 / 456789"></div>
-                <p class="field-hint" style="grid-column:1/-1;">Wird Gästen angezeigt, wenn keine Online-Reservierung möglich ist.</p>
+                
+                <div class="form-group full" style="border-top:1px solid rgba(0,0,0,0.05); padding-top:15px; margin-top:10px;">
+                    <label>Logo & Favicon</label>
+                </div>
+                
+                <div class="form-group">
+                    <label>Haupt-Logo</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img id="br-logo-preview" src="${branding.logo || ''}" style="height:60px; object-fit:contain; border-radius:8px; background:rgba(0,0,0,0.05); ${!branding.logo ? 'display:none;' : ''}">
+                        <input type="file" id="br-logo-upload" accept="image/*" style="display:none;">
+                        <button class="btn-secondary" onclick="document.getElementById('br-logo-upload').click()"><i class="fas fa-upload"></i> Hochladen</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Favicon (Browser-Tab Symbol)</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img id="br-favicon-preview" src="${branding.favicon || ''}" style="width:32px; height:32px; object-fit:contain; border-radius:50%; background:rgba(0,0,0,0.05); ${!branding.favicon ? 'display:none;' : ''}">
+                        <input type="file" id="br-favicon-upload" accept="image/*" style="display:none;">
+                        <button class="btn-secondary" onclick="document.getElementById('br-favicon-upload').click()"><i class="fas fa-upload"></i> Hochladen</button>
+                    </div>
+                </div>
+
+                <p class="field-hint" style="grid-column:1/-1;">Wird Gästen angezeigt, wenn keine Online-Reservierung möglich ist. Logos werden im Gäste-Web und im CMS genutzt.</p>
             </div>
         `;
     }
@@ -332,18 +355,58 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
         };
     }
 
+    // --- Branding Uploads ---
+    const handleUpload = (input, preview) => {
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                preview.src = ev.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        };
+    };
+    const logoInput = container.querySelector('#br-logo-upload');
+    const favInput = container.querySelector('#br-favicon-upload');
+    if (logoInput) handleUpload(logoInput, container.querySelector('#br-logo-preview'));
+    if (favInput) handleUpload(favInput, container.querySelector('#br-favicon-preview'));
+
     // --- Speichern ---
     const saveBtn = container.querySelector('#save-settings');
     if (saveBtn) {
         saveBtn.onclick = async () => {
             if (settingsTab === 'branding') {
-                const b = {
-                    name: container.querySelector('#br-name').value,
-                    slogan: container.querySelector('#br-slogan').value,
-                    phone: container.querySelector('#br-phone').value
-                };
+                const b = { ...branding };
+                b.name = container.querySelector('#br-name').value;
+                b.slogan = container.querySelector('#br-slogan').value;
+                b.phone = container.querySelector('#br-phone').value;
+                
+                const logoImg = container.querySelector('#br-logo-preview').src;
+                if (!logoImg.includes(window.location.host) && logoImg.length > 50) b.logo = logoImg;
+                else if (logoImg) b.logo = logoImg;
+
+                const favImg = container.querySelector('#br-favicon-preview').src;
+                if (!favImg.includes(window.location.host) && favImg.length > 50) b.favicon = favImg;
+                else if (favImg) b.favicon = favImg;
+
                 const r = await apiPost('branding', b);
-                if (r?.success) showToast('Branding gespeichert!');
+                if (r?.success) {
+                    showToast('Branding aktualisiert!');
+                    // Apply immediately to current CMS view
+                    document.getElementById('disp-res-name').textContent = b.name;
+                    document.getElementById('disp-res-slogan').textContent = b.slogan;
+                    if (b.name) document.title = b.name + ' CMS';
+                    if (b.favicon) {
+                        let link = document.querySelector("link[rel~='icon']");
+                        if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+                        link.href = b.favicon;
+                    }
+                    if (b.logo) {
+                        document.querySelectorAll('.login-logo').forEach(el => el.src = b.logo);
+                    }
+                }
             } else if (settingsTab === 'visibility') {
                 const s = { ...settings };
                 s.activeModules = {
