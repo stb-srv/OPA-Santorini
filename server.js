@@ -31,12 +31,7 @@ const allowedOrigins = rawOrigins
     : ['http://localhost:3000', 'http://localhost:5000'];
 
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        console.warn(`CORS blocked: ${origin}`);
-        callback(new Error(`CORS blocked: ${origin}`));
-    },
+    origin: (origin, callback) => callback(null, true),
     credentials: true
 }));
 app.use(express.json());
