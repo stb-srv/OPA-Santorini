@@ -210,7 +210,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     function applyBranding(d) {
         if (d.heroTitle) document.getElementById('hero-title').textContent = d.heroTitle;
         if (d.heroSlogan) document.getElementById('hero-slogan').textContent = d.heroSlogan;
-        if (d.bgImage) document.getElementById('hero-bg').style.backgroundImage = `url('${d.bgImage}')`;
+        if (d.bgImage) {
+            document.getElementById('hero-bg').style.backgroundImage = `url('${d.bgImage}')`;
+        } else {
+            document.getElementById('hero-bg').style.backgroundImage = `url('/admin/assets/santorini_bg.png')`;
+        }
+        
         if (d.welcomeTitle) document.getElementById('welcome-title').textContent = d.welcomeTitle;
         if (d.welcomeText) document.getElementById('welcome-text').textContent = d.welcomeText;
         if (d.promotionText && d.promotionEnabled !== false) document.getElementById('promo-text').textContent = d.promotionText;
@@ -224,7 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             wImg.style.display = 'block';
         } else if (wImg) {
             // Fallback: use hero bg
-            wImg.src = d.bgImage || '';
+            wImg.src = d.bgImage || '/admin/assets/greek_bg.png';
         }
     }
 
