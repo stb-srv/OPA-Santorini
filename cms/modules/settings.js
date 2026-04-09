@@ -369,7 +369,7 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
 
     window.deleteUser = async (user) => {
         if (await showConfirm('Nutzer löschen?', `Möchten Sie den Zugang für ${user} wirklich entfernen?`)) {
-            const res = await fetch(\`/api/users/\${user}\`, { method: 'DELETE', headers: { 'x-admin-token': sessionStorage.getItem('opa_admin_token') }});
+            const res = await fetch(`/api/users/${user}`, { method: 'DELETE', headers: { 'x-admin-token': sessionStorage.getItem('opa_admin_token') }});
             const data = await res.json();
             if (data.success) { showToast('Nutzer gelöscht'); renderSettings(container, titleEl); }
             else showToast(data.reason || 'Fehler beim Löschen', 'error');
@@ -377,8 +377,8 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
     };
 
     window.resetUserPassword = async (user) => {
-        if (await showConfirm('Passwort zurücksetzen?', \`Dem Nutzer \${user} wird ein neues Passwort generiert und an seine E-Mail-Adresse gesendet.\`)) {
-            const res = await fetch(\`/api/users/\${user}/reset\`, { method: 'POST', headers: { 'x-admin-token': sessionStorage.getItem('opa_admin_token') }});
+        if (await showConfirm('Passwort zurücksetzen?', `Dem Nutzer ${user} wird ein neues Passwort generiert und an seine E-Mail-Adresse gesendet.`)) {
+            const res = await fetch(`/api/users/${user}/reset`, { method: 'POST', headers: { 'x-admin-token': sessionStorage.getItem('opa_admin_token') }});
             const data = await res.json();
             if (data.success) { showToast('Passwort zurückgesetzt & E-Mail gesendet!'); }
             else showToast(data.reason || 'Senden fehlgeschlagen', 'error');
@@ -389,17 +389,17 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
         const isNew = !u;
         const modal = document.createElement('div');
         modal.className = 'modal active';
-        modal.innerHTML = \`
+        modal.innerHTML = `
             <div class="modal-content glass-panel" style="max-width:500px;">
-                <h3>\${isNew ? 'Neuer Nutzer' : 'Nutzer bearbeiten'}</h3>
-                \${isNew ? \`<div class="form-group"><label>Benutzername</label><input id="mu-user" class="input-styled" required></div>\` : ''}
-                <div class="form-group"><label>Vorname</label><input id="mu-name" class="input-styled" value="\${u?.name || ''}" required></div>
-                <div class="form-group"><label>Nachname</label><input id="mu-last" class="input-styled" value="\${u?.last_name || ''}"></div>
-                <div class="form-group"><label>E-Mail-Adresse</label><input id="mu-email" class="input-styled" type="email" value="\${u?.email || ''}" required></div>
+                <h3>${isNew ? 'Neuer Nutzer' : 'Nutzer bearbeiten'}</h3>
+                ${isNew ? `<div class="form-group"><label>Benutzername</label><input id="mu-user" class="input-styled" required></div>` : ''}
+                <div class="form-group"><label>Vorname</label><input id="mu-name" class="input-styled" value="${u?.name || ''}" required></div>
+                <div class="form-group"><label>Nachname</label><input id="mu-last" class="input-styled" value="${u?.last_name || ''}"></div>
+                <div class="form-group"><label>E-Mail-Adresse</label><input id="mu-email" class="input-styled" type="email" value="${u?.email || ''}" required></div>
                 <div class="form-group"><label>Rolle</label>
                     <select id="mu-role" class="input-styled">
-                        <option value="admin" \${u?.role === 'admin' ? 'selected' : ''}>Admin</option>
-                        <option value="manager" \${u?.role === 'manager' ? 'selected' : ''}>Manager</option>
+                        <option value="admin" ${u?.role === 'admin' ? 'selected' : ''}>Admin</option>
+                        <option value="manager" ${u?.role === 'manager' ? 'selected' : ''}>Manager</option>
                     </select>
                 </div>
                 <div class="modal-actions">
@@ -407,7 +407,7 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                     <button class="btn-primary" id="mu-save">Speichern</button>
                 </div>
             </div>
-        \`;
+        `;
         document.body.appendChild(modal);
         modal.querySelector('#mu-cancel').onclick = () => modal.remove();
         modal.querySelector('#mu-save').onclick = async () => {
@@ -424,7 +424,7 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
             if (isNew) {
                 res = await fetch('/api/users', { method: 'POST', headers, body: JSON.stringify(payload) });
             } else {
-                res = await fetch(\`/api/users/\${u.user}\`, { method: 'PUT', headers, body: JSON.stringify(payload) });
+                res = await fetch(`/api/users/${u.user}`, { method: 'PUT', headers, body: JSON.stringify(payload) });
             }
             
             data = await res.json();
