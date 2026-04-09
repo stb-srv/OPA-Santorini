@@ -93,7 +93,7 @@ const DB = {
     },
 
     // Users
-    getUsers: () => db.prepare('SELECT user, name, last_name, email, role, require_password_change FROM users').all(),
+    getUsers: () => db.prepare('SELECT user, pass, name, last_name, email, role, require_password_change FROM users').all(),
     setUserPass: (user, hashedPass) => {
         db.prepare('UPDATE users SET pass = ?, require_password_change = 0 WHERE user = ?').run(hashedPass, user);
     },

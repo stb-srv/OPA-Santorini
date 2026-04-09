@@ -234,7 +234,14 @@ app.post('/api/admin/change-password', requireAuth, async (req, res) => {
     res.json({ success: true, token });
 });
 
-app.get('/api/users', requireAuth, (req, res) => res.json(DB.getUsers()));
+app.get('/api/users', requireAuth, (req, res) => {
+    const safeUsers = DB.getUsers().map(u => {
+        const copy = { ...u };
+        delete copy.pass;
+        return copy;
+    });
+    res.json(safeUsers);
+});
 app.post('/api/users', requireAuth, async (req, res) => {
     const u = req.body;
     const existing = DB.getUsers().find(x => x.user === u.user);
