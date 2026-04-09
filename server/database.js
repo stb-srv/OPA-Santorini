@@ -116,23 +116,34 @@ const DB = {
         const rows = db.prepare('SELECT * FROM menu').all();
         return rows.map(r => ({ ...r, allergens: safeJsonParse(r.allergens, []), additives: safeJsonParse(r.additives, []) }));
     },
-    saveMenu: (items) => {
-        const insert = db.prepare('INSERT OR REPLACE INTO menu (id, name, price, cat, desc, allergens, additives, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        db.transaction((list) => {
-            db.prepare('DELETE FROM menu').run();
-            list.forEach(m => insert.run(m.id, m.name, m.price, m.cat, m.desc, JSON.stringify(m.allergens || []), JSON.stringify(m.additives || []), m.image));
-        })(items);
+    addMenu: (m) => {
+        db.prepare('INSERT INTO menu (id, name, price, cat, desc, allergens, additives, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .run(m.id, m.name, m.price, m.cat, m.desc, JSON.stringify(m.allergens || []), JSON.stringify(m.additives || []), m.image);
     },
+    updateMenu: (id, update) => {
+        const existing = db.prepare('SELECT * FROM menu WHERE id = ?').get(id);
+        if (!existing) return null;
+        const merged = { ...existing, ...update };
+        merged.allergens = safeJsonParse(typeof update.allergens !== 'undefined' ? JSON.stringify(update.allergens) : existing.allergens, []);
+        merged.additives = safeJsonParse(typeof update.additives !== 'undefined' ? JSON.stringify(update.additives) : existing.additives, []);
+        
+        db.prepare('UPDATE menu SET name = ?, price = ?, cat = ?, desc = ?, allergens = ?, additives = ?, image = ? WHERE id = ?')
+          .run(merged.name, merged.price, merged.cat, merged.desc, JSON.stringify(merged.allergens), JSON.stringify(merged.additives), merged.image, id);
+        return merged;
+    },
+    deleteMenu: (id) => db.prepare('DELETE FROM menu WHERE id = ?').run(id),
 
     // Categories
     getCategories: () => db.prepare('SELECT * FROM categories').all(),
-    saveCategories: (cats) => {
-        const insert = db.prepare('INSERT OR REPLACE INTO categories (id, label, icon, active) VALUES (?, ?, ?, ?)');
-        db.transaction((list) => {
-            db.prepare('DELETE FROM categories').run();
-            list.forEach(c => insert.run(c.id, c.label, c.icon, c.active ? 1 : 0));
-        })(cats);
+    addCategory: (c) => db.prepare('INSERT INTO categories (id, label, icon, active) VALUES (?, ?, ?, ?)').run(c.id, c.label, c.icon, c.active ? 1 : 0),
+    updateCategory: (id, update) => {
+        const existing = db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
+        if (!existing) return null;
+        const merged = { ...existing, ...update };
+        db.prepare('UPDATE categories SET label = ?, icon = ?, active = ? WHERE id = ?').run(merged.label, merged.icon, merged.active ? 1 : 0, id);
+        return merged;
     },
+    deleteCategory: (id) => db.prepare('DELETE FROM categories WHERE id = ?').run(id),
 
     // Reservations
     getReservations: () => {

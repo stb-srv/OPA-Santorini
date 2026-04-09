@@ -283,9 +283,45 @@ app.post('/api/users/:user/reset', requireAuth, async (req, res) => {
 });
 
 app.get('/api/menu', (req, res) => res.json(DB.getMenu()));
-app.post('/api/menu', requireAuth, requireLicense('menu_edit'), requireMenuLimit, (req, res) => { DB.saveMenu(req.body); res.json({ success: true }); });
+app.post('/api/menu', requireAuth, requireLicense('menu_edit'), (req, res) => {
+    // Check limit dynamically for a single insert
+    const lic = res.locals.license;
+    const maxDishes = lic?.limits?.maxDishes || 25;
+    const currentDishes = DB.getMenu().length;
+    if (currentDishes >= maxDishes) {
+        return res.status(403).json({ success: false, reason: `Ihr ${lic.label || lic.type}-Plan erlaubt maximal ${maxDishes} Speisen.` });
+    }
+    const m = req.body;
+    m.id = m.id || Date.now().toString();
+    DB.addMenu(m); 
+    res.json({ success: true, id: m.id });
+});
+app.put('/api/menu/:id', requireAuth, requireLicense('menu_edit'), (req, res) => {
+    const updated = DB.updateMenu(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ success: false, reason: 'Gericht nicht gefunden.' });
+    res.json({ success: true, item: updated });
+});
+app.delete('/api/menu/:id', requireAuth, requireLicense('menu_edit'), (req, res) => {
+    DB.deleteMenu(req.params.id);
+    res.json({ success: true });
+});
+
 app.get('/api/categories', (req, res) => res.json(DB.getCategories()));
-app.post('/api/categories', requireAuth, (req, res) => { DB.saveCategories(req.body); res.json({ success: true }); });
+app.post('/api/categories', requireAuth, (req, res) => {
+    const c = req.body;
+    c.id = c.id || Date.now().toString();
+    DB.addCategory(c);
+    res.json({ success: true, id: c.id });
+});
+app.put('/api/categories/:id', requireAuth, (req, res) => {
+    const updated = DB.updateCategory(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ success: false, reason: 'Kategorie nicht gefunden.' });
+    res.json({ success: true, item: updated });
+});
+app.delete('/api/categories/:id', requireAuth, (req, res) => {
+    DB.deleteCategory(req.params.id);
+    res.json({ success: true });
+});
 app.get('/api/allergens', (req, res) => res.json(DB.getKV('allergens', {})));
 app.post('/api/allergens', requireAuth, (req, res) => { DB.setKV('allergens', req.body); res.json({ success: true }); });
 app.get('/api/additives', (req, res) => res.json(DB.getKV('additives', {})));

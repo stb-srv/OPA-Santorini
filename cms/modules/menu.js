@@ -283,18 +283,24 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
     };
 
     window.deleteDish = async (idx) => {
-        if (await showConfirm('Löschen?', `Möchten Sie das Gericht "${menu[idx].name}" wirklich entfernen?`)) {
-            menu.splice(idx, 1);
-            await apiPost('menu', menu);
-            renderMenu(container, document.getElementById('view-title'), 'dishes', true);
+        const dish = menu[idx];
+        if (await showConfirm('Löschen?', `Möchten Sie das Gericht "${dish.name}" wirklich entfernen?`)) {
+            const res = await (await import('./api.js')).apiDelete(`menu/${dish.id}`);
+            if (res?.success) {
+                menu.splice(idx, 1);
+                renderMenu(container, document.getElementById('view-title'), 'dishes', true);
+            }
         }
     };
 
     window.deleteCategory = async (idx) => {
+        const cat = categories[idx];
         if (await showConfirm('Löschen?', 'Dies entfernt die Kategorie dauerhaft.')) {
-            categories.splice(idx, 1);
-            await apiPost('categories', categories);
-            renderMenu(container, document.getElementById('view-title'), 'categories', true);
+            const res = await (await import('./api.js')).apiDelete(`categories/${cat.id}`);
+            if (res?.success) {
+                categories.splice(idx, 1);
+                renderMenu(container, document.getElementById('view-title'), 'categories', true);
+            }
         }
     };
 
@@ -403,27 +409,39 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             const cat = container.querySelector('#df-cat').value;
             if (!name || !price) return showToast('Name und Preis erforderlich', 'error');
             const dish = {
-                id: editingDishIndex !== -1 ? menu[editingDishIndex].id : Date.now(),
+                id: editingDishIndex !== -1 ? menu[editingDishIndex].id : Date.now().toString(),
                 nr, name, price, cat,
                 desc: container.querySelector('#df-desc').value,
                 image: container.querySelector('#df-img').value,
                 allergens: Array.from(container.querySelectorAll('.dish-allergen-cb:checked')).map(cb => cb.value),
                 additives: Array.from(container.querySelectorAll('.dish-additive-cb:checked')).map(cb => cb.value)
             };
-            if (editingDishIndex !== -1) menu[editingDishIndex] = dish; else menu.push(dish);
-            await apiPost('menu', menu);
-            cachedMenuData = null;
-            showToast('Gericht gespeichert!');
-            renderMenu(container, document.getElementById('view-title'), 'dishes', true);
+            
+            let res;
+            if (editingDishIndex !== -1) {
+                res = await (await import('./api.js')).apiPut(`menu/${dish.id}`, dish);
+            } else {
+                res = await apiPost('menu', dish);
+            }
+
+            if (res?.success) {
+                cachedMenuData = null;
+                showToast('Gericht gespeichert!');
+                renderMenu(container, document.getElementById('view-title'), 'dishes', true);
+            } else {
+                showToast(res?.reason || 'Fehler beim Speichern', 'error');
+            }
         };
     } else if (currentTab === 'categories') {
         container.querySelector('#add-cat-btn').onclick = async () => {
             const label = container.querySelector('#new-cat-input').value;
             if (!label) return;
-            categories.push({ id: label.toLowerCase().replace(/\s/g, '_'), label, icon: 'utensils', active: true });
-            await apiPost('categories', categories);
-            cachedMenuData = null;
-            renderMenu(container, document.getElementById('view-title'), 'categories', true);
+            const newCat = { id: label.toLowerCase().replace(/\s/g, '_'), label, icon: 'utensils', active: true };
+            const res = await apiPost('categories', newCat);
+            if (res?.success) {
+                cachedMenuData = null;
+                renderMenu(container, document.getElementById('view-title'), 'categories', true);
+            }
         };
     } else {
         container.querySelector('#kv-add-btn').onclick = async () => {
