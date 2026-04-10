@@ -118,8 +118,8 @@ npm install --silent
 log_ok "CMS npm-Pakete installiert"
 
 log_step "Schritt 6/7: Verzeichnisse & Berechtigungen"
-mkdir -p "${INSTALL_DIR}/uploads" "${INSTALL_DIR}/tmp"
-chmod -R 775 "${INSTALL_DIR}/uploads" "${INSTALL_DIR}/tmp"
+mkdir -p "${INSTALL_DIR}/uploads" "${INSTALL_DIR}/tmp" "${INSTALL_DIR}/server"
+chmod -R 775 "${INSTALL_DIR}/uploads" "${INSTALL_DIR}/tmp" "${INSTALL_DIR}/server"
 chown -R "${SCRIPT_USER}:${SCRIPT_USER}" "${INSTALL_DIR}"
 log_ok "Berechtigungen gesetzt (${SCRIPT_USER} ist Eigentümer)"
 

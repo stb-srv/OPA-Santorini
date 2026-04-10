@@ -67,15 +67,7 @@ if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR);
 const PLUGINS_DIR = path.join(__dirname, 'plugins');
 if (!fs.existsSync(PLUGINS_DIR)) fs.mkdirSync(PLUGINS_DIR);
 
-// --- Pre-create config.json if missing so permissions are set correctly ---
-const CONFIG_JSON_PATH = path.join(__dirname, 'config.json');
-if (!fs.existsSync(CONFIG_JSON_PATH)) {
-    try {
-        fs.writeFileSync(CONFIG_JSON_PATH, '{}', { mode: 0o664 });
-    } catch (e) {
-        console.warn('⚠️  Could not pre-create config.json:', e.message);
-    }
-}
+
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, UPLOADS_DIR),
@@ -737,7 +729,8 @@ app.post('/api/setup', async (req, res) => {
             SMTP: smtp || {},
             SETUP_COMPLETE: true
         };
-        const configPath = path.join(__dirname, 'config.json');
+        const configPath = path.join(__dirname, 'server', 'config.json');
+        if (!fs.existsSync(path.join(__dirname, 'server'))) fs.mkdirSync(path.join(__dirname, 'server'));
         fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 4));
         Object.assign(CONFIG, newConfig);
 
