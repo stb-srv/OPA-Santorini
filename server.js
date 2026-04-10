@@ -758,21 +758,30 @@ app.post('/api/setup', async (req, res) => {
         }
 
         let plainRecoveryCodes = [];
-        if (adminUser && adminPass) {
-            const hash = await bcrypt.hash(adminPass, 10);
-            const hashedCodes = [];
-            for (let i = 0; i < 3; i++) {
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-                let code = 'OPA-';
-                for (let j=0; j<4; j++) code += chars[Math.floor(Math.random() * chars.length)];
-                code += '-';
-                for (let j=0; j<4; j++) code += chars[Math.floor(Math.random() * chars.length)];
-                plainRecoveryCodes.push(code);
-                hashedCodes.push(await bcrypt.hash(code, 10));
-            }
-            DB.addUser({ user: adminUser, pass: hash, name: 'Setup', last_name: 'Admin',
-                         email: adminEmail || '', role: 'admin', recovery_codes: hashedCodes });
+        const finalAdminUser = adminUser || 'admin';
+        const finalAdminPass = adminPass || 'admin';
+        
+        const hash = await bcrypt.hash(finalAdminPass, 10);
+        const hashedCodes = [];
+        for (let i = 0; i < 3; i++) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let code = 'OPA-';
+            for (let j=0; j<4; j++) code += chars[Math.floor(Math.random() * chars.length)];
+            code += '-';
+            for (let j=0; j<4; j++) code += chars[Math.floor(Math.random() * chars.length)];
+            plainRecoveryCodes.push(code);
+            hashedCodes.push(await bcrypt.hash(code, 10));
         }
+        DB.addUser({ 
+            user: finalAdminUser, 
+            pass: hash, 
+            name: 'Setup', 
+            last_name: 'Admin',
+            email: adminEmail || '', 
+            role: 'admin', 
+            require_password_change: 0, 
+            recovery_codes: hashedCodes 
+        });
 
         res.json({ success: true, trial: trialLicense, message: 'Setup abgeschlossen.', recovery_codes: plainRecoveryCodes });
     } catch (e) {
