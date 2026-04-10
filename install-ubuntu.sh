@@ -112,29 +112,52 @@ fi
 
 log_step "Schritt 6/7: Verzeichnisse & Berechtigungen"
 mkdir -p "${INSTALL_DIR}/uploads" "${INSTALL_DIR}/tmp"
+
+# Das App-Verzeichnis selbst muss für den Service-User beschreibbar sein,
+# damit der Setup-Wizard config.json anlegen kann (EACCES-Fix).
+chmod 775 "${INSTALL_DIR}"
 chmod -R 775 "${INSTALL_DIR}/uploads" "${INSTALL_DIR}/tmp"
+
+# config.json vorab anlegen (leer), damit Berechtigungen klar gesetzt sind,
+# bevor der Node-Prozess das erste Mal versucht, hineinzuschreiben.
+if [ ! -f "${INSTALL_DIR}/config.json" ]; then
+    touch "${INSTALL_DIR}/config.json"
+    chmod 664 "${INSTALL_DIR}/config.json"
+    log_ok "config.json vorab angelegt (leer)"
+fi
+
+# Jetzt erst chown – nach touch, damit der Service-User Eigentümer wird.
 chown -R "${SCRIPT_USER}:${SCRIPT_USER}" "${INSTALL_DIR}"
-log_ok "Berechtigungen gesetzt"
+log_ok "Berechtigungen gesetzt (${SCRIPT_USER} ist Eigentümer)"
 
 log_step "Schritt 7/7: PM2 Services starten"
 
-pm2 delete opa-cms 2>/dev/null || true
-pm2 delete opa-license 2>/dev/null || true
+# PM2 als Service-User starten, damit der Prozess Schreibrechte auf
+# config.json und das App-Verzeichnis hat (kein root-Prozess).
+PM2_BIN="$(command -v pm2)"
 
-pm2 start "${INSTALL_DIR}/server.js" \
-    --name "opa-cms" \
-    --env production \
-    -- --port "${CMS_PORT}"
+su -s /bin/bash "${SCRIPT_USER}" -c "${PM2_BIN} delete opa-cms 2>/dev/null || true"
+su -s /bin/bash "${SCRIPT_USER}" -c "${PM2_BIN} delete opa-license 2>/dev/null || true"
+
+su -s /bin/bash "${SCRIPT_USER}" -c \
+    "${PM2_BIN} start '${INSTALL_DIR}/server.js' \
+        --name 'opa-cms' \
+        --env production \
+        -- --port '${CMS_PORT}'"
 
 if [[ "${INSTALL_LICENSE,,}" == "j" || "${INSTALL_LICENSE,,}" == "y" ]] && [ -d "${INSTALL_DIR}/license-server" ]; then
-    pm2 start "${INSTALL_DIR}/license-server/server.js" \
-        --name "opa-license" \
-        --interpreter node
+    su -s /bin/bash "${SCRIPT_USER}" -c \
+        "${PM2_BIN} start '${INSTALL_DIR}/license-server/server.js' \
+            --name 'opa-license' \
+            --interpreter node"
     log_ok "Lizenzserver gestartet (Port 4000)"
 fi
 
-pm2 save
-PM2_STARTUP=$(pm2 startup systemd -u "${SCRIPT_USER}" --hp "/home/${SCRIPT_USER}" 2>&1 | grep 'sudo' | tail -1)
+su -s /bin/bash "${SCRIPT_USER}" -c "${PM2_BIN} save"
+
+PM2_STARTUP=$(su -s /bin/bash "${SCRIPT_USER}" -c \
+    "${PM2_BIN} startup systemd -u '${SCRIPT_USER}' --hp '/home/${SCRIPT_USER}'" 2>&1 \
+    | grep 'sudo' | tail -1)
 if [ -n "${PM2_STARTUP}" ]; then
     eval "${PM2_STARTUP}" || true
 fi
@@ -187,7 +210,7 @@ EOF
                 log_warn "Certbot fehlgeschlagen – bitte manuell ausführen: certbot --nginx -d ${SERVER_DOMAIN}"
             # CORS auf https umstellen
             sed -i "s|^CORS_ORIGINS=http://|CORS_ORIGINS=https://|" "${INSTALL_DIR}/.env"
-            pm2 restart opa-cms
+            su -s /bin/bash "${SCRIPT_USER}" -c "${PM2_BIN} restart opa-cms"
             log_ok "HTTPS aktiviert, CORS_ORIGINS automatisch auf https umgestellt"
         else
             log_warn "Keine E-Mail angegeben – SSL übersprungen."
