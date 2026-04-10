@@ -31,7 +31,6 @@ const allowedOrigins = rawOrigins
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Requests ohne Origin (z.B. mobile Apps, curl, Postman) immer erlauben
         if (!origin) return callback(null, true);
         if (allowedOrigins.includes(origin)) return callback(null, true);
         return callback(new Error(`CORS: Origin '${origin}' nicht erlaubt.`));
@@ -242,7 +241,7 @@ app.post('/api/users', requireAuth, async (req, res) => {
     u.pass = await bcrypt.hash(plainPass, 10);
     u.require_password_change = 1;
     DB.addUser(u);
-    if (u.email) Mailer.sendUserCredentials(u.email, u.name, u.user, plainPass).catch(e => console.error(e));
+    if (u.email) Mailer.sendUserCredentials(u.email, u.name, u.user, plainPass, DB).catch(e => console.error(e));
     res.json({ success: true });
 });
 
@@ -263,15 +262,13 @@ app.post('/api/users/:user/reset', requireAuth, async (req, res) => {
     if (!target.email) return res.status(400).json({ success: false, reason: 'Benutzer hat keine E-Mail Adresse hinterlegt.' });
     const plainPass = crypto.randomBytes(4).toString('hex');
     const hashed = await bcrypt.hash(plainPass, 10);
-    // Passwort setzen UND Pflichtänderung in einem konsistenten Schritt
     DB.setUserPass(target.user, hashed, true);
-    if (target.email) Mailer.sendUserCredentials(target.email, target.name, target.user, plainPass).catch(e => console.error(e));
+    if (target.email) Mailer.sendUserCredentials(target.email, target.name, target.user, plainPass, DB).catch(e => console.error(e));
     res.json({ success: true });
 });
 
 app.get('/api/menu', (req, res) => res.json(DB.getMenu()));
 app.post('/api/menu', requireAuth, requireLicense('menu_edit'), (req, res) => {
-    // Lizenz direkt laden (res.locals.license wird hier nicht gesetzt)
     const lic = getCurrentLicense(DB);
     const maxDishes = lic.limits?.max_dishes ?? 10;
     const currentDishes = DB.getMenu().length;
@@ -362,7 +359,7 @@ app.post('/api/reservations/submit', reservationLimiter, requireLicense('reserva
         ip: (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split('.').slice(0,2).join('.') + '.x.x'
     };
     DB.addReservation(newRes);
-    Mailer.sendConfirmation(newRes).catch(e => console.error('Mailer error:', e));
+    Mailer.sendConfirmation(newRes, DB).catch(e => console.error('Mailer error:', e));
     res.json({ success: true, reservation: newRes, isInquiry: !result.success });
 });
 
@@ -386,27 +383,50 @@ app.put('/api/reservations/:id', requireAuth, (req, res) => {
     }
     const updated = DB.updateReservation(resId, update);
     if (updated && update.status && update.status !== old.status)
-        Mailer.sendStatusChange(updated).catch(e => console.error('Status mailer error:', e));
+        Mailer.sendStatusChange(updated, DB).catch(e => console.error('Status mailer error:', e));
     res.json({ success: true, reservation: updated });
 });
 
 app.delete('/api/reservations/:id', requireAuth, (req, res) => { DB.deleteReservation(parseInt(req.params.id)); res.json({ success: true }); });
 app.post('/api/reservations', requireAuth, (req, res) => { DB.saveReservations(req.body); res.json({ success: true }); });
 
+// --- Reservierung Stornieren / Bestätigen via Token ---
+// GET-Routen: für E-Mail-Links von Gästen (bleibt erhalten für bestehende E-Mails)
 app.get('/api/reservations/cancel/:token', (req, res) => {
     const r = (DB.getReservations()||[]).find(x => x.token === req.params.token);
-    if (!r) return res.status(404).send('Ungültiger Link.');
+    if (!r) return res.status(404).send('<h1>Ungültiger oder abgelaufener Link.</h1>');
+    if (r.status === 'Cancelled') return res.send('<h1>Diese Reservierung wurde bereits storniert.</h1>');
     const updated = DB.updateReservation(r.id, { status: 'Cancelled' });
-    if (updated) Mailer.sendStatusChange(updated).catch(e => console.error('Cancel mailer error:', e));
-    res.send('<h1>Reservierung erfolgreich storniert.</h1>');
+    if (updated) Mailer.sendStatusChange(updated, DB).catch(e => console.error('Cancel mailer error:', e));
+    res.send('<h1>Reservierung erfolgreich storniert.</h1><p>Wir hoffen, Sie bald wieder begrüßen zu dürfen.</p>');
 });
 
 app.get('/api/reservations/confirm/:token', (req, res) => {
     const r = (DB.getReservations()||[]).find(x => x.token === req.params.token);
-    if (!r) return res.status(404).send('Ungültiger Link.');
+    if (!r) return res.status(404).send('<h1>Ungültiger oder abgelaufener Link.</h1>');
+    if (r.status === 'Confirmed') return res.send('<h1>Diese Reservierung ist bereits bestätigt.</h1>');
     const updated = DB.updateReservation(r.id, { status: 'Confirmed' });
-    if (updated) Mailer.sendStatusChange(updated).catch(e => console.error('Confirm mailer error:', e));
-    res.send('<h1>Reservierung erfolgreich bestätigt!</h1>');
+    if (updated) Mailer.sendStatusChange(updated, DB).catch(e => console.error('Confirm mailer error:', e));
+    res.send('<h1>Reservierung erfolgreich bestätigt!</h1><p>Wir freuen uns auf Ihren Besuch.</p>');
+});
+
+// POST-Routen: für programmatische / AJAX-Nutzung (z.B. internes Admin-Panel)
+app.post('/api/reservations/cancel/:token', reservationLimiter, (req, res) => {
+    const r = (DB.getReservations()||[]).find(x => x.token === req.params.token);
+    if (!r) return res.status(404).json({ success: false, reason: 'Ungültiger Token.' });
+    if (r.status === 'Cancelled') return res.json({ success: true, alreadyCancelled: true });
+    const updated = DB.updateReservation(r.id, { status: 'Cancelled' });
+    if (updated) Mailer.sendStatusChange(updated, DB).catch(e => console.error('Cancel mailer error:', e));
+    res.json({ success: true, reservation: updated });
+});
+
+app.post('/api/reservations/confirm/:token', reservationLimiter, (req, res) => {
+    const r = (DB.getReservations()||[]).find(x => x.token === req.params.token);
+    if (!r) return res.status(404).json({ success: false, reason: 'Ungültiger Token.' });
+    if (r.status === 'Confirmed') return res.json({ success: true, alreadyConfirmed: true });
+    const updated = DB.updateReservation(r.id, { status: 'Confirmed' });
+    if (updated) Mailer.sendStatusChange(updated, DB).catch(e => console.error('Confirm mailer error:', e));
+    res.json({ success: true, reservation: updated });
 });
 
 app.get('/api/tables', (req, res) => res.json(DB.getTables()));
@@ -455,6 +475,19 @@ app.get('/api/branding', (req, res) => res.json(DB.getKV('branding', {})));
 app.post('/api/branding', requireAuth, (req, res) => { DB.setKV('branding', req.body); res.json({ success: true }); });
 app.get('/api/settings', requireAuth, (req, res) => res.json(DB.getKV('settings', {})));
 app.post('/api/settings', requireAuth, (req, res) => { DB.setKV('settings', req.body); res.json({ success: true }); });
+
+// --- SMTP Test-Endpunkt ---
+app.post('/api/settings/test-smtp', requireAuth, async (req, res) => {
+    const target = DB.getUsers().find(u => u.user === req.admin.user);
+    const toEmail = target?.email || req.body?.email;
+    if (!toEmail) return res.status(400).json({ success: false, reason: 'Keine Ziel-E-Mail-Adresse gefunden. Bitte in den Benutzereinstellungen hinterlegen.' });
+    try {
+        await Mailer.sendTestMail(toEmail, DB);
+        res.json({ success: true, sentTo: toEmail });
+    } catch (e) {
+        res.status(500).json({ success: false, reason: `SMTP Fehler: ${e.message}` });
+    }
+});
 
 // --- License API ---
 app.get('/api/license/info', requireAuth, (req, res) => {
@@ -601,6 +634,8 @@ app.post('/api/setup', async (req, res) => {
 
         const settings = DB.getKV('settings', {});
         settings.license = trialLicense;
+        // SMTP auch in der DB speichern, damit Mailer es dynamisch laden kann
+        if (smtp && smtp.host) settings.smtp = smtp;
         DB.setKV('settings', settings);
 
         if (restaurantName) {
