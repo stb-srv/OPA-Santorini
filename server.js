@@ -21,17 +21,21 @@ app.set('trust proxy', 1);
 const PORT = CONFIG.PORT || 5000;
 const ADMIN_SECRET = CONFIG.ADMIN_SECRET;
 
-// Trailing Slash aus LICENSE_SERVER_URL entfernen (defensiv)
 const LICENSE_SERVER = (CONFIG.LICENSE_SERVER_URL || 'https://licens-prod.stb-srv.de').replace(/\/+$/, '');
 
-// --- CORS ---
+// --- CORS – nur erlaubte Origins zulassen ---
 const rawOrigins = process.env.CORS_ORIGINS || '';
 const allowedOrigins = rawOrigins
     ? rawOrigins.split(',').map(o => o.trim()).filter(Boolean)
     : ['http://localhost:3000', 'http://localhost:5000'];
 
 app.use(cors({
-    origin: (origin, callback) => callback(null, true),
+    origin: (origin, callback) => {
+        // Requests ohne Origin (z.B. mobile Apps, curl, Postman) immer erlauben
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error(`CORS: Origin '${origin}' nicht erlaubt.`));
+    },
     credentials: true
 }));
 app.use(express.json());
@@ -220,35 +224,25 @@ app.post('/api/admin/login', loginLimiter, async (req, res) => {
 app.post('/api/admin/change-password', requireAuth, async (req, res) => {
     const { newPassword } = req.body;
     if (!newPassword || newPassword.length < 6) return res.status(400).json({ success: false, reason: 'Passwort zu kurz.' });
-    
     const hashed = await bcrypt.hash(newPassword, 10);
-    DB.setUserPass(req.admin.user, hashed);
-    
-    // Auto-login with fresh token
+    DB.setUserPass(req.admin.user, hashed, false);
     const token = jwt.sign({ user: req.admin.user, role: req.admin.role, requirePasswordChange: false }, ADMIN_SECRET, { expiresIn: '12h' });
     res.json({ success: true, token });
 });
 
 app.get('/api/users', requireAuth, (req, res) => {
-    const safeUsers = DB.getUsers().map(u => {
-        const copy = { ...u };
-        delete copy.pass;
-        return copy;
-    });
+    const safeUsers = DB.getUsers().map(u => { const copy = { ...u }; delete copy.pass; return copy; });
     res.json(safeUsers);
 });
 app.post('/api/users', requireAuth, async (req, res) => {
     const u = req.body;
     const existing = DB.getUsers().find(x => x.user === u.user);
     if (existing) return res.status(400).json({ success: false, reason: 'Benutzername existiert bereits.' });
-
     const plainPass = crypto.randomBytes(4).toString('hex');
     u.pass = await bcrypt.hash(plainPass, 10);
     u.require_password_change = 1;
-    
     DB.addUser(u);
     if (u.email) Mailer.sendUserCredentials(u.email, u.name, u.user, plainPass).catch(e => console.error(e));
-    
     res.json({ success: true });
 });
 
@@ -267,33 +261,26 @@ app.post('/api/users/:user/reset', requireAuth, async (req, res) => {
     const target = DB.getUsers().find(x => x.user === req.params.user);
     if (!target) return res.status(404).json({ success: false, reason: 'Benutzer nicht gefunden.' });
     if (!target.email) return res.status(400).json({ success: false, reason: 'Benutzer hat keine E-Mail Adresse hinterlegt.' });
-    
     const plainPass = crypto.randomBytes(4).toString('hex');
     const hashed = await bcrypt.hash(plainPass, 10);
-    DB.setUserPass(target.user, hashed); // Sets require_password_change to 0 by default
-    
-    // Force require change
-    const Database = require('better-sqlite3');
-    const db = new Database(require('path').join(__dirname, 'server', 'database.sqlite'));
-    db.prepare('UPDATE users SET require_password_change = 1 WHERE user = ?').run(target.user);
-    db.close();
-
+    // Passwort setzen UND Pflichtänderung in einem konsistenten Schritt
+    DB.setUserPass(target.user, hashed, true);
     if (target.email) Mailer.sendUserCredentials(target.email, target.name, target.user, plainPass).catch(e => console.error(e));
     res.json({ success: true });
 });
 
 app.get('/api/menu', (req, res) => res.json(DB.getMenu()));
 app.post('/api/menu', requireAuth, requireLicense('menu_edit'), (req, res) => {
-    // Check limit dynamically for a single insert
-    const lic = res.locals.license;
-    const maxDishes = lic?.limits?.maxDishes || 25;
+    // Lizenz direkt laden (res.locals.license wird hier nicht gesetzt)
+    const lic = getCurrentLicense(DB);
+    const maxDishes = lic.limits?.max_dishes ?? 10;
     const currentDishes = DB.getMenu().length;
     if (currentDishes >= maxDishes) {
         return res.status(403).json({ success: false, reason: `Ihr ${lic.label || lic.type}-Plan erlaubt maximal ${maxDishes} Speisen.` });
     }
     const m = req.body;
     m.id = m.id || Date.now().toString();
-    DB.addMenu(m); 
+    DB.addMenu(m);
     res.json({ success: true, id: m.id });
 });
 app.put('/api/menu/:id', requireAuth, requireLicense('menu_edit'), (req, res) => {
@@ -487,7 +474,8 @@ app.post('/api/license/validate', async (req, res) => {
             settings.license = {
                 key: req.body.key, status: 'active', customer: r.customer_name,
                 type: r.type, label: r.plan_label, expiresAt: r.expires_at,
-                modules: r.allowed_modules, limits: r.limits
+                modules: r.allowed_modules,
+                limits: { max_dishes: r.limits?.max_dishes ?? r.limits?.maxDishes ?? 10, max_tables: r.limits?.max_tables ?? r.limits?.maxTables ?? 5 }
             };
             DB.setKV('settings', settings);
             res.json({ success: true, license: settings.license });
@@ -495,8 +483,6 @@ app.post('/api/license/validate', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false, reason: 'Lizenzserver nicht erreichbar.' }); }
 });
 
-// --- License Module Override (Admin) ---
-// Erlaubt es einzelne Module pro Lizenz manuell zu aktivieren/deaktivieren
 app.post('/api/license/modules', requireAuth, (req, res) => {
     const { modules } = req.body;
     if (!modules || typeof modules !== 'object') {
@@ -509,7 +495,7 @@ app.post('/api/license/modules', requireAuth, (req, res) => {
     res.json({ success: true, modules: settings.license.modules });
 });
 
-// --- Menu Import (kein requireLicense – Import ist für alle Pläne erlaubt) ---
+// --- Menu Import ---
 app.post('/api/menu/import', requireAuth, (req, res) => {
     const { menu, categories, allergens, additives } = req.body;
     const lic = getCurrentLicense(DB);
@@ -592,30 +578,16 @@ app.post('/api/setup', async (req, res) => {
         const { restaurantName, licenseServer, adminSecret, smtp, adminUser, adminPass, adminEmail } = req.body;
         const licenseServerUrl = (licenseServer || 'https://licens-prod.stb-srv.de').replace(/\/+$/, '');
 
-        let trialLicense = null;
-        try {
-            const trialPlan = PLAN_DEFINITIONS['FREE'];
-            trialLicense = {
-                key: 'OPA-TRIAL-' + crypto.randomBytes(4).toString('hex').toUpperCase() + '-' + new Date().getFullYear(),
-                status: 'trial', customer: restaurantName || 'Trial',
-                type: 'FREE', label: trialPlan.label,
-                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                modules: trialPlan.modules,
-                limits: { max_dishes: trialPlan.menu_items, max_tables: trialPlan.max_tables },
-                isTrial: true
-            };
-        } catch(e) {
-            const trialPlan = PLAN_DEFINITIONS['FREE'];
-            trialLicense = {
-                key: 'OPA-TRIAL-OFFLINE-' + crypto.randomBytes(4).toString('hex').toUpperCase(),
-                status: 'trial', customer: restaurantName || 'Trial',
-                type: 'FREE', label: trialPlan.label,
-                expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                modules: trialPlan.modules,
-                limits: { max_dishes: trialPlan.menu_items, max_tables: trialPlan.max_tables },
-                isTrial: true
-            };
-        }
+        const trialPlan = PLAN_DEFINITIONS['FREE'];
+        const trialLicense = {
+            key: 'OPA-TRIAL-' + crypto.randomBytes(4).toString('hex').toUpperCase() + '-' + new Date().getFullYear(),
+            status: 'trial', customer: restaurantName || 'Trial',
+            type: 'FREE', label: trialPlan.label,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            modules: trialPlan.modules,
+            limits: { max_dishes: trialPlan.menu_items, max_tables: trialPlan.max_tables },
+            isTrial: true
+        };
 
         const newConfig = {
             LICENSE_SERVER_URL: licenseServerUrl,

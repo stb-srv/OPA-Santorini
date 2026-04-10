@@ -6,7 +6,7 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
-// --- Schema initialisieren (wird nur beim ersten Start ausgeführt) ---
+// --- Schema initialisieren ---
 db.exec(`
     CREATE TABLE IF NOT EXISTS kv_store (
         key   TEXT PRIMARY KEY,
@@ -72,11 +72,16 @@ db.exec(`
     );
 `);
 
-// --- Migrations for users table ---
-try { db.exec("ALTER TABLE users ADD COLUMN email TEXT;"); } catch (e) { /* Ignore if it exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN last_name TEXT;"); } catch (e) { /* Ignore if it exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN require_password_change INTEGER DEFAULT 0;"); } catch (e) { /* Ignore if it exists */ }
-try { db.exec("ALTER TABLE users ADD COLUMN recovery_codes TEXT DEFAULT '[]';"); } catch (e) { /* Ignore if it exists */ }
+// --- Migrations ---
+try { db.exec("ALTER TABLE users ADD COLUMN email TEXT;"); } catch (e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN last_name TEXT;"); } catch (e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN require_password_change INTEGER DEFAULT 0;"); } catch (e) {}
+try { db.exec("ALTER TABLE users ADD COLUMN recovery_codes TEXT DEFAULT '[]';"); } catch (e) {}
+
+// --- Performance-Indizes ---
+try { db.exec("CREATE INDEX IF NOT EXISTS idx_reservations_date ON reservations(date);"); } catch (e) {}
+try { db.exec("CREATE INDEX IF NOT EXISTS idx_reservations_token ON reservations(token);"); } catch (e) {}
+try { db.exec("CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);"); } catch (e) {}
 
 const safeJsonParse = (str, fallback = null) => {
     try { return str ? JSON.parse(str) : fallback; }
@@ -95,9 +100,17 @@ const DB = {
 
     // Users
     getUsers: () => db.prepare('SELECT user, pass, name, last_name, email, role, require_password_change, recovery_codes FROM users').all(),
-    setUserPass: (user, hashedPass) => {
-        db.prepare('UPDATE users SET pass = ?, require_password_change = 0 WHERE user = ?').run(hashedPass, user);
+
+    setUserPass: (user, hashedPass, requireChange = false) => {
+        db.prepare('UPDATE users SET pass = ?, require_password_change = ? WHERE user = ?')
+            .run(hashedPass, requireChange ? 1 : 0, user);
     },
+
+    setRequirePasswordChange: (user, value) => {
+        db.prepare('UPDATE users SET require_password_change = ? WHERE user = ?')
+            .run(value ? 1 : 0, user);
+    },
+
     setRecoveryCodes: (user, codes) => {
         db.prepare('UPDATE users SET recovery_codes = ? WHERE user = ?').run(JSON.stringify(codes), user);
     },
@@ -130,12 +143,24 @@ const DB = {
         const merged = { ...existing, ...update };
         merged.allergens = safeJsonParse(typeof update.allergens !== 'undefined' ? JSON.stringify(update.allergens) : existing.allergens, []);
         merged.additives = safeJsonParse(typeof update.additives !== 'undefined' ? JSON.stringify(update.additives) : existing.additives, []);
-        
         db.prepare('UPDATE menu SET name = ?, price = ?, cat = ?, desc = ?, allergens = ?, additives = ?, image = ? WHERE id = ?')
           .run(merged.name, merged.price, merged.cat, merged.desc, JSON.stringify(merged.allergens), JSON.stringify(merged.additives), merged.image, id);
         return merged;
     },
     deleteMenu: (id) => db.prepare('DELETE FROM menu WHERE id = ?').run(id),
+    saveMenu: (items) => {
+        const upsert = db.prepare('INSERT OR REPLACE INTO menu (id, name, price, cat, desc, allergens, additives, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        db.transaction((list) => {
+            db.prepare('DELETE FROM menu').run();
+            list.forEach(m => upsert.run(
+                m.id || Date.now().toString(),
+                m.name, m.price, m.cat, m.desc,
+                JSON.stringify(m.allergens || []),
+                JSON.stringify(m.additives || []),
+                m.image || null
+            ));
+        })(items);
+    },
 
     // Categories
     getCategories: () => db.prepare('SELECT * FROM categories').all(),
@@ -148,6 +173,13 @@ const DB = {
         return merged;
     },
     deleteCategory: (id) => db.prepare('DELETE FROM categories WHERE id = ?').run(id),
+    saveCategories: (items) => {
+        const upsert = db.prepare('INSERT OR REPLACE INTO categories (id, label, icon, active) VALUES (?, ?, ?, ?)');
+        db.transaction((list) => {
+            db.prepare('DELETE FROM categories').run();
+            list.forEach(c => upsert.run(c.id, c.label, c.icon || '', c.active ? 1 : 0));
+        })(items);
+    },
 
     // Reservations
     getReservations: () => {
