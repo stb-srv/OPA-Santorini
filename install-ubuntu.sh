@@ -29,7 +29,23 @@ fi
 
 # --- Installationsverzeichnis ermitteln ---
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_USER="${SUDO_USER:-$(whoami)}"
+
+# --- Service-User bestimmen ---
+# Wenn via `sudo` aufgerufen => SUDO_USER nutzen (normaler User-Account).
+# Wenn direkt als root eingeloggt (kein SUDO_USER) => dedizierten 'opa'-User
+# anlegen, damit der Node-Prozess NIEMALS als root läuft und stets
+# Schreibrechte auf config.json hat (verhindert EACCES-Fehler im Setup-Wizard).
+if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
+    SCRIPT_USER="${SUDO_USER}"
+else
+    SCRIPT_USER="opa"
+    if ! id -u opa &>/dev/null; then
+        useradd --system --create-home --shell /bin/bash --comment "OPA-CMS Service" opa
+        log_ok "System-User 'opa' angelegt"
+    else
+        log_warn "System-User 'opa' bereits vorhanden"
+    fi
+fi
 
 clear
 echo -e "${BOLD}"
@@ -38,7 +54,7 @@ echo "  ║         OPA-CMS - Linux Installer v3.0              ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 log_info "Installationsverzeichnis: ${INSTALL_DIR}"
-log_info "Benutzer: ${SCRIPT_USER}"
+log_info "Service-User: ${SCRIPT_USER}"
 echo
 
 # --- Optionen abfragen ---
@@ -126,7 +142,9 @@ if [ ! -f "${INSTALL_DIR}/config.json" ]; then
     log_ok "config.json vorab angelegt (leer)"
 fi
 
-# Jetzt erst chown – nach touch, damit der Service-User Eigentümer wird.
+# chown NACH touch – Service-User wird Eigentümer aller Dateien.
+# Damit hat der Node-Prozess (läuft als SCRIPT_USER) garantiert
+# Lese- und Schreibrechte auf config.json. (Verhindert EACCES beim Setup-Wizard)
 chown -R "${SCRIPT_USER}:${SCRIPT_USER}" "${INSTALL_DIR}"
 log_ok "Berechtigungen gesetzt (${SCRIPT_USER} ist Eigentümer)"
 
@@ -155,8 +173,10 @@ fi
 
 su -s /bin/bash "${SCRIPT_USER}" -c "${PM2_BIN} save"
 
+# Home-Verzeichnis für opa-User korrekt setzen
+HOME_DIR="$(eval echo ~${SCRIPT_USER})"
 PM2_STARTUP=$(su -s /bin/bash "${SCRIPT_USER}" -c \
-    "${PM2_BIN} startup systemd -u '${SCRIPT_USER}' --hp '/home/${SCRIPT_USER}'" 2>&1 \
+    "${PM2_BIN} startup systemd -u '${SCRIPT_USER}' --hp '${HOME_DIR}'" 2>&1 \
     | grep 'sudo' | tail -1)
 if [ -n "${PM2_STARTUP}" ]; then
     eval "${PM2_STARTUP}" || true
@@ -244,3 +264,8 @@ echo -e "  ${GREEN}✅ Setup-Wizard öffnen:${NC}  http://${SERVER_DOMAIN}/admin
 echo -e "  ${GREEN}   Dort Admin-Zugangsdaten, SMTP & Lizenz einrichten –${NC}"
 echo -e "  ${GREEN}   alles im Browser, kein Konsolenzugriff mehr nötig.${NC}"
 echo
+if [[ "${SCRIPT_USER}" == "opa" ]]; then
+    echo -e "  ${YELLOW}ℹ️  Service läuft als System-User 'opa'.${NC}"
+    echo -e "  ${YELLOW}   PM2-Logs: sudo -u opa pm2 logs opa-cms${NC}"
+    echo
+fi
