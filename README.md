@@ -34,6 +34,16 @@
 **Lokal (Entwicklung):**
 - Node.js ≥ 18 ([nodejs.org](https://nodejs.org))
 - npm ≥ 9
+- **Native Build-Tools** (werden von `better-sqlite3` benötigt):
+
+| Betriebssystem | Installation |
+|---|---|
+| Ubuntu / Debian | `sudo apt install -y build-essential python3` |
+| Fedora / RHEL / Rocky | `sudo dnf install -y gcc make python3` |
+| macOS | `xcode-select --install` |
+| Windows | Python ([python.org](https://python.org/downloads)) + [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) oder in einer Admin-PowerShell: `npm install -g windows-build-tools` |
+
+> ℹ️ Das Start-Skript (`start-mac-linux.sh`) prüft diese Voraussetzungen automatisch und gibt eine klare Fehlermeldung, falls etwas fehlt.
 
 ---
 
@@ -100,6 +110,8 @@ Beim ersten Aufruf von `http://<deine-domain>/admin` startet automatisch der **S
 Nach dem Setup wirst du direkt ins CMS weitergeleitet.
 
 > 💡 **Recovery-Codes**: Am Ende des Setups bekommst du 3 Wiederherstellungs-Codes. **Speichere diese sicher ab** – sie erlauben dir den Zugang wiederherzustellen, falls du dein Passwort vergisst.
+
+> ⚠️ **Wichtig:** Die Setup-Konfiguration wird in `server/config.json` gespeichert (nicht in `.env`). Diese Datei ist in `.gitignore` aufgeführt und wird **nicht** ins Repository committed – sie bleibt bei `git pull` unangetastet. Führe **kein** `git clean -fd` aus, da dies `server/config.json` und damit alle Setup-Einstellungen löschen würde.
 
 ---
 
@@ -224,11 +236,14 @@ chmod +x start-mac-linux.sh
 ```
 
 Beide Skripte:
+- Prüfen automatisch ob Node.js und native Build-Tools vorhanden sind
 - Erstellen automatisch eine `.env` aus `.env.example` (ADMIN_SECRET wird auto-generiert)
-- Installieren fehlende npm-Pakete
+- Installieren fehlende npm-Pakete via `npm install`
 - Starten den Server auf Port 5000
 - CMS erreichbar unter: `http://localhost:5000/admin`
 - Beim ersten Aufruf startet der **Setup-Wizard** automatisch
+
+> ℹ️ **Hinweis:** Das Admin-Panel (`/admin`) wird vom Express-Server ausgeliefert und ist nur erreichbar wenn der Server läuft – das direkte Öffnen von `cms/index.html` im Browser funktioniert nicht.
 
 ---
 
@@ -334,6 +349,7 @@ Beide Skripte:
 ├── start-windows.bat      # Lokaler Start (Windows, Entwicklung)
 ├── server/
 │   ├── database.js        # SQLite-Datenbankschicht (better-sqlite3)
+│   ├── config.json        # Setup-Konfiguration (auto-generiert, NICHT committen!)
 │   ├── license.js         # Lizenz-Logik & Plan-Definitionen
 │   ├── mailer.js          # E-Mail-Versand (Nodemailer, dynamischer SMTP)
 │   └── api.js             # ⚠️ Legacy / deprecated – nicht mehr aktiv
