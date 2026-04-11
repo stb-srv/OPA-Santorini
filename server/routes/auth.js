@@ -6,14 +6,14 @@
  */
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const jwt    = require('jsonwebtoken');
 const crypto = require('crypto');
-const DB = require('../database.js');
+const DB     = require('../database.js');
 const Mailer = require('../mailer.js');
-const { loginLimiter, forgotPasswordLimiter } = require('../middleware.js');
+const { loginLimiter, forgotPasswordLimiter, requireAuth: makeRequireAuth } = require('../middleware.js');
 
 module.exports = (ADMIN_SECRET) => {
-    const { requireAuth } = require('../middleware.js')(ADMIN_SECRET);
+    const requireAuth = makeRequireAuth(ADMIN_SECRET);
 
     router.post('/login', loginLimiter, async (req, res) => {
         const { user, pass } = req.body;
@@ -37,7 +37,7 @@ module.exports = (ADMIN_SECRET) => {
         }
         try {
             const plainPass = crypto.randomBytes(5).toString('hex');
-            const hashed = await bcrypt.hash(plainPass, 10);
+            const hashed   = await bcrypt.hash(plainPass, 10);
             DB.setUserPass(u.user, hashed, true);
             await Mailer.sendUserCredentials(u.email, u.name || u.user, u.user, plainPass, DB);
             res.json({ success: true, message: 'Falls ein Konto mit diesem Benutzernamen und einer hinterlegten E-Mail existiert, wird eine E-Mail versendet.' });
