@@ -34,24 +34,38 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
     });
 
     router.get('/license/info', requireAuth, (req, res) => {
-        const lic = getCurrentLicense(DB);
+        const host = req.headers.host || 'localhost';
+        const lic = getCurrentLicense(DB, host);
         res.json({ ...lic, menu_items_used: (DB.getMenu() || []).length, trialDaysLeft: lic.trialDaysLeft, plans: PLAN_DEFINITIONS });
     });
 
     router.post('/license/validate', async (req, res) => {
         try {
+            const host = req.headers.host || 'localhost';
             const response = await fetch(`${LICENSE_SERVER}/api/v1/validate`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ license_key: req.body.key, domain: req.headers.host || 'localhost' })
+                body: JSON.stringify({ license_key: req.body.key, domain: host })
             });
             const r = await response.json();
             if (r.status === 'active') {
+                if (!r.token) {
+                    console.error('❌ License server returned status=active but no signed token (r.token missing)!');
+                    return res.status(500).json({ success: false, reason: 'Lizenzserver hat kein signiertes Token zurückgegeben. Bitte Support kontaktieren.' });
+                }
                 const settings = DB.getKV('settings', {});
                 settings.license = {
-                    key: req.body.key, status: 'active', customer: r.customer_name,
-                    type: r.type, label: r.plan_label, expiresAt: r.expires_at,
-                    modules: r.allowed_modules,
-                    limits: { max_dishes: r.limits?.max_dishes ?? r.limits?.maxDishes ?? 10, max_tables: r.limits?.max_tables ?? r.limits?.maxTables ?? 5 }
+                    key:          req.body.key,
+                    licenseToken: r.token,          // ← signiertes RS256-JWT, wird von getCurrentLicense() verifiziert
+                    status:       'active',
+                    customer:     r.customer_name,
+                    type:         r.type,
+                    label:        r.plan_label,
+                    expiresAt:    r.expires_at,
+                    modules:      r.allowed_modules,
+                    limits: {
+                        max_dishes: r.limits?.max_dishes ?? r.limits?.maxDishes ?? 10,
+                        max_tables: r.limits?.max_tables ?? r.limits?.maxTables ?? 5
+                    }
                 };
                 DB.setKV('settings', settings);
                 return res.json({ success: true, license: settings.license });
