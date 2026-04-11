@@ -9,6 +9,7 @@ server/db.json
 
 # Config & Secrets
 config.json
+server/config.json
 .env
 
 # Uploads & Temp
@@ -22,3 +23,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Scripts that should stay local
+# (deploy/start scripts are kept in repo intentionally for convenience)
