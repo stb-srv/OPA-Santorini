@@ -23,33 +23,31 @@ const viewTitle         = document.getElementById('view-title');
 const dashboardToolbar  = document.getElementById('dashboard-toolbar');
 
 let currentView = 'stats';
+let tokenExpiryTimer = null;
+
+function scheduleTokenExpiryWarning() {
+    if (tokenExpiryTimer) clearTimeout(tokenExpiryTimer);
+    const token = sessionStorage.getItem('opa_admin_token');
+    if (!token) return;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (!payload.exp) return;
+        const expiresInMs = (payload.exp * 1000) - Date.now();
+        const warnMs = expiresInMs - (5 * 60 * 1000); // 5 Minuten vorher warnen
+        if (warnMs > 0) {
+            tokenExpiryTimer = setTimeout(() => {
+                showToast('Ihre Sitzung läuft in 5 Minuten ab. Bitte speichern Sie Ihre Arbeit.', 'warning');
+            }, warnMs);
+        }
+    } catch (e) {}
+}
 
 async function init() {
-    // Check for auto-login via URL params (e.g. ?username=admin&password=...)
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlUser = urlParams.get('username');
-    const urlPass = urlParams.get('password');
-    if (urlUser && urlPass && !checkAuth()) {
-        const res = await login(urlUser, urlPass);
-        if (res.success) {
-            // Remove credentials from URL for security
-            window.history.replaceState({}, document.title, window.location.pathname);
-            // Re-run init() now that we are authenticated
-            return init();
-        } else {
-            // Show login form with error so user can retry manually
-            loginContainer.style.display = 'flex';
-            adminDashboard.style.display = 'none';
-            document.getElementById('password-change-container').style.display = 'none';
-            showToast(res.reason || 'Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.', 'error');
-            return;
-        }
-    }
-
     if (!checkAuth()) {
         loginContainer.style.display = 'flex';
         adminDashboard.style.display = 'none';
-        document.getElementById('password-change-container').style.display = 'none';
+        const pwdContainer = document.getElementById('password-change-container');
+        if (pwdContainer) pwdContainer.style.display = 'none';
         return;
     }
 
@@ -61,16 +59,19 @@ async function init() {
             if (payload.requirePasswordChange) {
                 loginContainer.style.display = 'none';
                 adminDashboard.style.display = 'none';
-                document.getElementById('password-change-container').style.display = 'flex';
+                const pwdContainer = document.getElementById('password-change-container');
+                if (pwdContainer) pwdContainer.style.display = 'flex';
                 return;
             }
         } catch (e) {}
     }
 
-    document.getElementById('password-change-container').style.display = 'none';
+    const pwdContainer = document.getElementById('password-change-container');
+    if (pwdContainer) pwdContainer.style.display = 'none';
     loginContainer.style.display = 'none';
     adminDashboard.style.display = 'flex';
 
+    scheduleTokenExpiryWarning();
     switchView('stats');
 
     const branding = await apiGet('branding');
@@ -179,8 +180,6 @@ if (loginForm) {
 
     const linkForgot = document.getElementById('link-forgot-pass');
     const linkBack = document.getElementById('link-back-login');
-    const loginContainer = document.getElementById('login-wrapper'); // this is actually inside login-container
-    const loginFormContainer = document.getElementById('login-form');
     const forgotContainer = document.getElementById('forgot-password-container');
     const forgotForm = document.getElementById('forgot-password-form');
 
@@ -188,14 +187,14 @@ if (loginForm) {
         linkForgot.onclick = (e) => {
             e.preventDefault();
             document.getElementById('login-container').style.display = 'none';
-            document.getElementById('forgot-password-container').style.display = 'flex';
+            if (forgotContainer) forgotContainer.style.display = 'flex';
         };
     }
     
     if (linkBack) {
         linkBack.onclick = (e) => {
             e.preventDefault();
-            document.getElementById('forgot-password-container').style.display = 'none';
+            if (forgotContainer) forgotContainer.style.display = 'none';
             document.getElementById('login-container').style.display = 'flex';
         };
     }
@@ -205,8 +204,7 @@ if (loginForm) {
             e.preventDefault();
             const user = document.getElementById('forgot-username').value;
             const btn = document.getElementById('btn-forgot-submit');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sende...';
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sende...'; }
             
             try {
                 const res = await fetch('/api/admin/forgot-password', {
@@ -218,20 +216,17 @@ if (loginForm) {
                 if (data.success) {
                     showToast(data.message, 'success');
                     setTimeout(() => {
-                        document.getElementById('forgot-password-container').style.display = 'none';
+                        if (forgotContainer) forgotContainer.style.display = 'none';
                         document.getElementById('login-container').style.display = 'flex';
-                        btn.disabled = false;
-                        btn.innerHTML = 'Neues Passwort anfordern';
+                        if (btn) { btn.disabled = false; btn.innerHTML = 'Neues Passwort anfordern'; }
                     }, 2000);
                 } else {
                     showToast(data.reason || 'Fehler beim Senden', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = 'Neues Passwort anfordern';
+                    if (btn) { btn.disabled = false; btn.innerHTML = 'Neues Passwort anfordern'; }
                 }
             } catch (err) {
                 showToast('Verbindungsfehler', 'error');
-                btn.disabled = false;
-                btn.innerHTML = 'Neues Passwort anfordern';
+                if (btn) { btn.disabled = false; btn.innerHTML = 'Neues Passwort anfordern'; }
             }
         };
     }
@@ -255,6 +250,7 @@ if (pwdChangeForm) {
             if (data.success && data.token) {
                 sessionStorage.setItem('opa_admin_token', data.token);
                 showToast('Passwort erfolgreich geändert! Willkommen im Dashboard.', 'success');
+                scheduleTokenExpiryWarning();
                 init();
             } else {
                 showToast(data.reason || 'Fehler beim Passwort ändern', 'error');
