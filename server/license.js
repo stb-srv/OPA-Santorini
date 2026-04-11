@@ -9,17 +9,17 @@
 const jwt = require('jsonwebtoken');
 
 // =============================================================================
-// RSA-2048 Public Key – hardcoded, nie aus DB/Config lesen!
-// Der zugehörige Private Key gehört NUR auf den Lizenzserver.
+// RSA-2048 Public Key – muss mit RSA_PUBLIC_KEY in licens-srv_OPA-Santorini/server.jsübereinstimmen!
+// Der zugehörige Private Key gehört NUR auf den Lizenzserver (.env RSA_PRIVATE_KEY).
 // =============================================================================
 const OPA_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApC2Awng/+rwf5zHwkT/D
-l7R9+MySENNAEJxJBkEVc27wON3JKYRw8Lf/3XqYecHhH0bLK1PLN2lw3nJF314U
-DN3XSlmWc4xpqpViS/RjJa5X4tO6//rmkHb4lv9pspwsL+uDA91qv1C/W9clP/TD
-qddFgwIijgUdGUdRkYtx5KPcd+vIZDF19H6L4ziyvybew1v3Ilbph/CrNIBVSt1p
-RPNysGPsdQJBcIG/+s0NC8nLekztq+nwVF0ycCABph8KNbLEaK9GI6oNpiyVYDvc
-lRlZiBd/U1tMTb21iwUOhkh/pFVkKe9kyFeNFvrDlQOvHSLWw5cB2WYTtPaUp5uK
-fwIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutES8Xqif1PpLJU9ClMJ
+rGfeCoUVOOni5/WiwGFdTd5ygYyie22fBheBA2fRek6xXDfGtC/QdIg7zbqI/0eQ
+V7DCcytIGJSfPRNW4t6cb7oRUVTbo74jia5GUDyJNLJPQDsPVWDvi6rpB+/hv+Uh
+rL3UQbHYwoJi/H5R2uwPsd9JaznGoygWhmaWpueXQkxYMRlupUWD1hT+OBSYWBnI
+l7NUVsJ8pDOE2u9REwVgBnJEbdA39YnZ2NB4W/5JZPLsM8pkp1QO32THcHixFUvC
+N+xMcoOA3fRdAICdI6kI9LccR4hzr7Btf/8Wbk0erF48Xw5NjFj0CZcRIjegiq2m
+HQIDAQAB
 -----END PUBLIC KEY-----`;
 
 // =============================================================================
@@ -112,23 +112,17 @@ const FREE_RESULT = (extra = {}) => ({
 /**
  * Stufe 1+2: Verifiziert ein signiertes Lizenz-Token (RS256).
  * Gibt das dekodierte Payload zurück oder null bei ungültigem Token.
- *
- * @param {string} token   – JWT aus der DB
- * @param {string} host    – aktueller Hostname des CMS (für Domain-Binding)
- * @returns {object|null}
  */
 const verifyLicenseToken = (token, host = null) => {
     if (!token || typeof token !== 'string') return null;
     try {
         const payload = jwt.verify(token, OPA_PUBLIC_KEY, { algorithms: ['RS256'] });
 
-        // Stufe 2: Domain-Binding – nur prüfen wenn Token eine Domain enthält
+        // Stufe 2: Domain-Binding
         if (payload.domain && host) {
-            // host kann 'example.com:5000' sein – nur Hostname vergleichen
             const normalizeHost = (h) => (h || '').replace(/:\d+$/, '').toLowerCase().trim();
             const tokenDomain  = normalizeHost(payload.domain);
             const currentHost  = normalizeHost(host);
-            // localhost / 127.0.0.1 immer erlauben (Entwicklung & Setup)
             const isLocal = ['localhost', '127.0.0.1', '::1'].includes(currentHost);
             if (!isLocal && tokenDomain !== currentHost) {
                 console.warn(`⚠️  License domain mismatch: token='${tokenDomain}' current='${currentHost}'`);
@@ -147,15 +141,12 @@ const verifyLicenseToken = (token, host = null) => {
 /**
  * Gibt die aktuelle, verifizierte Lizenz zurück.
  * Ohne gültiges signiertes Token → FREE-Limits.
- *
- * @param {object} DB    – Datenbank-Instanz
- * @param {string} host  – aktueller Hostname (optional, für Domain-Binding)
  */
 const getCurrentLicense = (DB, host = null) => {
     const settings = DB.getKV('settings', {});
     const lic      = settings.license || {};
 
-    // --- Trial-Lizenz: kein JWT erforderlich (wird beim Setup intern erstellt) ---
+    // --- Trial-Lizenz ---
     if (lic.isTrial) {
         const plan      = getPlan(lic.type);
         const now       = new Date();
@@ -182,7 +173,6 @@ const getCurrentLicense = (DB, host = null) => {
     const payload = verifyLicenseToken(token, host);
 
     if (!payload) {
-        // Kein Token oder ungültig → FREE
         if (lic.key) {
             console.warn('⚠️  License key present but token invalid or missing – falling back to FREE.');
         }
@@ -200,13 +190,13 @@ const getCurrentLicense = (DB, host = null) => {
     }
 
     return {
-        key:      payload.key      || lic.key,
+        key:      payload.license_key || lic.key,
         status:   'active',
-        customer: payload.customer || 'Unbekannt',
+        customer: payload.customer_name || lic.customer || 'Unbekannt',
         type:     payload.type     || 'FREE',
         label:    plan.label,
         expiresAt: expiresAt?.toISOString() || null,
-        modules:  payload.modules  || plan.modules,
+        modules:  payload.allowed_modules || plan.modules,
         limits: {
             max_dishes: payload.limits?.max_dishes ?? plan.menu_items,
             max_tables: payload.limits?.max_tables ?? plan.max_tables
