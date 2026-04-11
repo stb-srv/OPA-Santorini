@@ -31,10 +31,6 @@ fi
 INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- Service-User bestimmen ---
-# Wenn via `sudo` aufgerufen => SUDO_USER nutzen (normaler User-Account).
-# Wenn direkt als root eingeloggt (kein SUDO_USER) => dedizierten 'opa'-User
-# anlegen, damit der Node-Prozess NIEMALS als root läuft und stets
-# Schreibrechte auf config.json hat (verhindert EACCES-Fehler im Setup-Wizard).
 if [[ -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
     SCRIPT_USER="${SUDO_USER}"
 else
@@ -50,7 +46,7 @@ fi
 clear
 echo -e "${BOLD}"
 echo "  ╔══════════════════════════════════════════════════════╗"
-echo "  ║         OPA-CMS - Linux Installer v3.1              ║"
+echo "  ║         OPA-CMS - Linux Installer v3.2              ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 log_info "Installationsverzeichnis: ${INSTALL_DIR}"
@@ -64,8 +60,35 @@ INSTALL_NGINX=${INSTALL_NGINX:-J}
 read -rp "  CMS Port [5000]: " CMS_PORT
 CMS_PORT=${CMS_PORT:-5000}
 
-read -rp "  Domain/IP für Nginx (z.B. meinrestaurant.de oder 1.2.3.4): " SERVER_DOMAIN
+read -rp "  Domain/IP (z.B. meinrestaurant.de oder 1.2.3.4): " SERVER_DOMAIN
 SERVER_DOMAIN=${SERVER_DOMAIN:-localhost}
+
+# --- SSL vorab fragen (WICHTIG: bestimmt CORS_ORIGINS http vs https) ---
+echo
+echo -e "  ${YELLOW}WICHTIG: CORS-Konfiguration${NC}"
+echo -e "  Das CMS muss wissen ob es per HTTP oder HTTPS erreichbar sein wird."
+echo -e "  Wenn du SSL/HTTPS aktivierst aber hier 'n' wählst, erhältst du"
+echo -e "  beim Login einen CORS-Fehler!"
+echo
+read -rp "  Wird SSL/HTTPS (Let's Encrypt) eingerichtet? [J/n]: " WILL_USE_SSL
+WILL_USE_SSL=${WILL_USE_SSL:-n}
+
+# CORS-Protokoll anhand SSL-Antwort bestimmen
+if [[ "${WILL_USE_SSL,,}" == "j" || "${WILL_USE_SSL,,}" == "y" ]]; then
+    CORS_PROTOCOL="https"
+    log_info "CORS_ORIGINS wird auf https://${SERVER_DOMAIN} gesetzt."
+else
+    CORS_PROTOCOL="http"
+    log_info "CORS_ORIGINS wird auf http://${SERVER_DOMAIN} gesetzt."
+    if [[ "${SERVER_DOMAIN}" != "localhost" && "${SERVER_DOMAIN}" != "127.0.0.1" ]]; then
+        echo
+        log_warn "Du hast eine Domain angegeben aber kein SSL gewählt."
+        log_warn "Falls du später manuell SSL einrichtest, musst du in /opt/opa-santorini/.env"
+        log_warn "die Zeile \"CORS_ORIGINS=http://\" auf \"CORS_ORIGINS=https://\" ändern"
+        log_warn "und danach \"pm2 restart opa-cms\" ausführen."
+        echo
+    fi
+fi
 
 # --- .env automatisch anlegen wenn nicht vorhanden ---
 log_step ".env Konfiguration"
@@ -74,14 +97,22 @@ if [ ! -f "${INSTALL_DIR}/.env" ]; then
     cp "${INSTALL_DIR}/.env.example" "${INSTALL_DIR}/.env"
 
     sed -i "s|^PORT=.*|PORT=${CMS_PORT}|" "${INSTALL_DIR}/.env"
-    sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=http://${SERVER_DOMAIN}|" "${INSTALL_DIR}/.env"
+    sed -i "s|^CORS_ORIGINS=.*|CORS_ORIGINS=${CORS_PROTOCOL}://${SERVER_DOMAIN}|" "${INSTALL_DIR}/.env"
 
     GENERATED_SECRET=$(openssl rand -hex 32 2>/dev/null || cat /proc/sys/kernel/random/uuid | tr -d '-')
     sed -i "s|^ADMIN_SECRET=.*|ADMIN_SECRET=${GENERATED_SECRET}|" "${INSTALL_DIR}/.env"
 
-    log_ok ".env erstellt (PORT=${CMS_PORT}, CORS=${SERVER_DOMAIN}, ADMIN_SECRET=auto-generated)"
+    log_ok ".env erstellt (PORT=${CMS_PORT}, CORS=${CORS_PROTOCOL}://${SERVER_DOMAIN}, ADMIN_SECRET=auto-generated)"
 else
     log_warn ".env bereits vorhanden – wird nicht überschrieben."
+    # Trotzdem prüfen ob CORS zur SSL-Wahl passt
+    CURRENT_CORS=$(grep '^CORS_ORIGINS=' "${INSTALL_DIR}/.env" | head -1 || echo "")
+    if [[ "${WILL_USE_SSL,,}" == "j" || "${WILL_USE_SSL,,}" == "y" ]] && echo "${CURRENT_CORS}" | grep -q 'http://'; then
+        log_warn "Deine .env enthält noch http:// in CORS_ORIGINS, aber SSL wird aktiviert!"
+        log_warn "Korrigiere automatisch auf https://..."
+        sed -i "s|^CORS_ORIGINS=http://|CORS_ORIGINS=https://|" "${INSTALL_DIR}/.env"
+        log_ok "CORS_ORIGINS auf https:// aktualisiert."
+    fi
 fi
 
 echo
@@ -143,11 +174,10 @@ chmod -R 775 "${INSTALL_DIR}/uploads" \
               "${INSTALL_DIR}/cms" \
               "${INSTALL_DIR}/plugins"
 chown -R "${SCRIPT_USER}:${SCRIPT_USER}" "${INSTALL_DIR}"
-log_ok "Berechtigungen gesetzt (${SCRIPT_USER} ist Eigentümer, cms/assets/css/ angelegt)"
+log_ok "Berechtigungen gesetzt (${SCRIPT_USER} ist Eigentümer)"
 
 log_step "Schritt 7/7: PM2 Services starten"
 
-# Bestehende PM2-Prozesse entfernen falls vorhanden
 "${PM2_BIN}" delete opa-cms 2>/dev/null || true
 
 "${PM2_BIN}" start "${INSTALL_DIR}/server.js" \
@@ -197,26 +227,27 @@ EOF
         log_ok "Firewall: Port 80/443 freigegeben"
     fi
 
-    # --- HTTPS via Certbot (optional) ---
-    read -rp "  SSL/HTTPS via Let's Encrypt einrichten? (Domain muss auf diesen Server zeigen) [J/n]: " INSTALL_SSL
-    INSTALL_SSL=${INSTALL_SSL:-n}
-    if [[ "${INSTALL_SSL,,}" == "j" || "${INSTALL_SSL,,}" == "y" ]]; then
+    # --- HTTPS via Certbot ---
+    if [[ "${WILL_USE_SSL,,}" == "j" || "${WILL_USE_SSL,,}" == "y" ]]; then
+        log_step "SSL/HTTPS via Let's Encrypt einrichten"
         read -rp "  E-Mail für Let's Encrypt Benachrichtigungen: " LE_EMAIL
         if [ -n "${LE_EMAIL}" ]; then
             apt-get install -yq certbot python3-certbot-nginx
             certbot --nginx -d "${SERVER_DOMAIN}" --non-interactive --agree-tos -m "${LE_EMAIL}" || \
                 log_warn "Certbot fehlgeschlagen – bitte manuell ausführen: certbot --nginx -d ${SERVER_DOMAIN}"
-            # CORS auf https umstellen
+            # Sicherheitshalber nochmal CORS auf https sicherstellen & neu starten
             sed -i "s|^CORS_ORIGINS=http://|CORS_ORIGINS=https://|" "${INSTALL_DIR}/.env"
             "${PM2_BIN}" restart opa-cms
-            log_ok "HTTPS aktiviert, CORS_ORIGINS automatisch auf https umgestellt"
+            log_ok "HTTPS aktiviert, CORS_ORIGINS = https://${SERVER_DOMAIN}"
         else
             log_warn "Keine E-Mail angegeben – SSL übersprungen."
+            log_warn "CORS_ORIGINS bleibt auf https:// – falls SSL später manuell eingerichtet wird passt es."
         fi
     fi
 fi
 
 # --- Zusammenfassung ---
+FINAL_URL="${CORS_PROTOCOL}://${SERVER_DOMAIN}"
 echo
 echo -e "${BOLD}${GREEN}"
 echo "  ╔══════════════════════════════════════════════════════╗"
@@ -224,8 +255,8 @@ echo "  ║            ✓ INSTALLATION ABGESCHLOSSEN              ║"
 echo "  ╚══════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 echo
-echo "  CMS URL:      http://${SERVER_DOMAIN}"
-echo "  Admin Panel:  http://${SERVER_DOMAIN}/admin"
+echo "  CMS URL:      ${FINAL_URL}"
+echo "  Admin Panel:  ${FINAL_URL}/admin"
 echo
 echo "  ┌─────────────────────────────────────────────────────┐"
 echo "  │  Nützliche Befehle:                                  │"
@@ -236,7 +267,15 @@ echo "  │    pm2 monit           - Live Monitoring             │"
 echo "  │    ./update-upgrade.sh - Update auf neueste Version  │"
 echo "  └─────────────────────────────────────────────────────┘"
 echo
-echo -e "  ${GREEN}✅ Setup-Wizard öffnen:${NC}  http://${SERVER_DOMAIN}/admin"
+if [[ "${WILL_USE_SSL,,}" != "j" && "${WILL_USE_SSL,,}" != "y" ]] && \
+   [[ "${SERVER_DOMAIN}" != "localhost" && "${SERVER_DOMAIN}" != "127.0.0.1" ]]; then
+    echo -e "  ${YELLOW}⚠️  Kein SSL aktiv. CORS_ORIGINS = http://${SERVER_DOMAIN}${NC}"
+    echo -e "  ${YELLOW}   Falls du später HTTPS einrichtest, bitte in .env anpassen:${NC}"
+    echo -e "  ${YELLOW}   CORS_ORIGINS=https://${SERVER_DOMAIN}${NC}"
+    echo -e "  ${YELLOW}   Danach: pm2 restart opa-cms${NC}"
+    echo
+fi
+echo -e "  ${GREEN}✅ Setup-Wizard öffnen:${NC}  ${FINAL_URL}/admin"
 echo -e "  ${GREEN}   Dort Admin-Zugangsdaten, SMTP & Lizenz einrichten –${NC}"
 echo -e "  ${GREEN}   alles im Browser, kein Konsolenzugriff mehr nötig.${NC}"
 echo
