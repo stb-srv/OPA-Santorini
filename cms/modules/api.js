@@ -1,5 +1,5 @@
 /**
- * API Module for Grieche-CMS
+ * API Module for OPA-CMS
  */
 
 const API_URL = '/api';
@@ -16,9 +16,14 @@ export const handleAuthFailure = () => {
 export async function apiGet(route) {
     try {
         const r = await fetch(`${API_URL}/${route}`, { 
-            headers: { 'X-Admin-Token': getAuthToken() } 
+            headers: { 'x-admin-token': getAuthToken() } 
         });
         if (r.status === 401) return handleAuthFailure();
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            console.error(`API GET error (${route}) [${r.status}]:`, err.reason || r.statusText);
+            return null;
+        }
         return await r.json();
     } catch (e) { 
         console.error(`API GET error (${route}):`, e);
@@ -32,21 +37,22 @@ export async function apiPost(route, data) {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json', 
-                'X-Admin-Token': getAuthToken() 
+                'x-admin-token': getAuthToken() 
             },
             body: JSON.stringify(data)
         });
         if (r.status === 401 && route !== 'admin/login') return handleAuthFailure();
-        const res = await r.json();
-        // Global error handling for 403 (License/Permission)
+        const res = await r.json().catch(() => ({ success: false, reason: 'Ungültige Server-Antwort.' }));
         if (r.status === 403) { 
-            import('./utils.js').then(m => m.showToast(res.reason, 'error'));
-            return { success: false }; 
+            import('./utils.js').then(m => m.showToast(res.reason || 'Zugriff verweigert.', 'error'));
+            return { success: false, reason: res.reason }; 
         }
+        // fix: forward reason for 400/500 responses so callers get proper error messages
+        if (!r.ok && !res.reason) res.reason = `Serverfehler (${r.status})`;
         return res;
     } catch (e) { 
         console.error(`API POST error (${route}):`, e);
-        return { success: false }; 
+        return { success: false, reason: 'Verbindungsfehler.' }; 
     }
 }
 
@@ -56,7 +62,7 @@ export async function apiUpload(file) {
         fd.append('image', file);
         const r = await fetch(`${API_URL}/upload`, {
             method: 'POST',
-            headers: { 'X-Admin-Token': getAuthToken() },
+            headers: { 'x-admin-token': getAuthToken() },
             body: fd
         });
         if (r.status === 401) return handleAuthFailure();
@@ -73,20 +79,22 @@ export async function apiPut(route, data) {
             method: 'PUT',
             headers: { 
                 'Content-Type': 'application/json', 
-                'X-Admin-Token': getAuthToken() 
+                'x-admin-token': getAuthToken() 
             },
             body: JSON.stringify(data)
         });
         if (r.status === 401) return handleAuthFailure();
-        const res = await r.json();
+        const res = await r.json().catch(() => ({ success: false, reason: 'Ungültige Server-Antwort.' }));
         if (r.status === 403) { 
-            import('./utils.js').then(m => m.showToast(res.reason, 'error'));
-            return { success: false }; 
+            import('./utils.js').then(m => m.showToast(res.reason || 'Zugriff verweigert.', 'error'));
+            return { success: false, reason: res.reason }; 
         }
+        // fix: forward reason for 400/500 responses
+        if (!r.ok && !res.reason) res.reason = `Serverfehler (${r.status})`;
         return res;
     } catch (e) { 
         console.error(`API PUT error (${route}):`, e);
-        return { success: false }; 
+        return { success: false, reason: 'Verbindungsfehler.' }; 
     }
 }
 
@@ -94,12 +102,16 @@ export async function apiDelete(route) {
     try {
         const r = await fetch(`${API_URL}/${route}`, {
             method: 'DELETE',
-            headers: { 'X-Admin-Token': getAuthToken() }
+            headers: { 'x-admin-token': getAuthToken() }
         });
         if (r.status === 401) return handleAuthFailure();
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            return { success: false, reason: err.reason || `Serverfehler (${r.status})` };
+        }
         return await r.json();
     } catch (e) { 
         console.error(`API DELETE error (${route}):`, e);
-        return { success: false }; 
+        return { success: false, reason: 'Verbindungsfehler.' }; 
     }
 }

@@ -1,5 +1,6 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
 const DB_PATH = path.join(__dirname, 'database.sqlite');
 const db = new Database(DB_PATH);
@@ -38,10 +39,11 @@ db.exec(`
     );
 
     CREATE TABLE IF NOT EXISTS categories (
-        id     TEXT PRIMARY KEY,
-        label  TEXT NOT NULL,
-        icon   TEXT,
-        active INTEGER DEFAULT 1
+        id         TEXT PRIMARY KEY,
+        label      TEXT NOT NULL,
+        icon       TEXT,
+        active     INTEGER DEFAULT 1,
+        sort_order INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS reservations (
@@ -83,7 +85,7 @@ db.exec(`
     );
 `);
 
-// --- Migrations (idempotent – laufen bei jedem Start) ---
+// --- Migrations (idempotent - laufen bei jedem Start) ---
 const migrations = [
     "ALTER TABLE users ADD COLUMN email TEXT",
     "ALTER TABLE users ADD COLUMN last_name TEXT",
@@ -91,15 +93,15 @@ const migrations = [
     "ALTER TABLE users ADD COLUMN recovery_codes TEXT DEFAULT '[]'",
     "ALTER TABLE menu ADD COLUMN number TEXT",
     "ALTER TABLE menu ADD COLUMN active INTEGER DEFAULT 1",
-    // orders Tabelle: alte JSON-Blob Spalte ggf. vorhanden – neue Felder ergänzen
     "ALTER TABLE orders ADD COLUMN table_id TEXT",
     "ALTER TABLE orders ADD COLUMN table_name TEXT",
     "ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'pending'",
     "ALTER TABLE orders ADD COLUMN total REAL DEFAULT 0",
     "ALTER TABLE orders ADD COLUMN note TEXT",
     "ALTER TABLE orders ADD COLUMN items TEXT DEFAULT '[]'",
+    "ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0",
 ];
-migrations.forEach(sql => { try { db.exec(sql + ';'); } catch (e) { /* Spalte existiert bereits */ } });
+migrations.forEach(sql => { try { db.exec(sql + ';'); } catch (e) { /* column already exists */ } });
 
 // --- Performance-Indizes ---
 [
@@ -109,6 +111,7 @@ migrations.forEach(sql => { try { db.exec(sql + ';'); } catch (e) { /* Spalte ex
     "CREATE INDEX IF NOT EXISTS idx_orders_status       ON orders(status)",
     "CREATE INDEX IF NOT EXISTS idx_orders_timestamp    ON orders(timestamp)",
     "CREATE INDEX IF NOT EXISTS idx_menu_cat            ON menu(cat)",
+    "CREATE INDEX IF NOT EXISTS idx_categories_sort     ON categories(sort_order)",
 ].forEach(sql => { try { db.exec(sql + ';'); } catch (e) {} });
 
 const safeJsonParse = (str, fallback = null) => {
@@ -116,73 +119,109 @@ const safeJsonParse = (str, fallback = null) => {
     catch (e) { return fallback; }
 };
 
+// --- Gecachte Prepared Statements (Performance) ---
+const stmts = {
+    getKV:              db.prepare('SELECT value FROM kv_store WHERE key = ?'),
+    setKV:              db.prepare('INSERT OR REPLACE INTO kv_store (key, value) VALUES (?, ?)'),
+    getUsers:           db.prepare('SELECT user, pass, name, last_name, email, role, require_password_change, recovery_codes FROM users'),
+    getUserByName:      db.prepare('SELECT * FROM users WHERE user = ?'),
+    setUserPass:        db.prepare('UPDATE users SET pass = ?, require_password_change = ? WHERE user = ?'),
+    setRequirePwChange: db.prepare('UPDATE users SET require_password_change = ? WHERE user = ?'),
+    setRecoveryCodes:   db.prepare('UPDATE users SET recovery_codes = ? WHERE user = ?'),
+    addUser:            db.prepare('INSERT OR REPLACE INTO users (user, pass, name, last_name, email, role, require_password_change, recovery_codes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
+    updateUser:         db.prepare('UPDATE users SET name = ?, last_name = ?, email = ?, role = ? WHERE user = ?'),
+    deleteUser:         db.prepare('DELETE FROM users WHERE user = ?'),
+    getMenu:            db.prepare('SELECT * FROM menu ORDER BY cat, name'),
+    getMenuById:        db.prepare('SELECT * FROM menu WHERE id = ?'),
+    addMenu:            db.prepare('INSERT INTO menu (id, number, name, price, cat, desc, allergens, additives, image, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+    deleteMenu:         db.prepare('DELETE FROM menu WHERE id = ?'),
+    deleteAllMenu:      db.prepare('DELETE FROM menu'),
+    upsertMenu:         db.prepare('INSERT OR REPLACE INTO menu (id, number, name, price, cat, desc, allergens, additives, image, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+    updateMenuRow:      db.prepare('UPDATE menu SET number = ?, name = ?, price = ?, cat = ?, desc = ?, allergens = ?, additives = ?, image = ?, active = ? WHERE id = ?'),
+    getCategories:      db.prepare('SELECT * FROM categories ORDER BY sort_order ASC, label ASC'),
+    getCategoryById:    db.prepare('SELECT * FROM categories WHERE id = ?'),
+    addCategory:        db.prepare('INSERT INTO categories (id, label, icon, active, sort_order) VALUES (?, ?, ?, ?, ?)'),
+    updateCategory:     db.prepare('UPDATE categories SET label = ?, icon = ?, active = ?, sort_order = ? WHERE id = ?'),
+    deleteCategory:     db.prepare('DELETE FROM categories WHERE id = ?'),
+    deleteAllCategories:db.prepare('DELETE FROM categories'),
+    upsertCategory:     db.prepare('INSERT OR REPLACE INTO categories (id, label, icon, active, sort_order) VALUES (?, ?, ?, ?, ?)'),
+    getReservations:    db.prepare('SELECT * FROM reservations ORDER BY submittedAt DESC'),
+    getReservationById: db.prepare('SELECT * FROM reservations WHERE id = ?'),
+    addReservation:     db.prepare('INSERT INTO reservations (id, token, name, email, phone, date, time, start_time, end_time, guests, note, status, assigned_tables, submittedAt, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+    updateReservation:  db.prepare('UPDATE reservations SET name = ?, email = ?, phone = ?, date = ?, time = ?, start_time = ?, end_time = ?, guests = ?, note = ?, status = ?, assigned_tables = ? WHERE id = ?'),
+    deleteReservation:  db.prepare('DELETE FROM reservations WHERE id = ?'),
+    deleteAllReservations: db.prepare('DELETE FROM reservations'),
+    upsertReservation:  db.prepare('INSERT OR REPLACE INTO reservations (id, token, name, email, phone, date, time, start_time, end_time, guests, note, status, assigned_tables, submittedAt, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+    getTables:          db.prepare('SELECT * FROM tables'),
+    upsertTable:        db.prepare('INSERT OR REPLACE INTO tables (id, name, capacity, combinable, active, area_id) VALUES (?, ?, ?, ?, ?, ?)'),
+    deactivateMissingTables: db.prepare('UPDATE tables SET active = 0 WHERE id NOT IN (SELECT value FROM json_each(?))'),
+    getOrders:          db.prepare('SELECT * FROM orders ORDER BY timestamp DESC'),
+    getOrderById:       db.prepare('SELECT * FROM orders WHERE id = ?'),
+    addOrder:           db.prepare('INSERT OR REPLACE INTO orders (id, table_id, table_name, status, timestamp, total, note, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
+    updateOrderStatus:  db.prepare('UPDATE orders SET status = ? WHERE id = ?'),
+    deleteOrder:        db.prepare('DELETE FROM orders WHERE id = ?'),
+};
+
 const DB = {
     // --- KV Store ---
     getKV: (key, defaultValue = null) => {
-        const row = db.prepare('SELECT value FROM kv_store WHERE key = ?').get(key);
+        const row = stmts.getKV.get(key);
         return row ? safeJsonParse(row.value, defaultValue) : defaultValue;
     },
     setKV: (key, value) => {
-        db.prepare('INSERT OR REPLACE INTO kv_store (key, value) VALUES (?, ?)').run(key, JSON.stringify(value));
+        stmts.setKV.run(key, JSON.stringify(value));
     },
 
     // --- Users ---
-    getUsers: () => db.prepare(
-        'SELECT user, pass, name, last_name, email, role, require_password_change, recovery_codes FROM users'
-    ).all(),
+    getUsers: () => stmts.getUsers.all(),
 
     setUserPass: (user, hashedPass, requireChange = false) => {
-        db.prepare('UPDATE users SET pass = ?, require_password_change = ? WHERE user = ?')
-            .run(hashedPass, requireChange ? 1 : 0, user);
+        stmts.setUserPass.run(hashedPass, requireChange ? 1 : 0, user);
     },
 
     setRequirePasswordChange: (user, value) => {
-        db.prepare('UPDATE users SET require_password_change = ? WHERE user = ?')
-            .run(value ? 1 : 0, user);
+        stmts.setRequirePwChange.run(value ? 1 : 0, user);
     },
 
     setRecoveryCodes: (user, codes) => {
-        db.prepare('UPDATE users SET recovery_codes = ? WHERE user = ?')
-            .run(JSON.stringify(codes), user);
+        stmts.setRecoveryCodes.run(JSON.stringify(codes), user);
     },
 
     addUser: (u) => {
-        db.prepare(
-            'INSERT OR REPLACE INTO users (user, pass, name, last_name, email, role, require_password_change, recovery_codes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        ).run(u.user, u.pass, u.name || '', u.last_name || '', u.email || '', u.role || 'admin',
-              u.require_password_change || 0, JSON.stringify(u.recovery_codes || []));
+        stmts.addUser.run(
+            u.user, u.pass, u.name || '', u.last_name || '', u.email || '',
+            u.role || 'admin', u.require_password_change || 0,
+            JSON.stringify(u.recovery_codes || [])
+        );
     },
 
     updateUser: (user, u) => {
-        db.prepare('UPDATE users SET name = ?, last_name = ?, email = ?, role = ? WHERE user = ?')
-            .run(u.name || '', u.last_name || '', u.email || '', u.role || 'admin', user);
+        stmts.updateUser.run(u.name || '', u.last_name || '', u.email || '', u.role || 'admin', user);
     },
 
-    deleteUser: (user) => {
-        db.prepare('DELETE FROM users WHERE user = ?').run(user);
-    },
+    deleteUser: (user) => stmts.deleteUser.run(user),
 
     // --- Menu ---
     getMenu: () => {
-        const rows = db.prepare('SELECT * FROM menu ORDER BY cat, name').all();
+        const rows = stmts.getMenu.all();
         return rows.map(r => ({
             ...r,
-            active: r.active !== 0, // SQLite integer → boolean
+            active: Number(r.active) !== 0,  // fix: explicit Number() conversion prevents 0 !== false bug
             allergens: safeJsonParse(r.allergens, []),
             additives: safeJsonParse(r.additives, [])
         }));
     },
 
     addMenu: (m) => {
-        db.prepare(
-            'INSERT INTO menu (id, number, name, price, cat, desc, allergens, additives, image, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).run(m.id, m.number || null, m.name, m.price, m.cat, m.desc,
-              JSON.stringify(m.allergens || []), JSON.stringify(m.additives || []),
-              m.image || null, m.active !== false ? 1 : 0);
+        stmts.addMenu.run(
+            m.id, m.number || null, m.name, m.price, m.cat, m.desc,
+            JSON.stringify(m.allergens || []), JSON.stringify(m.additives || []),
+            m.image || null, m.active !== false ? 1 : 0
+        );
     },
 
     updateMenu: (id, update) => {
-        const existing = db.prepare('SELECT * FROM menu WHERE id = ?').get(id);
+        const existing = stmts.getMenuById.get(id);
         if (!existing) return null;
         const merged = {
             ...existing,
@@ -194,23 +233,24 @@ const DB = {
                 typeof update.additives !== 'undefined' ? JSON.stringify(update.additives) : existing.additives, []
             )
         };
-        db.prepare(
-            'UPDATE menu SET number = ?, name = ?, price = ?, cat = ?, desc = ?, allergens = ?, additives = ?, image = ?, active = ? WHERE id = ?'
-        ).run(merged.number || null, merged.name, merged.price, merged.cat, merged.desc,
-              JSON.stringify(merged.allergens), JSON.stringify(merged.additives),
-              merged.image || null, merged.active !== false ? 1 : 0, id);
-        return { ...merged, active: merged.active !== false };
+        // fix: use explicit Number() to correctly handle SQLite integer 0
+        const activeVal = typeof update.active !== 'undefined'
+            ? (update.active ? 1 : 0)
+            : Number(existing.active);
+        stmts.updateMenuRow.run(
+            merged.number || null, merged.name, merged.price, merged.cat, merged.desc,
+            JSON.stringify(merged.allergens), JSON.stringify(merged.additives),
+            merged.image || null, activeVal, id
+        );
+        return { ...merged, active: activeVal !== 0 };
     },
 
-    deleteMenu: (id) => db.prepare('DELETE FROM menu WHERE id = ?').run(id),
+    deleteMenu: (id) => stmts.deleteMenu.run(id),
 
     saveMenu: (items) => {
-        const upsert = db.prepare(
-            'INSERT OR REPLACE INTO menu (id, number, name, price, cat, desc, allergens, additives, image, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
         db.transaction((list) => {
-            db.prepare('DELETE FROM menu').run();
-            list.forEach(m => upsert.run(
+            stmts.deleteAllMenu.run();
+            list.forEach(m => stmts.upsertMenu.run(
                 m.id || Date.now().toString(), m.number || null,
                 m.name, m.price, m.cat, m.desc,
                 JSON.stringify(m.allergens || []), JSON.stringify(m.additives || []),
@@ -220,50 +260,51 @@ const DB = {
     },
 
     // --- Categories ---
-    getCategories: () => db.prepare('SELECT * FROM categories ORDER BY label').all(),
+    getCategories: () => stmts.getCategories.all(),
 
     addCategory: (c) => {
-        db.prepare('INSERT INTO categories (id, label, icon, active) VALUES (?, ?, ?, ?)')
-            .run(c.id, c.label, c.icon || '', c.active !== false ? 1 : 0);
+        stmts.addCategory.run(c.id, c.label, c.icon || '', c.active !== false ? 1 : 0, c.sort_order || 0);
     },
 
     updateCategory: (id, update) => {
-        const existing = db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
+        const existing = stmts.getCategoryById.get(id);
         if (!existing) return null;
         const merged = { ...existing, ...update };
-        db.prepare('UPDATE categories SET label = ?, icon = ?, active = ? WHERE id = ?')
-            .run(merged.label, merged.icon || '', merged.active !== false ? 1 : 0, id);
+        stmts.updateCategory.run(
+            merged.label, merged.icon || '', merged.active !== false ? 1 : 0,
+            merged.sort_order || 0, id
+        );
         return merged;
     },
 
-    deleteCategory: (id) => db.prepare('DELETE FROM categories WHERE id = ?').run(id),
+    deleteCategory: (id) => stmts.deleteCategory.run(id),
 
     saveCategories: (items) => {
-        const upsert = db.prepare('INSERT OR REPLACE INTO categories (id, label, icon, active) VALUES (?, ?, ?, ?)');
         db.transaction((list) => {
-            db.prepare('DELETE FROM categories').run();
-            list.forEach(c => upsert.run(c.id, c.label, c.icon || '', c.active !== false ? 1 : 0));
+            stmts.deleteAllCategories.run();
+            list.forEach((c, i) => stmts.upsertCategory.run(
+                c.id, c.label, c.icon || '', c.active !== false ? 1 : 0,
+                typeof c.sort_order !== 'undefined' ? c.sort_order : i
+            ));
         })(items);
     },
 
     // --- Reservations ---
     getReservations: () => {
-        const rows = db.prepare('SELECT * FROM reservations ORDER BY submittedAt DESC').all();
+        const rows = stmts.getReservations.all();
         return rows.map(r => ({ ...r, assigned_tables: safeJsonParse(r.assigned_tables, []) }));
     },
 
     addReservation: (r) => {
-        db.prepare(`
-            INSERT INTO reservations
-            (id, token, name, email, phone, date, time, start_time, end_time, guests, note, status, assigned_tables, submittedAt, ip)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(r.id, r.token, r.name, r.email, r.phone, r.date, r.time,
-               r.start_time, r.end_time, r.guests, r.note || '', r.status,
-               JSON.stringify(r.assigned_tables || []), r.submittedAt, r.ip || null);
+        stmts.addReservation.run(
+            r.id, r.token, r.name, r.email, r.phone, r.date, r.time,
+            r.start_time, r.end_time, r.guests, r.note || '', r.status,
+            JSON.stringify(r.assigned_tables || []), r.submittedAt, r.ip || null
+        );
     },
 
     updateReservation: (id, update) => {
-        const existing = db.prepare('SELECT * FROM reservations WHERE id = ?').get(id);
+        const existing = stmts.getReservationById.get(id);
         if (!existing) return null;
         const merged = { ...existing, ...update };
         merged.assigned_tables = safeJsonParse(
@@ -272,29 +313,25 @@ const DB = {
                 : existing.assigned_tables,
             []
         );
-        db.prepare(`
-            UPDATE reservations SET
-                name = ?, email = ?, phone = ?, date = ?, time = ?,
-                start_time = ?, end_time = ?, guests = ?, note = ?,
-                status = ?, assigned_tables = ?
-            WHERE id = ?
-        `).run(merged.name, merged.email, merged.phone, merged.date, merged.time,
-               merged.start_time, merged.end_time, merged.guests, merged.note || '',
-               merged.status, JSON.stringify(merged.assigned_tables), id);
+        stmts.updateReservation.run(
+            merged.name, merged.email, merged.phone, merged.date, merged.time,
+            merged.start_time, merged.end_time, merged.guests, merged.note || '',
+            merged.status, JSON.stringify(merged.assigned_tables), id
+        );
         return merged;
     },
 
-    deleteReservation: (id) => db.prepare('DELETE FROM reservations WHERE id = ?').run(id),
+    deleteReservation: (id) => stmts.deleteReservation.run(id),
 
+    // fix: guard against empty list to prevent accidental full data wipe
     saveReservations: (list) => {
-        const insert = db.prepare(`
-            INSERT OR REPLACE INTO reservations
-            (id, token, name, email, phone, date, time, start_time, end_time, guests, note, status, assigned_tables, submittedAt, ip)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
+        if (!Array.isArray(list) || list.length === 0) {
+            console.warn('[DB] saveReservations called with empty list – skipping to prevent data loss.');
+            return;
+        }
         db.transaction((items) => {
-            db.prepare('DELETE FROM reservations').run();
-            items.forEach(r => insert.run(
+            stmts.deleteAllReservations.run();
+            items.forEach(r => stmts.upsertReservation.run(
                 r.id, r.token, r.name, r.email, r.phone,
                 r.date, r.time, r.start_time, r.end_time, r.guests,
                 r.note || '', r.status, JSON.stringify(r.assigned_tables || []),
@@ -304,47 +341,36 @@ const DB = {
     },
 
     // --- Tables ---
-    getTables: () => db.prepare('SELECT * FROM tables').all(),
+    getTables: () => stmts.getTables.all(),
 
     saveTables: (tables) => {
-        const upsert = db.prepare(
-            'INSERT OR REPLACE INTO tables (id, name, capacity, combinable, active, area_id) VALUES (?, ?, ?, ?, ?, ?)'
-        );
         db.transaction((list) => {
-            list.forEach(t => upsert.run(
+            list.forEach(t => stmts.upsertTable.run(
                 t.id, t.name, t.capacity || 2,
                 t.combinable !== false ? 1 : 0,
                 t.active !== false ? 1 : 0,
                 t.area_id || 'main'
             ));
-            // Tische deaktivieren die nicht mehr in der Liste sind
             if (list.length > 0) {
-                db.prepare('UPDATE tables SET active = 0 WHERE id NOT IN (SELECT value FROM json_each(?))')
-                    .run(JSON.stringify(list.map(t => t.id)));
+                stmts.deactivateMissingTables.run(JSON.stringify(list.map(t => t.id)));
             }
         })(tables);
     },
 
     // --- Orders ---
     getOrders: () => {
-        const rows = db.prepare('SELECT * FROM orders ORDER BY timestamp DESC').all();
-        return rows.map(r => ({
-            ...r,
-            items: safeJsonParse(r.items, [])
-        }));
+        const rows = stmts.getOrders.all();
+        return rows.map(r => ({ ...r, items: safeJsonParse(r.items, []) }));
     },
 
     getOrderById: (id) => {
-        const r = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+        const r = stmts.getOrderById.get(id);
         if (!r) return null;
         return { ...r, items: safeJsonParse(r.items, []) };
     },
 
     addOrder: (order) => {
-        db.prepare(`
-            INSERT OR REPLACE INTO orders (id, table_id, table_name, status, timestamp, total, note, items)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
+        stmts.addOrder.run(
             order.id || Date.now().toString(),
             order.table_id || order.tableId || null,
             order.table_name || order.tableName || null,
@@ -356,13 +382,9 @@ const DB = {
         );
     },
 
-    updateOrderStatus: (id, status) => {
-        db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, id);
-    },
+    updateOrderStatus: (id, status) => stmts.updateOrderStatus.run(status, id),
 
-    deleteOrder: (id) => {
-        db.prepare('DELETE FROM orders WHERE id = ?').run(id);
-    }
+    deleteOrder: (id) => stmts.deleteOrder.run(id),
 };
 
 module.exports = DB;

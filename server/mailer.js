@@ -9,8 +9,7 @@ const CONFIG = require('../config.js');
 
 /**
  * Erstellt einen frischen SMTP-Transporter.
- * Greift zuerst auf die DB-Einstellungen zurück (vom CMS gesetzt),
- * dann auf die .env-Konfiguration.
+ * Gibt null zurück wenn keine gültige SMTP-Konfiguration vorhanden ist.
  */
 const createTransporter = (DB = null) => {
     let smtp = { ...CONFIG.SMTP };
@@ -22,6 +21,12 @@ const createTransporter = (DB = null) => {
                 smtp = { ...smtp, ...settings.smtp };
             }
         } catch (e) { /* Ignorieren wenn DB noch nicht verfügbar */ }
+    }
+
+    // fix: guard against missing SMTP host
+    if (!smtp.host) {
+        console.warn('[Mailer] Kein SMTP-Host konfiguriert. E-Mail wird nicht gesendet.');
+        return null;
     }
 
     return nodemailer.createTransport({
@@ -37,23 +42,47 @@ const createTransporter = (DB = null) => {
 };
 
 /**
- * Gibt den Absender-Namen aus DB-Branding oder Config zurück.
+ * Gibt den Absender-String zurück.
+ * fix: fällt auf smtp.user zurück wenn kein from gesetzt, wirft klaren Fehler wenn beides leer.
  */
 const getSenderName = (DB = null) => {
+    let smtpConfig = { ...CONFIG.SMTP };
+    if (DB) {
+        try {
+            const settings = DB.getKV('settings', {});
+            if (settings.smtp && settings.smtp.host) smtpConfig = { ...smtpConfig, ...settings.smtp };
+        } catch (e) {}
+    }
+
+    const fromEmail = smtpConfig.from || smtpConfig.user || null;
+    if (!fromEmail) {
+        throw new Error('SMTP from/user-Adresse nicht konfiguriert. Bitte SMTP-Einstellungen prüfen.');
+    }
+
     if (DB) {
         try {
             const branding = DB.getKV('branding', {});
             if (branding.name) {
-                const smtp = DB.getKV('settings', {})?.smtp || CONFIG.SMTP;
-                const fromEmail = smtp.from || smtp.user || '';
-                // Extrahiere reine E-Mail aus "Name <email>" Format
                 const emailMatch = fromEmail.match(/<(.+)>/);
                 const email = emailMatch ? emailMatch[1] : fromEmail;
                 return `"${branding.name}" <${email}>`;
             }
         } catch (e) {}
     }
-    return CONFIG.SMTP.from || '';
+    return fromEmail;
+};
+
+/**
+ * Gibt den Restaurant-Namen aus Branding oder einen Fallback zurück.
+ */
+const getRestaurantName = (DB = null) => {
+    if (DB) {
+        try {
+            const branding = DB.getKV('branding', {});
+            if (branding.name) return branding.name;
+        } catch (e) {}
+    }
+    return 'Das Team';
 };
 
 const Mailer = {
@@ -63,9 +92,11 @@ const Mailer = {
     sendConfirmation: async (reservation, DB = null) => {
         const { name, email, date, start_time, guests, status } = reservation;
         if (!email) return;
-        const isInquiry = status === 'Inquiry';
         const transporter = createTransporter(DB);
+        if (!transporter) return; // kein SMTP konfiguriert
         const from = getSenderName(DB);
+        const restaurantName = getRestaurantName(DB);
+        const isInquiry = status === 'Inquiry';
 
         const subject = isInquiry
             ? `Warteliste / Anfrage bestätigt: ${date}`
@@ -73,7 +104,7 @@ const Mailer = {
 
         const html = `
             <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                <h2 style="color: #2b6cb0;">Kalispera ${name}!</h2>
+                <h2 style="color: #2b6cb0;">Hallo ${name}!</h2>
                 <p>${isInquiry
                     ? 'Vielen Dank für Ihre Anfrage. Leider sind wir zum gewählten Zeitpunkt bereits ausgebucht, aber wir haben Sie auf unsere <strong>Warteliste</strong> gesetzt.'
                     : 'Ihre Reservierung wurde erfolgreich empfangen.'}</p>
@@ -87,7 +118,7 @@ const Mailer = {
 
                 <p>Wir freuen uns auf Ihren Besuch!</p>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-                <p style="font-size: 12px; color: #718096;">Restaurant-CMS powered by OPA!</p>
+                <p style="font-size: 12px; color: #718096;">Herzliche Grüße, ${restaurantName}</p>
             </div>
         `;
 
@@ -101,7 +132,9 @@ const Mailer = {
         const { name, email, status, date, start_time } = reservation;
         if (!email) return;
         const transporter = createTransporter(DB);
+        if (!transporter) return;
         const from = getSenderName(DB);
+        const restaurantName = getRestaurantName(DB);
 
         let subject = '', statusText = '', color = '#2b6cb0';
 
@@ -126,7 +159,7 @@ const Mailer = {
                     <p><strong>Status:</strong> ${status}</p>
                 </div>
 
-                <p>Herzliche Grüße,<br>Ihr OPA! Team</p>
+                <p>Herzliche Grüße,<br>${restaurantName}</p>
             </div>
         `;
 
@@ -139,7 +172,9 @@ const Mailer = {
     sendUserCredentials: async (email, name, username, plainPassword, DB = null) => {
         if (!email) return;
         const transporter = createTransporter(DB);
+        if (!transporter) return;
         const from = getSenderName(DB);
+        const restaurantName = getRestaurantName(DB);
 
         const subject = 'Ihre Zugangsdaten für das CMS';
         const html = `
@@ -155,7 +190,7 @@ const Mailer = {
 
                 <p><em>Zu Ihrer Sicherheit werden Sie gebeten, dieses Passwort bei Ihrem ersten Login zu ändern.</em></p>
 
-                <p>Herzliche Grüße,<br>Ihr OPA! Team</p>
+                <p>Herzliche Grüße,<br>${restaurantName}</p>
             </div>
         `;
 
@@ -167,12 +202,13 @@ const Mailer = {
      */
     sendTestMail: async (toEmail, DB = null) => {
         const transporter = createTransporter(DB);
+        if (!transporter) throw new Error('Kein SMTP-Host konfiguriert.');
         const from = getSenderName(DB);
 
         await sendWithRetry(transporter, {
             from,
             to: toEmail,
-            subject: 'OPA! CMS – SMTP Test erfolgreich ✅',
+            subject: 'OPA! CMS - SMTP Test erfolgreich ✅',
             html: `
                 <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
                     <h2 style="color: #38a169;">✅ SMTP-Konfiguration funktioniert!</h2>
