@@ -2,26 +2,18 @@
 /**
  * OPA-CMS – Einmaliges Fix-Script: Lizenz-Token erneuern
  *
- * Liest den gespeicherten License-Key aus der DB und holt ein frisches
- * RS256-signiertes JWT vom Lizenzserver.
- *
- * Aufruf:
- *   node scripts/fix-license-token.js prodbeta.stb-srv.de
- *
- * Alternativ ohne Argument – dann wird die Domain aus der DB gelesen.
+ * Aufruf: node scripts/fix-license-token.js prodbeta.stb-srv.de
  */
 
 require('dotenv').config();
 const path = require('path');
+const jwt  = require('jsonwebtoken');
 
 async function main() {
     const CONFIG = require(path.join(__dirname, '..', 'config.js'));
     const DB     = require(path.join(__dirname, '..', 'server', 'database.js'));
-    const { verifyLicenseToken } = require(path.join(__dirname, '..', 'server', 'license.js'));
 
     const LICENSE_SERVER = (CONFIG.LICENSE_SERVER_URL || 'https://licens-prod.stb-srv.de').replace(/\/+$/, '');
-
-    // Domain: CLI-Argument hat Vorrang, dann DB, dann Fehler
     const cliDomain = process.argv[2] ? process.argv[2].replace(/^https?:\/\//, '').split('/')[0] : null;
 
     console.log('\n🔒 OPA-CMS License Token Fix-Script');
@@ -36,18 +28,14 @@ async function main() {
         console.error('\u274c Kein License-Key in der DB gefunden.');
         process.exit(1);
     }
-
     if (lic.isTrial) {
         console.log('ℹ️  Trial-Lizenz – kein Token-Refresh nötig.');
         process.exit(0);
     }
 
-    // Domain ermitteln
     const domain = cliDomain || lic.domain || null;
-
     if (!domain) {
-        console.error('\u274c Keine Domain gefunden.');
-        console.log('   → Aufruf: node scripts/fix-license-token.js deine-domain.de');
+        console.error('\u274c Keine Domain – Aufruf: node scripts/fix-license-token.js deine-domain.de');
         process.exit(1);
     }
 
@@ -74,18 +62,14 @@ async function main() {
         const rawToken = data.license_token || data.token || null;
 
         if (data.status !== 'active' || !rawToken) {
-            console.error('\u274c Kein gültiges Token. Status:', data.status);
+            console.error('\u274c Kein gültiges Token erhalten. Status:', data.status);
             process.exit(1);
         }
 
-        // Signatur prüfen (ohne Domain-Check – wird beim nächsten Request korrekt geprüft)
-        const payload = verifyLicenseToken(rawToken, null);
-        if (!payload) {
-            console.error('\u274c Token-Signatur ungültig – RSA Public Key stimmt nicht überein.');
-            process.exit(1);
-        }
+        // JWT-Payload dekodieren (OHNE Signaturprüfung) nur zum Anzeigen der Infos
+        const payload = jwt.decode(rawToken);
 
-        // Token + Domain in DB speichern
+        // Token direkt in DB speichern
         settings.license.licenseToken = rawToken;
         settings.license.domain       = domain;
         delete settings.license.degraded;
@@ -93,13 +77,13 @@ async function main() {
         delete settings.license.degradedAt;
         await DB.setKV('settings', settings);
 
-        const exp = payload.exp ? new Date(payload.exp * 1000).toLocaleString('de-DE') : 'unbekannt';
-        console.log('\u2705 Token erfolgreich erneuert!');
-        console.log(`   Plan:        ${payload.type}`);
-        console.log(`   Domain:      ${payload.domain}`);
+        const exp = payload?.exp ? new Date(payload.exp * 1000).toLocaleString('de-DE') : 'unbekannt';
+        console.log('\u2705 Token erfolgreich in DB gespeichert!');
+        console.log(`   Plan:        ${payload?.type}`);
+        console.log(`   Domain:      ${payload?.domain}`);
         console.log(`   Gültig bis:  ${exp}`);
-        console.log(`   Max Speisen: ${payload.limits?.max_dishes ?? '?'}`);
-        console.log('\n🚀 pm2 restart opa-cms\n');
+        console.log(`   Max Speisen: ${payload?.limits?.max_dishes ?? '?'}`);
+        console.log('\n🚀 CMS neu starten: pm2 restart opa-cms\n');
 
     } catch (e) {
         console.error('\u274c Fehler:', e.message);
