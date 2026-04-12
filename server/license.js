@@ -1,22 +1,9 @@
 /**
  * OPA-CMS – License Plan Definitions, Token Verification & Helpers
- *
- * Stufe 1: RS256-signierte JWT-Tokens – der Public Key ist hardcoded als Fallback.
- *          Priorität: ENV LICENSE_PUBLIC_KEY > hardcoded OPA_PUBLIC_KEY
- *          Nur der Lizenzserver (privater Schlüssel) kann gültige Tokens ausstellen.
- * Stufe 2: Domain-Binding – jeder Token enthält die Domain, für die er ausgestellt wurde.
- *
- * IMP-02: Für produktiven Key-Wechsel LICENSE_PUBLIC_KEY in .env setzen.
- *         Nächster Schritt: beim CMS-Start automatisch von /api/v1/public-key laden.
  */
 
 const jwt = require('jsonwebtoken');
 
-// =============================================================================
-// RSA-2048 Public Key – Fallback falls LICENSE_PUBLIC_KEY nicht in .env gesetzt.
-// IMP-02: Bevorzugt wird process.env.LICENSE_PUBLIC_KEY (dynamisch konfigurierbar).
-// Der zugehörige Private Key gehört NUR auf den Lizenzserver (.env RSA_PRIVATE_KEY).
-// =============================================================================
 const OPA_PUBLIC_KEY_FALLBACK = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutES8Xqif1PpLJU9ClMJ
 rGfeCoUVOOni5/WiwGFdTd5ygYyie22fBheBA2fRek6xXDfGtC/QdIg7zbqI/0eQ
@@ -27,95 +14,44 @@ N+xMcoOA3fRdAICdI6kI9LccR4hzr7Btf/8Wbk0erF48Xw5NjFj0CZcRIjegiq2m
 HQIDAQAB
 -----END PUBLIC KEY-----`;
 
-// IMP-02: Per .env überschreibbar – LICENSE_PUBLIC_KEY hat Vorrang
 const OPA_PUBLIC_KEY = (process.env.LICENSE_PUBLIC_KEY || '').trim() || OPA_PUBLIC_KEY_FALLBACK;
 
 if (process.env.LICENSE_PUBLIC_KEY) {
     console.log('\u2705  RSA Public Key aus LICENSE_PUBLIC_KEY Env-Variable geladen.');
 } else {
-    console.warn('\u26a0\ufe0f   RSA Public Key: Fallback-Key aktiv. Für Produktion LICENSE_PUBLIC_KEY in .env setzen.');
+    console.warn('\u26a0\ufe0f   RSA Public Key: Fallback-Key aktiv. F\u00fcr Produktion LICENSE_PUBLIC_KEY in .env setzen.');
 }
 
-// =============================================================================
-// Plan-Definitionen
-// FIX-04: Werte an License-Server angeglichen (licens-srv_OPA-Santorini/server.js)
-// FREE: menu_items 10 → 30, STARTER: 40 → 60, PRO: 100 → 150,
-//       PRO_PLUS: 200 → 300, ENTERPRISE: 500 → 999
-// =============================================================================
 const PLAN_DEFINITIONS = {
     FREE: {
-        label: 'Free',
-        menu_items: 30,
-        max_tables: 5,
-        modules: {
-            menu_edit: true,
-            orders_kitchen: false,
-            reservations: false,
-            custom_design: false,
-            analytics: false,
-            qr_pay: false
-        },
+        label: 'Free', menu_items: 30, max_tables: 5,
+        modules: { menu_edit: true, orders_kitchen: false, reservations: false, custom_design: false, analytics: false, qr_pay: false },
         note: 'Kostenlos zum Testen'
     },
     STARTER: {
-        label: 'Starter',
-        menu_items: 60,
-        max_tables: 10,
-        modules: {
-            menu_edit: true,
-            orders_kitchen: true,
-            reservations: true,
-            custom_design: false,
-            analytics: false,
-            qr_pay: false
-        },
-        note: 'Für kleine Cafés & Imbiße'
+        label: 'Starter', menu_items: 60, max_tables: 10,
+        modules: { menu_edit: true, orders_kitchen: true, reservations: true, custom_design: false, analytics: false, qr_pay: false },
+        note: 'F\u00fcr kleine Caf\u00e9s & Imbi\u00dfe'
     },
     PRO: {
-        label: 'Pro',
-        menu_items: 150,
-        max_tables: 25,
-        modules: {
-            menu_edit: true,
-            orders_kitchen: true,
-            reservations: true,
-            custom_design: true,
-            analytics: false,
-            qr_pay: false
-        },
-        note: 'Für Restaurants'
+        label: 'Pro', menu_items: 150, max_tables: 25,
+        modules: { menu_edit: true, orders_kitchen: true, reservations: true, custom_design: true, analytics: false, qr_pay: false },
+        note: 'F\u00fcr Restaurants'
     },
     PRO_PLUS: {
-        label: 'Pro+',
-        menu_items: 300,
-        max_tables: 50,
-        modules: {
-            menu_edit: true,
-            orders_kitchen: true,
-            reservations: true,
-            custom_design: true,
-            analytics: true,
-            qr_pay: false
-        },
-        note: 'Für große Restaurants'
+        label: 'Pro+', menu_items: 300, max_tables: 50,
+        modules: { menu_edit: true, orders_kitchen: true, reservations: true, custom_design: true, analytics: true, qr_pay: false },
+        note: 'F\u00fcr gro\u00dfe Restaurants'
     },
     ENTERPRISE: {
-        label: 'Enterprise',
-        menu_items: 999,
-        max_tables: 999,
-        modules: {
-            menu_edit: true,
-            orders_kitchen: true,
-            reservations: true,
-            custom_design: true,
-            analytics: true,
-            qr_pay: true
-        },
-        note: 'Für Ketten & Hotels'
+        label: 'Enterprise', menu_items: 999, max_tables: 999,
+        modules: { menu_edit: true, orders_kitchen: true, reservations: true, custom_design: true, analytics: true, qr_pay: true },
+        note: 'F\u00fcr Ketten & Hotels'
     }
 };
 
 const getPlan = (type) => PLAN_DEFINITIONS[type] || PLAN_DEFINITIONS['FREE'];
+
 const FREE_RESULT = (extra = {}) => ({
     key: null, status: 'free', customer: 'Testmodus',
     type: 'FREE', label: 'Free',
@@ -126,41 +62,35 @@ const FREE_RESULT = (extra = {}) => ({
     ...extra
 });
 
-/**
- * Stufe 1+2: Verifiziert ein signiertes Lizenz-Token (RS256).
- * Gibt das dekodierte Payload zurück oder null bei ungültigem Token.
- */
 const verifyLicenseToken = (token, host = null) => {
     if (!token || typeof token !== 'string') return null;
     try {
         const payload = jwt.verify(token, OPA_PUBLIC_KEY, { algorithms: ['RS256'] });
-
-        // Stufe 2: Domain-Binding
         if (payload.domain && host) {
             const normalizeHost = (h) => (h || '').replace(/:\d+$/, '').toLowerCase().trim();
             const tokenDomain  = normalizeHost(payload.domain);
             const currentHost  = normalizeHost(host);
             const isLocal = ['localhost', '127.0.0.1', '::1'].includes(currentHost);
             if (!isLocal && tokenDomain !== currentHost) {
-                console.warn(`⚠️  License domain mismatch: token='${tokenDomain}' current='${currentHost}'`);
+                console.warn(`\u26a0\ufe0f  License domain mismatch: token='${tokenDomain}' current='${currentHost}'`);
                 return null;
             }
         }
         return payload;
     } catch (e) {
         if (e.name !== 'JsonWebTokenError' && e.name !== 'TokenExpiredError') {
-            console.error('❌ License token verification error:', e.message);
+            console.error('\u274c License token verification error:', e.message);
         }
         return null;
     }
 };
 
 /**
- * Gibt die aktuelle, verifizierte Lizenz zurück.
- * Ohne gültiges signiertes Token → FREE-Limits.
+ * Gibt die aktuelle, verifizierte Lizenz zur\u00fcck.
+ * ASYNC: DB.getKV ist bei MySQL ein Promise.
  */
-const getCurrentLicense = (DB, host = null) => {
-    const settings = DB.getKV('settings', {});
+const getCurrentLicense = async (DB, host = null) => {
+    const settings = await DB.getKV('settings', {});
     const lic      = settings.license || {};
 
     // --- Trial-Lizenz ---
@@ -190,9 +120,7 @@ const getCurrentLicense = (DB, host = null) => {
     const payload = verifyLicenseToken(token, host);
 
     if (!payload) {
-        if (lic.key) {
-            console.warn('⚠️  License key present but token invalid or missing – falling back to FREE.');
-        }
+        if (lic.key) console.warn('\u26a0\ufe0f  License key present but token invalid or missing \u2013 falling back to FREE.');
         return FREE_RESULT();
     }
 
@@ -202,7 +130,7 @@ const getCurrentLicense = (DB, host = null) => {
     const isExpired = expiresAt ? expiresAt < now : false;
 
     if (isExpired) {
-        console.warn(`⚠️  License token expired at ${expiresAt?.toISOString()}`);
+        console.warn(`\u26a0\ufe0f  License token expired at ${expiresAt?.toISOString()}`);
         return FREE_RESULT({ isExpired: true, status: 'expired', key: payload.key });
     }
 
