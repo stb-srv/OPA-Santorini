@@ -2,22 +2,22 @@
 /**
  * OPA-CMS – Auto-Image Script
  * Sucht für alle Gerichte ohne Bild automatisch ein passendes Foto.
- * Quelle 1: Unsplash (hochwertig, lizenzfrei)
- * Quelle 2: Google Custom Search (Fallback wenn Unsplash nichts findet)
+ *
+ * Quellen (Reihenfolge im Auto-Modus):
+ *   1. Pexels    – kostenlos, 200 req/h, kein Tageslimit, kein CSE-Setup
+ *   2. Unsplash  – kostenlos, 50 req/h, hochwertig
  *
  * Aufruf:
  *   node scripts/auto-images.js              # alle Gerichte ohne Bild
  *   node scripts/auto-images.js --dry-run    # nur anzeigen, nichts speichern
  *   node scripts/auto-images.js --limit 20   # max. 20 Gerichte verarbeiten
  *   node scripts/auto-images.js --overwrite  # auch Gerichte MIT Bild neu bebildern
- *   node scripts/auto-images.js --source google    # nur Google verwenden
- *   node scripts/auto-images.js --source unsplash  # nur Unsplash verwenden
+ *   node scripts/auto-images.js --source pexels    # nur Pexels
+ *   node scripts/auto-images.js --source unsplash  # nur Unsplash
  *
  * .env Variablen:
- *   UNSPLASH_ACCESS_KEY  – https://unsplash.com/developers  (kostenlos, 50 req/h)
- *   GOOGLE_API_KEY       – https://console.cloud.google.com -> Custom Search API
- *   GOOGLE_CSE_ID        – https://programmablesearchengine.google.com (Search Engine ID)
- *                          Tipp: Im CSE "Suche im gesamten Web" aktivieren + "Bilder" einschalten
+ *   PEXELS_API_KEY       – https://www.pexels.com/api/ -> kostenlos registrieren -> API Key
+ *   UNSPLASH_ACCESS_KEY  – https://unsplash.com/developers (optional, 50 req/h)
  */
 
 require('dotenv').config();
@@ -26,11 +26,10 @@ const fs    = require('fs');
 const https = require('https');
 const http  = require('http');
 
-const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY || '';
-const GOOGLE_KEY   = process.env.GOOGLE_API_KEY       || '';
-const GOOGLE_CSE   = process.env.GOOGLE_CSE_ID        || '';
+const PEXELS_KEY   = process.env.PEXELS_API_KEY       || '';
+const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY   || '';
 const UPLOADS_DIR  = path.join(__dirname, '..', 'uploads');
-const DELAY_MS     = 1400;
+const DELAY_MS     = 800; // Pexels erlaubt 200/h – können schneller sein
 
 const args      = process.argv.slice(2);
 const DRY_RUN   = args.includes('--dry-run');
@@ -38,19 +37,18 @@ const OVERWRITE = args.includes('--overwrite');
 const limitIdx  = args.indexOf('--limit');
 const LIMIT     = limitIdx !== -1 ? parseInt(args[limitIdx + 1]) || 999 : 999;
 const sourceIdx = args.indexOf('--source');
-const SOURCE    = sourceIdx !== -1 ? args[sourceIdx + 1] : 'auto'; // auto | unsplash | google
+const SOURCE    = sourceIdx !== -1 ? args[sourceIdx + 1] : 'auto'; // auto | pexels | unsplash
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-function httpGet(url) {
+function httpGet(url, headers = {}) {
     return new Promise((resolve, reject) => {
         const proto = url.startsWith('https') ? https : http;
-        proto.get(url, { headers: { 'User-Agent': 'OPA-CMS-AutoImage/1.0' } }, (res) => {
-            // Redirects folgen
+        proto.get(url, { headers: { 'User-Agent': 'OPA-CMS-AutoImage/1.0', ...headers } }, (res) => {
             if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-                return httpGet(res.headers.location).then(resolve).catch(reject);
+                return httpGet(res.headers.location, headers).then(resolve).catch(reject);
             }
             let body = '';
             res.on('data', d => body += d);
@@ -59,15 +57,14 @@ function httpGet(url) {
     });
 }
 
-function download(url, dest) {
+function download(url, dest, headers = {}) {
     return new Promise((resolve, reject) => {
         const proto = url.startsWith('https') ? https : http;
         const file  = fs.createWriteStream(dest);
-        const req   = proto.get(url, { headers: { 'User-Agent': 'OPA-CMS-AutoImage/1.0' } }, (res) => {
+        proto.get(url, { headers: { 'User-Agent': 'OPA-CMS-AutoImage/1.0', ...headers } }, (res) => {
             if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
-                file.close();
-                fs.unlinkSync(dest);
-                return download(res.headers.location, dest).then(resolve).catch(reject);
+                file.close(); fs.unlinkSync(dest);
+                return download(res.headers.location, dest, headers).then(resolve).catch(reject);
             }
             if (res.statusCode !== 200) {
                 file.close();
@@ -76,12 +73,31 @@ function download(url, dest) {
             }
             res.pipe(file);
             file.on('finish', () => file.close(resolve));
-        });
-        req.on('error', (e) => { if (fs.existsSync(dest)) fs.unlinkSync(dest); reject(e); });
+        }).on('error', (e) => { if (fs.existsSync(dest)) fs.unlinkSync(dest); reject(e); });
     });
 }
 
-// ── Unsplash ──────────────────────────────────────────────────────────────────
+// ── Pexels ────────────────────────────────────────────────────────────────────
+
+async function fetchPexels(query) {
+    if (!PEXELS_KEY) return null;
+    const q   = encodeURIComponent(query);
+    const url = `https://api.pexels.com/v1/search?query=${q}&per_page=1&orientation=landscape`;
+    const res = await httpGet(url, { Authorization: PEXELS_KEY });
+    if (res.status === 429) throw new Error('Pexels Rate-Limit erreicht (200 req/h) – kurz warten.');
+    if (res.status !== 200) throw new Error(`Pexels HTTP ${res.status}`);
+    const data = JSON.parse(res.body);
+    const photo = data.photos?.[0];
+    if (!photo) return null;
+    return {
+        url:    photo.src.large,   // ~1200px Breite
+        thumb:  photo.src.small,
+        author: photo.photographer,
+        source: 'pexels'
+    };
+}
+
+// ── Unsplash ─────────────────────────────────────────────────────────────────
 
 async function fetchUnsplash(query) {
     if (!UNSPLASH_KEY) return null;
@@ -96,35 +112,16 @@ async function fetchUnsplash(query) {
     return { url: r.urls.regular, thumb: r.urls.thumb, author: r.user.name, source: 'unsplash' };
 }
 
-// ── Google Custom Search ───────────────────────────────────────────────────────
-
-async function fetchGoogle(query) {
-    if (!GOOGLE_KEY || !GOOGLE_CSE) return null;
-    const q   = encodeURIComponent(query + ' food dish');
-    const url = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_KEY}&cx=${GOOGLE_CSE}&q=${q}&searchType=image&imgType=photo&imgSize=large&num=1&safe=active`;
-    const res = await httpGet(url);
-    if (res.status === 429) throw new Error('Google Quota erreicht (100 req/Tag kostenlos)');
-    if (res.status !== 200) throw new Error(`Google HTTP ${res.status}: ${res.body.substring(0, 120)}`);
-    const data = JSON.parse(res.body);
-    const item = data.items?.[0];
-    if (!item) return null;
-    return { url: item.link, thumb: item.image?.thumbnailLink || item.link, author: item.displayLink, source: 'google' };
-}
-
-// ── Kombinierte Suche ─────────────────────────────────────────────────────────
+// ── Kombinierte Suche ────────────────────────────────────────────────────────
 
 async function findImage(query) {
-    if (SOURCE === 'google') {
-        return await fetchGoogle(query);
-    }
-    if (SOURCE === 'unsplash') {
-        return await fetchUnsplash(query);
-    }
-    // auto: Unsplash zuerst, dann Google als Fallback
-    const unsplashResult = await fetchUnsplash(query).catch(() => null);
-    if (unsplashResult) return unsplashResult;
-    const googleResult = await fetchGoogle(query).catch(() => null);
-    return googleResult;
+    if (SOURCE === 'pexels')   return await fetchPexels(query);
+    if (SOURCE === 'unsplash') return await fetchUnsplash(query);
+
+    // auto: Pexels zuerst (200/h), Unsplash als Fallback (50/h)
+    const pexels = await fetchPexels(query).catch(() => null);
+    if (pexels) return pexels;
+    return await fetchUnsplash(query).catch(() => null);
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -133,22 +130,21 @@ async function main() {
     console.log('\n\ud83c\udf04 OPA-CMS Auto-Image Script');
     console.log('='.repeat(50));
 
-    // Key-Check
+    const hasPexels   = !!PEXELS_KEY;
     const hasUnsplash = !!UNSPLASH_KEY;
-    const hasGoogle   = !!(GOOGLE_KEY && GOOGLE_CSE);
 
-    if (!hasUnsplash && !hasGoogle) {
+    if (!hasPexels && !hasUnsplash) {
         console.error('\u274c Kein API-Key konfiguriert!');
-        console.error('   UNSPLASH_ACCESS_KEY -> https://unsplash.com/developers');
-        console.error('   GOOGLE_API_KEY + GOOGLE_CSE_ID -> https://console.cloud.google.com');
+        console.error('   PEXELS_API_KEY   -> https://www.pexels.com/api/  (empfohlen, 200 req/h)');
+        console.error('   UNSPLASH_ACCESS_KEY -> https://unsplash.com/developers (50 req/h)');
         process.exit(1);
     }
 
-    console.log(`\ud83d\udd11 Unsplash: ${hasUnsplash ? '\u2705 aktiv (50 req/h)' : '\u274c kein Key'}`);
-    console.log(`\ud83d\udd11 Google:   ${hasGoogle   ? '\u2705 aktiv (100 req/Tag kostenlos)' : '\u274c kein Key/CSE-ID'}`);
-    console.log(`\ud83c\udfaf Modus:    ${SOURCE === 'auto' ? 'Auto (Unsplash \u2192 Google Fallback)' : SOURCE}`);
-    if (DRY_RUN)   console.log('\u26a0\ufe0f  DRY-RUN aktiv \u2013 keine \u00c4nderungen werden gespeichert.');
-    if (OVERWRITE) console.log('\u26a0\ufe0f  OVERWRITE aktiv \u2013 bestehende Bilder werden ersetzt.');
+    console.log(`\ud83d\udd11 Pexels:   ${hasPexels   ? '\u2705 aktiv (200 req/h, kein Tageslimit)' : '\u274c kein Key – PEXELS_API_KEY in .env setzen'}`);
+    console.log(`\ud83d\udd11 Unsplash: ${hasUnsplash ? '\u2705 aktiv (50 req/h)' : '\u274c kein Key (optional)'}`);
+    console.log(`\ud83c\udfaf Modus:    ${SOURCE === 'auto' ? 'Auto (Pexels \u2192 Unsplash Fallback)' : SOURCE}`);
+    if (DRY_RUN)   console.log('\u26a0\ufe0f  DRY-RUN aktiv – keine \u00c4nderungen werden gespeichert.');
+    if (OVERWRITE) console.log('\u26a0\ufe0f  OVERWRITE aktiv – bestehende Bilder werden ersetzt.');
     console.log('');
 
     if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -174,16 +170,16 @@ async function main() {
             const result = await findImage(query);
 
             if (!result) {
-                console.log('\u26a0\ufe0f  Kein Bild gefunden \u2013 \u00fcbersprungen.');
+                console.log('\u26a0\ufe0f  Kein Bild gefunden – \u00fcbersprungen.');
                 skip++;
                 await sleep(DELAY_MS);
                 continue;
             }
 
-            const srcLabel = result.source === 'google' ? '\ud83d\udd0d Google' : '\ud83c\udf04 Unsplash';
+            const srcLabel = result.source === 'pexels' ? '\ud83d\udcf8 Pexels' : '\ud83c\udf04 Unsplash';
 
             if (DRY_RUN) {
-                console.log(`\u2705 [DRY] ${srcLabel} | ${result.thumb}`);
+                console.log(`\u2705 [DRY] ${srcLabel} | ${result.author}`);
                 ok++;
                 await sleep(DELAY_MS);
                 continue;
@@ -194,18 +190,16 @@ async function main() {
 
             await download(result.url, destPath);
 
-            // Pr\u00fcfen ob Datei sinnvoll gro\u00df ist (mind. 5 KB)
             const stat = fs.statSync(destPath);
             if (stat.size < 5000) {
                 fs.unlinkSync(destPath);
-                console.log('\u26a0\ufe0f  Bild zu klein / ung\u00fcltig \u2013 \u00fcbersprungen.');
+                console.log('\u26a0\ufe0f  Bild zu klein / ung\u00fcltig – \u00fcbersprungen.');
                 skip++;
                 await sleep(DELAY_MS);
                 continue;
             }
 
             await DB.updateMenu(dish.id, { ...dish, image: `/uploads/${filename}` });
-
             console.log(`\u2705 ${srcLabel} | ${result.author} -> /uploads/${filename}`);
             ok++;
 
