@@ -1,7 +1,7 @@
 /**
  * Express Middleware – auth, license, rate limiters
  */
-const jwt = require('jsonwebtoken');
+const jwt      = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { getCurrentLicense, verifyLicenseToken } = require('./license.js');
 const DB = require('./database.js');
@@ -30,42 +30,43 @@ function extractDomain(req) {
 }
 
 /**
- * requireLicense – prüft RS256-signiertes JWT oder Trial-Plan.
- * Nutzt extractDomain() statt req.hostname um Domain-Mismatch hinter Nginx zu vermeiden.
- * ASYNC: DB.getKV ist bei MySQL ein Promise.
+ * requireLicense – prüft ob ein Modul in der aktuellen Lizenz aktiv ist.
+ *
+ * Nutzt getCurrentLicense() (identische Logik wie menu.js / settings.js)
+ * statt direkt das raw JWT zu verifizieren.
+ * Das verhindert falsche 403-Fehler hinter Nginx / Reverse-Proxy wenn
+ * req.hostname von X-Forwarded-Host abweicht.
+ *
+ * Reihenfolge:
+ *  1. getCurrentLicense() → liefert aufgelöste Lizenz (Trial oder Vollizenz)
+ *  2. modules aus payload.allowed_modules ODER aus Plan-Definition
+ *  3. Wenn Modul nicht enthalten → 403
  */
 const requireLicense = (module) => async (req, res, next) => {
     try {
-        const settings = await DB.getKV('settings', {});
-        const lic = settings.license || {};
+        const domain = extractDomain(req);
+        const lic    = await getCurrentLicense(DB, domain);
 
-        // Trial-Lizenzen: Modul-Check direkt am Plan
-        if (lic.isTrial) {
-            if (!lic.modules || !lic.modules[module]) {
-                return res.status(403).json({ success: false, reason: `Feature '${module}' gesperrt.` });
-            }
-            return next();
-        }
-
-        // Vollizenz: JWT MUSS gültig und signiert sein
-        const token   = lic.licenseToken || null;
-        const host    = extractDomain(req); // FIX: X-Forwarded-Host statt req.hostname
-        const payload = verifyLicenseToken(token, host);
-
-        if (!payload) {
+        // Abgelaufene oder ungültige Lizenz → FREE hat keine Premium-Module
+        if (lic.isExpired) {
             return res.status(403).json({
                 success: false,
-                reason: `Feature '${module}' gesperrt – kein gültiges Lizenz-Token.`
+                reason: `Feature '${module}' gesperrt – Lizenz abgelaufen.`
             });
         }
 
-        const allowedModules = payload.allowed_modules || {};
-        if (!allowedModules[module]) {
-            return res.status(403).json({ success: false, reason: `Feature '${module}' ist in Ihrem Plan nicht enthalten.` });
+        const modules = lic.modules || {};
+        if (!modules[module]) {
+            return res.status(403).json({
+                success: false,
+                reason: `Feature '${module}' ist in Ihrem ${lic.label || lic.type}-Plan nicht enthalten.`
+            });
         }
 
+        // Lizenz-Infos für nachfolgende Handler verfügbar machen
+        req.license = lic;
         next();
-    } catch(e) {
+    } catch (e) {
         console.error('requireLicense error:', e.message);
         res.status(500).json({ success: false, reason: 'Lizenzprüfung fehlgeschlagen.' });
     }
@@ -73,12 +74,12 @@ const requireLicense = (module) => async (req, res, next) => {
 
 /**
  * requireMenuLimit – prüft Speisenlimit des aktuellen Plans.
- * ASYNC: getCurrentLicense ist jetzt async.
+ * Nutzt getCurrentLicense (async).
  */
 const requireMenuLimit = async (req, res, next) => {
     try {
         const host = extractDomain(req);
-        const lic = await getCurrentLicense(DB, host);
+        const lic  = await getCurrentLicense(DB, host);
         const maxDishes = lic.limits?.max_dishes ?? 10;
         const incomingItems = Array.isArray(req.body) ? req.body : [];
         if (incomingItems.length > maxDishes) {
@@ -89,7 +90,7 @@ const requireMenuLimit = async (req, res, next) => {
             });
         }
         next();
-    } catch(e) {
+    } catch (e) {
         console.error('requireMenuLimit error:', e.message);
         next(); // im Zweifel durchlassen
     }
