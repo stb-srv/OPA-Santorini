@@ -132,11 +132,9 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 <button class="btn-primary" id="toggle-dish-form" style="background:var(--accent);"><i class="fas fa-plus"></i> Neues Gericht</button>
                 <div style="display:flex;gap:4px;align-items:center;padding:0 5px;border-left:1px solid rgba(0,0,0,0.1);margin-left:5px;">
                     <button class="btn-primary" style="background:#4b5563; opacity:.8; padding:10px 15px;" id="btn-export-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
-                    ${renderHelpIcon('pdf_export')}
                     <button class="btn-primary" style="background:#4b5563; opacity:.8; padding:10px 15px;" id="btn-export-menu"><i class="fas fa-download"></i> Backup</button>
-                    ${renderHelpIcon('menu_backup')}
                     <button class="btn-primary" style="background:#4b5563; opacity:.8; padding:10px 15px;" id="btn-import-menu"><i class="fas fa-upload"></i> Restore</button>
-                    ${renderHelpIcon('menu_restore')}
+                    ${renderHelpIcon('menu_tools')}
                 </div>
             </div>
         </div>
@@ -376,7 +374,6 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
              URL.revokeObjectURL(url);
         };
 
-        // Import nutzt /api/menu/import – kein requireLicense, nur requireAuth + Limit-Check
         container.querySelector('#btn-import-menu').onclick = () => {
              const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
              inp.onchange = async (e) => {
