@@ -214,6 +214,16 @@ textarea.input-styled { resize:vertical; min-height:80px; }
     border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 
+/* Archiv-Eintrag: eingerückt & dezent als Sub-Sub-Eintrag */
+.nav-subitem--archive {
+    padding-left: 68px;
+    font-size: .75rem;
+    opacity: .75;
+}
+.nav-subitem--archive:hover {
+    opacity: 1;
+}
+
 .nav-item.active { background:var(--active-orange) !important; color:#ffffff !important; box-shadow:0 6px 20px rgba(255, 102, 0, 0.35); }
 
 .sidebar-footer { padding:16px 28px 0; border-top:1px solid rgba(0,0,0,.06); }
