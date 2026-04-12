@@ -15,7 +15,7 @@
 - [Lizenz aktivieren](#-lizenz-aktivieren)
 - [System aktualisieren](#-system-aktualisieren)
 - [Admin-Passwort vergessen?](#-admin-passwort-vergessen)
-- [Lokale Entwicklung (Windows / Mac)](#-lokale-entwicklung-windows--mac)
+- [Lokale Entwicklung (Mac / Linux)](#-lokale-entwicklung-mac--linux)
 - [CMS-Navigation](#cms-navigation)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
@@ -41,7 +41,7 @@
 | Ubuntu / Debian | `sudo apt install -y build-essential python3` |
 | Fedora / RHEL / Rocky | `sudo dnf install -y gcc make python3` |
 | macOS | `xcode-select --install` |
-| Windows | Python ([python.org](https://python.org/downloads)) + [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) oder in einer Admin-PowerShell: `npm install -g windows-build-tools` |
+
 
 > ℹ️ Das Start-Skript (`start-mac-linux.sh`) prüft diese Voraussetzungen automatisch und gibt eine klare Fehlermeldung, falls etwas fehlt.
 
@@ -223,19 +223,16 @@ Das Skript gibt die neuen Zugangsdaten direkt in der Konsole aus und erzwingt be
 
 ---
 
-## 💻 Lokale Entwicklung (Windows / Mac)
+## 💻 Lokale Entwicklung (Mac / Linux)
 
 Für Tests und Entwicklung auf dem eigenen Rechner:
 
-**Windows:** Doppelklick auf `start-windows.bat`
-
-**Mac / Linux:**
 ```bash
 chmod +x start-mac-linux.sh
 ./start-mac-linux.sh
 ```
 
-Beide Skripte:
+Das Skript:
 - Prüfen automatisch ob Node.js und native Build-Tools vorhanden sind
 - Erstellen automatisch eine `.env` aus `.env.example` (ADMIN_SECRET wird auto-generiert)
 - Installieren fehlende npm-Pakete via `npm install`
@@ -346,7 +343,6 @@ Beide Skripte:
 ├── deploy.sh              # Alternatives Deploy-Skript (systemd)
 ├── update-mac-linux.sh    # Update-Skript (Linux/Mac, PM2)
 ├── start-mac-linux.sh     # Lokaler Start (Mac/Linux, Entwicklung)
-├── start-windows.bat      # Lokaler Start (Windows, Entwicklung)
 ├── server/
 │   ├── database.js        # SQLite-Datenbankschicht (better-sqlite3)
 │   ├── config.json        # Setup-Konfiguration (auto-generiert, NICHT committen!)
