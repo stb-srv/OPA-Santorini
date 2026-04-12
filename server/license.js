@@ -1,18 +1,23 @@
 /**
  * OPA-CMS – License Plan Definitions, Token Verification & Helpers
  *
- * Stufe 1: RS256-signierte JWT-Tokens – der Public Key ist hardcoded.
+ * Stufe 1: RS256-signierte JWT-Tokens – der Public Key ist hardcoded als Fallback.
+ *          Priorität: ENV LICENSE_PUBLIC_KEY > hardcoded OPA_PUBLIC_KEY
  *          Nur der Lizenzserver (privater Schlüssel) kann gültige Tokens ausstellen.
  * Stufe 2: Domain-Binding – jeder Token enthält die Domain, für die er ausgestellt wurde.
+ *
+ * IMP-02: Für produktiven Key-Wechsel LICENSE_PUBLIC_KEY in .env setzen.
+ *         Nächster Schritt: beim CMS-Start automatisch von /api/v1/public-key laden.
  */
 
 const jwt = require('jsonwebtoken');
 
 // =============================================================================
-// RSA-2048 Public Key – muss mit RSA_PUBLIC_KEY in licens-srv_OPA-Santorini/server.jsübereinstimmen!
+// RSA-2048 Public Key – Fallback falls LICENSE_PUBLIC_KEY nicht in .env gesetzt.
+// IMP-02: Bevorzugt wird process.env.LICENSE_PUBLIC_KEY (dynamisch konfigurierbar).
 // Der zugehörige Private Key gehört NUR auf den Lizenzserver (.env RSA_PRIVATE_KEY).
 // =============================================================================
-const OPA_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+const OPA_PUBLIC_KEY_FALLBACK = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAutES8Xqif1PpLJU9ClMJ
 rGfeCoUVOOni5/WiwGFdTd5ygYyie22fBheBA2fRek6xXDfGtC/QdIg7zbqI/0eQ
 V7DCcytIGJSfPRNW4t6cb7oRUVTbo74jia5GUDyJNLJPQDsPVWDvi6rpB+/hv+Uh
@@ -22,13 +27,25 @@ N+xMcoOA3fRdAICdI6kI9LccR4hzr7Btf/8Wbk0erF48Xw5NjFj0CZcRIjegiq2m
 HQIDAQAB
 -----END PUBLIC KEY-----`;
 
+// IMP-02: Per .env überschreibbar – LICENSE_PUBLIC_KEY hat Vorrang
+const OPA_PUBLIC_KEY = (process.env.LICENSE_PUBLIC_KEY || '').trim() || OPA_PUBLIC_KEY_FALLBACK;
+
+if (process.env.LICENSE_PUBLIC_KEY) {
+    console.log('\u2705  RSA Public Key aus LICENSE_PUBLIC_KEY Env-Variable geladen.');
+} else {
+    console.warn('\u26a0\ufe0f   RSA Public Key: Fallback-Key aktiv. Für Produktion LICENSE_PUBLIC_KEY in .env setzen.');
+}
+
 // =============================================================================
-// Plan-Definitionen (bleiben als Fallback-Referenz erhalten)
+// Plan-Definitionen
+// FIX-04: Werte an License-Server angeglichen (licens-srv_OPA-Santorini/server.js)
+// FREE: menu_items 10 → 30, STARTER: 40 → 60, PRO: 100 → 150,
+//       PRO_PLUS: 200 → 300, ENTERPRISE: 500 → 999
 // =============================================================================
 const PLAN_DEFINITIONS = {
     FREE: {
         label: 'Free',
-        menu_items: 10,
+        menu_items: 30,
         max_tables: 5,
         modules: {
             menu_edit: true,
@@ -42,7 +59,7 @@ const PLAN_DEFINITIONS = {
     },
     STARTER: {
         label: 'Starter',
-        menu_items: 40,
+        menu_items: 60,
         max_tables: 10,
         modules: {
             menu_edit: true,
@@ -52,11 +69,11 @@ const PLAN_DEFINITIONS = {
             analytics: false,
             qr_pay: false
         },
-        note: 'Für kleine Cafés & Imbisse'
+        note: 'Für kleine Cafés & Imbiße'
     },
     PRO: {
         label: 'Pro',
-        menu_items: 100,
+        menu_items: 150,
         max_tables: 25,
         modules: {
             menu_edit: true,
@@ -70,7 +87,7 @@ const PLAN_DEFINITIONS = {
     },
     PRO_PLUS: {
         label: 'Pro+',
-        menu_items: 200,
+        menu_items: 300,
         max_tables: 50,
         modules: {
             menu_edit: true,
@@ -84,7 +101,7 @@ const PLAN_DEFINITIONS = {
     },
     ENTERPRISE: {
         label: 'Enterprise',
-        menu_items: 500,
+        menu_items: 999,
         max_tables: 999,
         modules: {
             menu_edit: true,
