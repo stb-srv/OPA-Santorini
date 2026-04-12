@@ -50,7 +50,14 @@ const PLAN_DEFINITIONS = {
     }
 };
 
-const getPlan = (type) => PLAN_DEFINITIONS[type] || PLAN_DEFINITIONS['FREE'];
+const getPlan = (type) => {
+    if (!type) return PLAN_DEFINITIONS['FREE'];
+    // Normalisierung: Großbuchstaben, '+' zu '_PLUS', Leerzeichen zu '_'
+    const normalizedType = type.toUpperCase()
+        .replace(/\+/g, '_PLUS')
+        .replace(/\s+/g, '_');
+    return PLAN_DEFINITIONS[normalizedType] || PLAN_DEFINITIONS['FREE'];
+};
 
 const FREE_RESULT = (extra = {}) => ({
     key: null, status: 'free', customer: 'Testmodus',

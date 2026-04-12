@@ -4,7 +4,7 @@
 const router = require('express').Router();
 const DB = require('../database.js');
 const Mailer = require('../mailer.js');
-const { getCurrentLicense, PLAN_DEFINITIONS } = require('../license.js');
+const { getCurrentLicense, PLAN_DEFINITIONS, getPlan } = require('../license.js');
 
 /**
  * Extrahiert die saubere Domain aus dem Request.
@@ -114,18 +114,19 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                     });
                 }
                 const settings = await DB.getKV('settings', {});
+                const plan = getPlan(r.type);
                 settings.license = {
                     key:          req.body.key,
                     licenseToken: licenseToken,
                     status:       'active',
                     customer:     r.customer_name,
-                    type:         r.type,
-                    label:        r.plan_label,
+                    type:         r.type || 'FREE',
+                    label:        r.plan_label || plan.label,
                     expiresAt:    r.expires_at,
-                    modules:      r.allowed_modules,
+                    modules:      r.allowed_modules || plan.modules,
                     limits: {
-                        max_dishes: r.limits?.max_dishes ?? r.limits?.maxDishes ?? 10,
-                        max_tables: r.limits?.max_tables ?? r.limits?.maxTables ?? 5
+                        max_dishes: r.limits?.max_dishes ?? r.limits?.maxDishes ?? plan.menu_items,
+                        max_tables: r.limits?.max_tables ?? r.limits?.maxTables ?? plan.max_tables
                     }
                 };
                 await DB.setKV('settings', settings);
