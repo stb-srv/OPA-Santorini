@@ -1,5 +1,8 @@
 /**
  * Routes – Menu, Categories, Allergens, Additives, Import
+ *
+ * SECURITY / BUGFIXES:
+ *  - BUG-02: await bei DB.getKV in getMaxDishes ergänzt (MySQL-Kompatibilität)
  */
 const router = require('express').Router();
 const DB = require('../database.js');
@@ -17,8 +20,13 @@ function extractDomain(req) {
 }
 
 const jwt = require('jsonwebtoken');
+
+/**
+ * BUG-02 FIX: await ergänzt – DB.getKV ist im MySQL-Adapter async.
+ * Ohne await wurde im MySQL-Betrieb immer ein leeres {} verwendet.
+ */
 async function getMaxDishes(DB, domain) {
-    const settings = DB.getKV('settings', {});
+    const settings = await DB.getKV('settings', {});  // FIX: await hinzugefügt
     const lic      = (settings && settings.license) ? settings.license : {};
 
     let verified = null;
@@ -124,7 +132,6 @@ module.exports = (requireAuth, requireLicense) => {
             const safeCats = Array.isArray(dbCats) ? dbCats : [];
 
             // Zusätzlich: alle cat-Werte aus der menu-Tabelle einschließen
-            // (für Gerichte die vor der Kategorienverwaltung angelegt wurden)
             const menuItems = await DB.getMenu();
             const menuCatLabels = Array.isArray(menuItems)
                 ? [...new Set(menuItems.map(m => (m.cat || '').trim()).filter(Boolean))]
