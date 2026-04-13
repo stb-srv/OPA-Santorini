@@ -8,6 +8,8 @@
  *                            - deliveryEnabled     (Lieferung aktiv)
  *                            - pickupEnabled       (Abholung aktiv)
  *                            - dineInEnabled       (Am Tisch aktiv)
+ *                            - isOpenNow           (Restaurant gerade geöffnet?)
+ *                            - closedReason        (Text falls geschlossen)
  *
  * POST /api/cart/order    → öffentlich für Gäste, aber Lizenzgate online_orders
  *                           Schreibt Bestellung in die DB, feuert Socket.IO Event
@@ -20,11 +22,51 @@
 const express = require('express');
 const DB      = require('../database.js');
 const { getCurrentLicense } = require('../license.js');
+const { sanitizeText } = require('../helpers.js');
 
 // Maximale Anzahl Artikel pro Bestellung (DoS-Schutz)
 const MAX_ITEMS_PER_ORDER = 50;
 // Maximale Bestellmenge pro Artikel
 const MAX_QTY_PER_ITEM = 99;
+
+/**
+ * Prüft ob das Restaurant zum aktuellen Zeitpunkt geöffnet ist.
+ * Gibt { open: true } oder { open: false, reason: '...' } zurück.
+ */
+function checkOpeningHours() {
+    const homepage = DB.getKV('homepage', {});
+    const oh = homepage.openingHours || {};
+    const now = new Date();
+    const dayKey = ['So','Mo','Di','Mi','Do','Fr','Sa'][now.getDay()];
+    const dayConfig = oh[dayKey];
+
+    if (!dayConfig) return { open: true }; // Keine Konfiguration → nicht blockieren
+
+    if (dayConfig.closed) {
+        return { open: false, reason: `Wir haben heute (${dayKey}) leider Ruhetag und nehmen keine Bestellungen an.` };
+    }
+
+    // Uhrzeiten parsen (Format "HH:MM")
+    const parseHM = (str) => {
+        if (!str) return null;
+        const [h, m] = str.split(':').map(Number);
+        return h * 60 + (m || 0);
+    };
+    const openMin  = parseHM(dayConfig.open);
+    const closeMin = parseHM(dayConfig.close);
+    const nowMin   = now.getHours() * 60 + now.getMinutes();
+
+    if (openMin !== null && closeMin !== null) {
+        if (nowMin < openMin || nowMin > closeMin) {
+            return {
+                open: false,
+                reason: `Bestellungen sind nur während der Öffnungszeiten möglich (${dayConfig.open} – ${dayConfig.close} Uhr).`
+            };
+        }
+    }
+
+    return { open: true };
+}
 
 module.exports = function cartRoutes(requireLicense, io) {
     const router = express.Router();
@@ -39,19 +81,21 @@ module.exports = function cartRoutes(requireLicense, io) {
             const settings = await DB.getKV('settings', {});
 
             const onlineOrdersEnabled = !!(license.modules && license.modules.online_orders);
-
-            // orderConfig aus Settings lesen – Defaults: alles deaktiviert
             const orderConfig = settings.orderConfig || {};
+
+            // Öffnungszeiten-Check für das Frontend (Vorschau-Deaktivierung)
+            const openStatus = checkOpeningHours();
 
             res.json({
                 success: true,
-                // Warenkorb (Planungsansicht) ist IMMER aktiv – kein Flag nötig
                 onlineOrdersEnabled,
-                // Globaler Schalter – nur relevant wenn Lizenz online_orders hat
                 ordersEnabled:   onlineOrdersEnabled && (orderConfig.ordersEnabled  === true),
                 deliveryEnabled: onlineOrdersEnabled && (orderConfig.ordersEnabled === true) && (orderConfig.deliveryEnabled === true),
                 pickupEnabled:   onlineOrdersEnabled && (orderConfig.ordersEnabled === true) && (orderConfig.pickupEnabled   === true),
-                dineInEnabled:   onlineOrdersEnabled && (orderConfig.ordersEnabled === true) && (orderConfig.dineInEnabled   === true)
+                dineInEnabled:   onlineOrdersEnabled && (orderConfig.ordersEnabled === true) && (orderConfig.dineInEnabled   === true),
+                // Öffnungszeiten-Status für Frontend-Anzeige
+                isOpenNow:    openStatus.open,
+                closedReason: openStatus.open ? null : openStatus.reason
             });
         } catch (e) {
             console.error('❌ cart/config error:', e.message);
@@ -67,11 +111,18 @@ module.exports = function cartRoutes(requireLicense, io) {
             const {
                 type,        // 'dine_in' | 'pickup' | 'delivery'
                 items,       // [{ id, quantity, extras? }]
+                phone,       // Telefonnummer (Pflicht bei allen Typen für Rückfragen)
                 tableNumber, // bei dine_in
                 pickupTime,  // bei pickup
                 delivery,    // bei delivery: { name, address, phone, note? }
                 guestNote    // optionaler Gesamtkommentar
             } = req.body;
+
+            // --- Öffnungszeiten-Prüfung (identisch zur Reservierungs-Logik) ---
+            const openStatus = checkOpeningHours();
+            if (!openStatus.open) {
+                return res.status(403).json({ success: false, reason: openStatus.reason });
+            }
 
             // --- Typ-Validierung ---
             if (!type || !['dine_in', 'pickup', 'delivery'].includes(type)) {
@@ -84,6 +135,15 @@ module.exports = function cartRoutes(requireLicense, io) {
             // BUG-03: Item-Limit prüfen (DoS-Schutz)
             if (items.length > MAX_ITEMS_PER_ORDER) {
                 return res.status(400).json({ success: false, reason: `Maximale Artikelanzahl (${MAX_ITEMS_PER_ORDER}) überschritten.` });
+            }
+
+            // --- Telefonnummer (Pflichtfeld für Rückfragen bei allen Bestelltypen) ---
+            const cleanPhone = sanitizeText(phone);
+            if (type !== 'delivery') {
+                // Bei delivery ist phone im delivery-Objekt – dort separat validieren
+                if (!cleanPhone) {
+                    return res.status(400).json({ success: false, reason: 'Bitte geben Sie eine Telefonnummer für Rückfragen an.' });
+                }
             }
 
             // Prüfen ob der gewählte Modus vom Admin aktiviert wurde
@@ -120,7 +180,7 @@ module.exports = function cartRoutes(requireLicense, io) {
                 validatedItems.push({
                     id:       dbItem.id,
                     name:     dbItem.name,
-                    price:    parseFloat(dbItem.price) || 0,  // Preis aus DB, nicht vom Client
+                    price:    parseFloat(dbItem.price) || 0,
                     quantity: qty,
                     extras:   item.extras || null
                 });
@@ -137,6 +197,7 @@ module.exports = function cartRoutes(requireLicense, io) {
                 status:      'new',
                 items:       validatedItems,
                 total:       parseFloat(total.toFixed(2)),
+                phone:       type !== 'delivery' ? cleanPhone : (delivery && delivery.phone ? sanitizeText(delivery.phone) : null),
                 tableNumber: type === 'dine_in'  ? (tableNumber || null) : null,
                 pickupTime:  type === 'pickup'   ? (pickupTime  || null) : null,
                 delivery:    type === 'delivery' ? (delivery    || null) : null,
@@ -144,15 +205,13 @@ module.exports = function cartRoutes(requireLicense, io) {
                 createdAt:   new Date().toISOString()
             };
 
-            // In DB speichern via addOrder (verhindert Race Condition des KV-Stores)
             await DB.addOrder(order);
 
-            // Socket.IO: Küchen-Monitor in Echtzeit benachrichtigen
             if (io) {
                 io.emit('new_order', order);
             }
 
-            console.log(`🛒 Neue Gast-Bestellung: ${orderId} | Typ: ${type} | Artikel: ${validatedItems.length} | Gesamt: ${total.toFixed(2)} €`);
+            console.log(`🛒 Neue Gast-Bestellung: ${orderId} | Typ: ${type} | Artikel: ${validatedItems.length} | Gesamt: ${total.toFixed(2)} € | Tel: ${order.phone || 'n/a'}`);
 
             res.status(201).json({
                 success:  true,
