@@ -24,7 +24,6 @@ export async function renderDesigner(container, titleEl, initialTab = null) {
     titleEl.innerHTML = `<div style="display:flex;align-items:center;">${tabTitles[designerTab] || 'Website Designer'} ${renderHelpIcon(designerTab)}</div>`;
     const home = await apiGet('homepage') || {};
 
-    // Cookie-Tabs brauchen eigene Daten
     let cookieConfig = null;
     let consentLog = null;
     if (designerTab === 'cookies') {
@@ -41,9 +40,8 @@ export async function renderDesigner(container, titleEl, initialTab = null) {
             <div id="designer-content">
                 ${renderDesignerTab(home, cookieConfig, consentLog)}
             </div>
-            
             <div style="display:flex; justify-content:flex-end; margin-top:30px;" id="save-bar-wrap">
-                ${isCookieTab ? '' : '<button class="btn-primary" id="save-designer"><i class="fas fa-save"></i> Änderungen speichern</button>'}
+                ${isCookieTab ? '' : '<button class="btn-primary" id="save-designer"><i class="fas fa-save"></i> \u00c4nderungen speichern</button>'}
             </div>
         </div>
     `;
@@ -51,13 +49,11 @@ export async function renderDesigner(container, titleEl, initialTab = null) {
     attachDesignerHandlers(container, home, titleEl, cookieConfig);
 }
 
-// ── Cookie-Config vom Admin-Endpoint holen ──────────────────────────────────
+// ── Cookie-Config ────────────────────────────────────────────────────────────
 async function _fetchCookieConfig() {
     try {
         const token = sessionStorage.getItem('opa_admin_token');
-        const res = await fetch('/api/cookie-config/admin', {
-            headers: { 'x-admin-token': token }
-        });
+        const res = await fetch('/api/cookie-config/admin', { headers: { 'x-admin-token': token } });
         if (!res.ok) return null;
         return await res.json();
     } catch { return null; }
@@ -78,9 +74,7 @@ async function _saveCookieConfig(config) {
 async function _fetchConsentLog(page = 1) {
     try {
         const token = sessionStorage.getItem('opa_admin_token');
-        const res = await fetch(`/api/cookie-consent/log?page=${page}&limit=50`, {
-            headers: { 'x-admin-token': token }
-        });
+        const res = await fetch(`/api/cookie-consent/log?page=${page}&limit=50`, { headers: { 'x-admin-token': token } });
         if (!res.ok) return null;
         return await res.json();
     } catch { return null; }
@@ -89,10 +83,7 @@ async function _fetchConsentLog(page = 1) {
 async function _triggerRecons() {
     try {
         const token = sessionStorage.getItem('opa_admin_token');
-        const res = await fetch('/api/cookie-consent/recons', {
-            method: 'POST',
-            headers: { 'x-admin-token': token }
-        });
+        const res = await fetch('/api/cookie-consent/recons', { method: 'POST', headers: { 'x-admin-token': token } });
         return await res.json();
     } catch (e) { return { success: false, reason: e.message }; }
 }
@@ -100,15 +91,12 @@ async function _triggerRecons() {
 async function _clearConsentLog() {
     try {
         const token = sessionStorage.getItem('opa_admin_token');
-        const res = await fetch('/api/cookie-consent/log', {
-            method: 'DELETE',
-            headers: { 'x-admin-token': token }
-        });
+        const res = await fetch('/api/cookie-consent/log', { method: 'DELETE', headers: { 'x-admin-token': token } });
         return await res.json();
     } catch (e) { return { success: false, reason: e.message }; }
 }
 
-// ── Tab-Renderer ────────────────────────────────────────────────────────────
+// ── Tab-Renderer ─────────────────────────────────────────────────────────────
 function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
     switch (designerTab) {
         case 'visuals':
@@ -134,17 +122,18 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
                     </div>
                 </div>
             `;
-        
-        case 'location':
+
+        case 'location': {
             const loc = home.location || {};
             return `
                 <div class="form-grid">
-                    <div class="form-group full"><label>Adresse (für Anzeige & Maps)</label><textarea id="ds-loc-addr" class="input-styled" style="height:100px;">${loc.address || ''}</textarea></div>
+                    <div class="form-group full"><label>Adresse (f\u00fcr Anzeige & Maps)</label><textarea id="ds-loc-addr" class="input-styled" style="height:100px;">${loc.address || ''}</textarea></div>
                     <div class="form-group full"><label>Google Maps Embed URL (Iframe-Quelle)</label><input id="ds-loc-map" class="input-styled" value="${loc.embedUrl || ''}"></div>
                 </div>
             `;
+        }
 
-        case 'pages':
+        case 'pages': {
             const pages = home.pages || [];
             return `
                 <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
@@ -152,7 +141,7 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
                     <button class="btn-edit" id="add-custom-page"><i class="fas fa-plus"></i> Neue Seite</button>
                 </div>
                 <div id="pages-list" style="display:grid; gap:15px;">
-                    ${pages.map((p, idx) => `
+                    ${pages.map((p) => `
                         <div class="glass-panel" style="padding:20px; background:rgba(0,0,0,0.03); display:flex; justify-content:space-between; align-items:center;">
                             <div>
                                 <strong style="font-size:1.1rem;">${p.title}</strong><br>
@@ -167,8 +156,9 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
                     ${pages.length === 0 ? '<p style="text-align:center; opacity:.5; padding:40px;">Noch keine eigenen Seiten erstellt.</p>' : ''}
                 </div>
             `;
+        }
 
-        case 'vacation':
+        case 'vacation': {
             const vac = home.vacation || {};
             return `
                 <div class="form-grid">
@@ -184,30 +174,33 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
                     <div class="form-group"><label>Ende (Datum)</label><input id="ds-v-end" type="date" class="input-styled" value="${vac.end || ''}"></div>
                 </div>
             `;
+        }
 
-        case 'holiday':
+        case 'holiday': {
             const hol = home.holiday || {};
             return `
                 <div class="form-grid">
                     <div class="form-group full">
                         <label class="switch-label">
                             <label class="switch small"><input type="checkbox" id="ds-h-on" ${hol.enabled ? 'checked' : ''}><span class="slider round"></span></label>
-                            Feiertags-Ankündigung aktiv
+                            Feiertags-Ank\u00fcndigung aktiv
                         </label>
                     </div>
                     <div class="form-group"><label>Event Titel</label><input id="ds-h-title" class="input-styled" value="${hol.title || ''}"></div>
-                    <div class="form-group"><label>Ankündigungs-Text</label><textarea id="ds-h-text" class="input-styled" style="height:80px;">${hol.text || ''}</textarea></div>
+                    <div class="form-group"><label>Ank\u00fcndigungs-Text</label><textarea id="ds-h-text" class="input-styled" style="height:80px;">${hol.text || ''}</textarea></div>
                     <div class="form-group"><label>Angebots-Start</label><input id="ds-h-start" type="date" class="input-styled" value="${hol.start || ''}"></div>
                     <div class="form-group"><label>Angebots-Ende</label><input id="ds-h-end" type="date" class="input-styled" value="${hol.end || ''}"></div>
                 </div>
             `;
+        }
 
-        case 'legal':
+        case 'legal': {
             const leg = home.legal || { impressum: '', privacy: '' };
             return `
                 <div class="form-group full" style="margin-bottom:20px;"><label>Impressum</label><textarea id="ds-leg-imp" class="input-styled" style="height:200px;">${leg.impressum || ''}</textarea></div>
-                <div class="form-group full"><label>Datenschutzerklärung</label><textarea id="ds-leg-priv" class="input-styled" style="height:200px;">${leg.privacy || ''}</textarea></div>
+                <div class="form-group full"><label>Datenschutzerkl\u00e4rung</label><textarea id="ds-leg-priv" class="input-styled" style="height:200px;">${leg.privacy || ''}</textarea></div>
             `;
+        }
 
         case 'cookies':
             return _renderCookiesTab(cookieConfig);
@@ -219,7 +212,7 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
     }
 }
 
-// ── Cookie-Banner DSGVO-Tab ─────────────────────────────────────────────────
+// ── Cookie-Banner Tab ─────────────────────────────────────────────────────────
 function _renderCookiesTab(cfg) {
     if (!cfg) {
         return `<div style="text-align:center; padding:60px; opacity:.5;">
@@ -229,32 +222,21 @@ function _renderCookiesTab(cfg) {
     }
 
     const cats = cfg.categories || {};
-    const catIcons = {
-        necessary: 'shield-alt',
-        functional: 'cogs',
-        analytics: 'chart-bar',
-        marketing: 'bullhorn'
-    };
-    const catColors = {
-        necessary: '#10b981',
-        functional: '#3b82f6',
-        analytics: '#f59e0b',
-        marketing: '#8b5cf6'
-    };
+    const catIcons  = { necessary: 'shield-alt', functional: 'cogs', analytics: 'chart-bar', marketing: 'bullhorn' };
+    const catColors = { necessary: '#10b981', functional: '#3b82f6', analytics: '#f59e0b', marketing: '#8b5cf6' };
 
     const categoriesHtml = Object.entries(cats).map(([id, cat]) => {
-        const icon = catIcons[id] || 'cookie-bite';
-        const color = catColors[id] || '#6b7280';
+        const icon      = catIcons[id]  || 'cookie-bite';
+        const color     = catColors[id] || '#6b7280';
         const isRequired = cat.required === true;
-        const isEnabled = cat.enabled !== false;
+        const isEnabled  = cat.enabled  !== false;
         const cookieRows = (cat.cookies || []).map(c => `
             <tr style="font-size:.78rem; color:var(--text-muted);">
-                <td style="padding:4px 8px;"><code>${c.name || '–'}</code></td>
-                <td style="padding:4px 8px;">${c.purpose || '–'}</td>
-                <td style="padding:4px 8px;">${c.duration || '–'}</td>
-                <td style="padding:4px 8px;">${c.provider || '–'}</td>
-            </tr>
-        `).join('');
+                <td style="padding:4px 8px;"><code>${c.name || '\u2013'}</code></td>
+                <td style="padding:4px 8px;">${c.purpose  || '\u2013'}</td>
+                <td style="padding:4px 8px;">${c.duration || '\u2013'}</td>
+                <td style="padding:4px 8px;">${c.provider || '\u2013'}</td>
+            </tr>`).join('');
 
         return `
         <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:20px; margin-bottom:14px;" data-cat-id="${id}">
@@ -271,7 +253,7 @@ function _renderCookiesTab(cfg) {
                 </div>
                 <label class="switch small" style="flex-shrink:0;">
                     <input type="checkbox" class="cat-toggle" data-cat="${id}"
-                        ${isEnabled ? 'checked' : ''}
+                        ${isEnabled  ? 'checked'  : ''}
                         ${isRequired ? 'disabled' : ''}>
                     <span class="slider round"></span>
                 </label>
@@ -292,7 +274,6 @@ function _renderCookiesTab(cfg) {
     }).join('');
 
     return `
-        <!-- Globaler Banner-Toggle -->
         <div style="background:rgba(37,99,235,.06); border:1px solid rgba(37,99,235,.15); border-radius:12px; padding:20px; margin-bottom:24px; display:flex; align-items:center; gap:16px;">
             <div style="flex:1;">
                 <div style="font-weight:700; font-size:1rem; margin-bottom:3px;">Cookie-Banner anzeigen</div>
@@ -303,38 +284,25 @@ function _renderCookiesTab(cfg) {
                 <span class="slider round"></span>
             </label>
         </div>
-
-        <!-- Banner-Text & Datenschutz-URL -->
         <div style="display:grid; gap:14px; margin-bottom:24px;">
-            <div class="form-group full">
-                <label>Banner-Text</label>
-                <textarea id="ck-text" class="input-styled" style="height:80px;">${cfg.banner_text || ''}</textarea>
-            </div>
-            <div class="form-group full">
-                <label>Datenschutz-URL</label>
-                <input id="ck-privacy-url" class="input-styled" value="${cfg.privacy_url || '/datenschutz'}" placeholder="/datenschutz">
-            </div>
+            <div class="form-group full"><label>Banner-Text</label><textarea id="ck-text" class="input-styled" style="height:80px;">${cfg.banner_text || ''}</textarea></div>
+            <div class="form-group full"><label>Datenschutz-URL</label><input id="ck-privacy-url" class="input-styled" value="${cfg.privacy_url || '/datenschutz'}" placeholder="/datenschutz"></div>
         </div>
-
-        <!-- Kategorien -->
         <h4 style="margin-bottom:14px;"><i class="fas fa-layer-group"></i> Cookie-Kategorien</h4>
         ${categoriesHtml}
-
-        <!-- Aktions-Buttons -->
         <div style="display:flex; gap:12px; flex-wrap:wrap; justify-content:flex-end; margin-top:24px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.07);">
-            <button id="btn-recons" class="btn-secondary" title="Erhöht die Config-Version → alle Besucher werden beim nächsten Besuch erneut um Zustimmung gebeten">
-                <i class="fas fa-sync-alt"></i> Re-Consent auslösen
+            <button id="btn-recons" class="btn-secondary" title="Erh\u00f6ht die Config-Version \u2192 alle Besucher werden beim n\u00e4chsten Besuch erneut um Zustimmung gebeten">
+                <i class="fas fa-sync-alt"></i> Re-Consent ausl\u00f6sen
             </button>
             <button id="btn-save-cookies" class="btn-primary">
                 <i class="fas fa-save"></i> Cookie-Einstellungen speichern
             </button>
         </div>
-
         <div id="cookie-save-result" style="margin-top:12px;"></div>
     `;
 }
 
-// ── Consent-Log Tab ─────────────────────────────────────────────────────────
+// ── Consent-Log Tab ───────────────────────────────────────────────────────────
 function _renderConsentLogTab(log) {
     if (!log) {
         return `<div style="text-align:center; padding:60px; opacity:.5;">
@@ -342,18 +310,17 @@ function _renderConsentLogTab(log) {
             Consent-Log konnte nicht geladen werden.
         </div>`;
     }
-
     const entries = log.entries || [];
     const rows = entries.map(e => {
         const choices = Object.entries(e.choices || {})
-            .map(([k, v]) => `<span style="color:${v ? '#10b981' : '#ef4444'}; margin-right:6px; font-size:.75rem;">${k}: ${v ? '✓' : '✗'}</span>`)
+            .map(([k, v]) => `<span style="color:${v ? '#10b981' : '#ef4444'}; margin-right:6px; font-size:.75rem;">${k}: ${v ? '\u2713' : '\u2717'}</span>`)
             .join('');
         return `
             <tr style="font-size:.82rem; border-bottom:1px solid rgba(255,255,255,0.05);">
                 <td style="padding:8px 10px; color:var(--text-muted);">${new Date(e.timestamp).toLocaleString('de-DE')}</td>
                 <td style="padding:8px 10px;">${choices}</td>
-                <td style="padding:8px 10px; color:var(--text-muted);">${e.source || '–'}</td>
-                <td style="padding:8px 10px; font-family:monospace; font-size:.72rem; color:var(--text-muted);">${e.config_version || '–'}</td>
+                <td style="padding:8px 10px; color:var(--text-muted);">${e.source || '\u2013'}</td>
+                <td style="padding:8px 10px; font-family:monospace; font-size:.72rem; color:var(--text-muted);">${e.config_version || '\u2013'}</td>
             </tr>`;
     }).join('');
 
@@ -362,16 +329,15 @@ function _renderConsentLogTab(log) {
             <div>
                 <h4 style="margin:0;">Consent-Protokoll</h4>
                 <p style="color:var(--text-muted); font-size:.83rem; margin:4px 0 0;">
-                    ${log.total || 0} Einträge gesamt &nbsp;·&nbsp; Seite ${log.page || 1}
-                    &nbsp;·&nbsp; DSGVO Art. 7 – Nachweis der Einwilligung
+                    ${log.total || 0} Eintr\u00e4ge gesamt &nbsp;\u00b7&nbsp; Seite ${log.page || 1}
+                    &nbsp;\u00b7&nbsp; DSGVO Art. 7 \u2013 Nachweis der Einwilligung
                 </p>
             </div>
-            <button id="btn-clear-log" class="btn-edit" style="color:#ef4444;" title="Alle Consent-Einträge löschen">
+            <button id="btn-clear-log" class="btn-edit" style="color:#ef4444;" title="Alle Consent-Eintr\u00e4ge l\u00f6schen">
                 <i class="fas fa-trash"></i> Log leeren
             </button>
         </div>
-
-        ${entries.length === 0 ? '<p style="text-align:center; opacity:.5; padding:40px;">Noch keine Consent-Einträge vorhanden.</p>' : `
+        ${entries.length === 0 ? '<p style="text-align:center; opacity:.5; padding:40px;">Noch keine Consent-Eintr\u00e4ge vorhanden.</p>' : `
         <div style="overflow-x:auto;">
             <table style="width:100%; border-collapse:collapse;">
                 <thead>
@@ -388,45 +354,36 @@ function _renderConsentLogTab(log) {
     `;
 }
 
-// ── Handler ─────────────────────────────────────────────────────────────────
+// ── Handler ───────────────────────────────────────────────────────────────────
 function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
     const f = (id) => container.querySelector(`#${id}`);
 
-    // Cookie-Banner-Tab Handlers
+    // Cookie-Banner-Tab
     if (designerTab === 'cookies') {
-        const btnSave = f('btn-save-cookies');
+        const btnSave   = f('btn-save-cookies');
         const btnRecons = f('btn-recons');
 
         if (btnSave) {
             btnSave.onclick = async () => {
                 const resultEl = f('cookie-save-result');
-                const updated = JSON.parse(JSON.stringify(cookieConfig || {}));
-
+                const updated  = JSON.parse(JSON.stringify(cookieConfig || {}));
                 updated.bannerEnabled = f('ck-enabled').checked;
                 updated.banner_text   = f('ck-text').value;
                 updated.privacy_url   = f('ck-privacy-url').value;
-
-                // Kategorien-Toggles einlesen
                 container.querySelectorAll('.cat-toggle').forEach(cb => {
                     const catId = cb.dataset.cat;
-                    if (updated.categories && updated.categories[catId]) {
-                        updated.categories[catId].enabled = cb.checked;
-                    }
+                    if (updated.categories && updated.categories[catId]) updated.categories[catId].enabled = cb.checked;
                 });
-
                 btnSave.disabled = true;
                 btnSave.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird gespeichert...';
-
                 const res = await _saveCookieConfig(updated);
-
                 btnSave.disabled = false;
                 btnSave.innerHTML = '<i class="fas fa-save"></i> Cookie-Einstellungen speichern';
-
                 if (res && res.success) {
                     showToast('Cookie-Einstellungen gespeichert!');
                     if (resultEl) resultEl.innerHTML = `
                         <div style="padding:10px 14px; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); border-radius:8px; color:#10b981; font-size:.85rem;">
-                            <i class="fas fa-check-circle"></i> Gespeichert – Änderungen sind sofort auf der Website aktiv.
+                            <i class="fas fa-check-circle"></i> Gespeichert \u2013 \u00c4nderungen sind sofort auf der Website aktiv.
                         </div>`;
                 } else {
                     showToast(res?.reason || 'Fehler beim Speichern.', 'error');
@@ -440,17 +397,14 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
                 btnRecons.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 const res = await _triggerRecons();
                 btnRecons.disabled = false;
-                btnRecons.innerHTML = '<i class="fas fa-sync-alt"></i> Re-Consent auslösen';
-                if (res && res.success) {
-                    showToast(`Re-Consent ausgelöst! Neue Version: ${res.new_version}`);
-                } else {
-                    showToast(res?.reason || 'Fehler beim Re-Consent.', 'error');
-                }
+                btnRecons.innerHTML = '<i class="fas fa-sync-alt"></i> Re-Consent ausl\u00f6sen';
+                if (res && res.success) showToast(`Re-Consent ausgel\u00f6st! Neue Version: ${res.new_version}`);
+                else showToast(res?.reason || 'Fehler beim Re-Consent.', 'error');
             };
         }
     }
 
-    // Consent-Log Handlers
+    // Consent-Log
     if (designerTab === 'consent_log') {
         const btnClear = f('btn-clear-log');
         if (btnClear) {
@@ -462,25 +416,21 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
                         <i class="fas fa-trash" style="font-size:2rem; color:#ef4444; margin-bottom:16px; display:block;"></i>
                         <h4 style="margin-bottom:8px;">Consent-Log leeren?</h4>
                         <p style="color:var(--text-muted); font-size:.85rem; margin-bottom:24px;">
-                            Alle gespeicherten Einwilligungsnachweise werden unwiderruflich gelöscht.<br>
+                            Alle gespeicherten Einwilligungsnachweise werden unwiderruflich gel\u00f6scht.<br>
                             Dies ist aus DSGVO-Sicht nur erlaubt wenn die Aufbewahrungsfrist abgelaufen ist.
                         </p>
                         <div style="display:flex; gap:12px; justify-content:center;">
-                            <button class="btn-secondary" id="cl-cancel">Abbrechen</button>
-                            <button class="btn-primary" id="cl-confirm" style="background:#ef4444;">Ja, Log leeren</button>
+                            <button class="btn-secondary" data-action="cancel">Abbrechen</button>
+                            <button class="btn-primary" data-action="confirm" style="background:#ef4444;">Ja, Log leeren</button>
                         </div>
                     </div>`;
                 document.body.appendChild(modal);
-                modal.querySelector('#cl-cancel').onclick = () => modal.remove();
-                modal.querySelector('#cl-confirm').onclick = async () => {
+                modal.querySelector('[data-action="cancel"]').onclick = () => modal.remove();
+                modal.querySelector('[data-action="confirm"]').onclick = async () => {
                     modal.remove();
                     const res = await _clearConsentLog();
-                    if (res && res.success) {
-                        showToast('Consent-Log geleert.');
-                        renderDesigner(container, titleEl, 'consent_log');
-                    } else {
-                        showToast(res?.reason || 'Fehler beim Leeren.', 'error');
-                    }
+                    if (res && res.success) { showToast('Consent-Log geleert.'); renderDesigner(container, titleEl, 'consent_log'); }
+                    else showToast(res?.reason || 'Fehler beim Leeren.', 'error');
                 };
             };
         }
@@ -489,34 +439,65 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
     // Pages Tab
     if (designerTab === 'pages') {
         container.querySelector('#add-custom-page').onclick = () => window.editCustomPage();
-        
+
+        /**
+         * Seiten-Modal – KEINE globalen IDs!
+         * Alle Felder werden \u00fcber data-field Attribute referenziert,
+         * damit der Browser keine "Duplicate id" Warnung wirft.
+         */
         window.editCustomPage = (id = null) => {
-            const page = id ? home.pages.find(p => p.id === id) : { id: 'new-' + Date.now(), title: '', content: '', headline: '' };
+            const page = id
+                ? (home.pages || []).find(p => p.id === id) || { id, title: '', content: '', headline: '' }
+                : { id: 'new-' + Date.now(), title: '', content: '', headline: '' };
+
             const modal = document.createElement('div');
             modal.className = 'modal active';
             modal.innerHTML = `
                 <div class="modal-content glass-panel" style="max-width:800px;">
-                    <h3>Seite bearbeiten</h3>
-                    <div class="form-group"><label>Menü-Titel</label><input id="mp-title" class="input-styled" value="${page.title}"></div>
-                    <div class="form-group"><label>Haupt-Überschrift (in der Seite)</label><input id="mp-head" class="input-styled" value="${page.headline || ''}"></div>
-                    <div class="form-group"><label>Inhalt (HTML erlaubt)</label><textarea id="mp-content" class="input-styled" style="height:300px;">${page.content || ''}</textarea></div>
+                    <h3>${id ? 'Seite bearbeiten' : 'Neue Seite erstellen'}</h3>
+                    <div class="form-group">
+                        <label>Men\u00fc-Titel</label>
+                        <input data-field="title" class="input-styled" value="${(page.title || '').replace(/"/g, '&quot;')}" placeholder="z.B. \u00dcber uns">
+                    </div>
+                    <div class="form-group">
+                        <label>Haupt-\u00dcberschrift (in der Seite)</label>
+                        <input data-field="headline" class="input-styled" value="${(page.headline || '').replace(/"/g, '&quot;')}" placeholder="Gro\u00dfe \u00dcberschrift auf der Seite">
+                    </div>
+                    <div class="form-group">
+                        <label>Inhalt (HTML erlaubt)</label>
+                        <textarea data-field="content" class="input-styled" style="height:300px;">${page.content || ''}</textarea>
+                    </div>
                     <div class="modal-actions">
-                        <button class="btn-secondary" id="mp-cancel">Abbrechen</button>
-                        <button class="btn-primary" id="mp-save"><i class="fas fa-save"></i> Speichern</button>
+                        <button class="btn-secondary" data-action="cancel">Abbrechen</button>
+                        <button class="btn-primary"   data-action="save"><i class="fas fa-save"></i> Speichern</button>
                     </div>
                 </div>
             `;
             document.body.appendChild(modal);
-            modal.querySelector('#mp-cancel').onclick = () => modal.remove();
-            modal.querySelector('#mp-save').onclick = async () => {
-                const saveBtn = modal.querySelector('#mp-save');
+
+            const q          = (sel) => modal.querySelector(sel);
+            const saveBtn    = q('[data-action="save"]');
+            const cancelBtn  = q('[data-action="cancel"]');
+            const titleInput = q('[data-field="title"]');
+
+            cancelBtn.onclick = () => modal.remove();
+            titleInput.focus();
+
+            saveBtn.onclick = async () => {
                 const updated = {
-                    id: page.id,
-                    title: modal.querySelector('#mp-title').value,
-                    headline: modal.querySelector('#mp-head').value,
-                    content: modal.querySelector('#mp-content').value,
-                    active: true
+                    id:       page.id,
+                    title:    q('[data-field="title"]').value.trim(),
+                    headline: q('[data-field="headline"]').value.trim(),
+                    content:  q('[data-field="content"]').value,
+                    active:   true
                 };
+
+                if (!updated.title) {
+                    showToast('Bitte einen Men\u00fc-Titel eingeben.', 'error');
+                    q('[data-field="title"]').focus();
+                    return;
+                }
+
                 if (!home.pages) home.pages = [];
                 const idx = home.pages.findIndex(p => p.id === page.id);
                 if (idx >= 0) home.pages[idx] = updated;
@@ -538,26 +519,23 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
         };
 
         window.deleteCustomPage = async (id) => {
+            if (!home.pages) return;
             home.pages = home.pages.filter(p => p.id !== id);
             const res = await apiPost('homepage', home);
-            if (res && res.success) {
-                renderDesigner(container, titleEl, 'pages');
-            } else {
-                showToast(res?.reason || 'Fehler beim Löschen!', 'error');
-            }
+            if (res && res.success) renderDesigner(container, titleEl, 'pages');
+            else showToast(res?.reason || 'Fehler beim L\u00f6schen!', 'error');
         };
     }
 
-    // Standard Speichern (alle Tabs außer cookies/consent_log)
+    // Standard Speichern
     const saveBtn = f('save-designer');
     if (saveBtn) {
         saveBtn.onclick = async () => {
             const u = { ...home };
-            
             if (designerTab === 'visuals') {
-                u.heroTitle = f('ds-title').value;
-                u.heroSlogan = f('ds-slogan').value;
-                u.bgImage = f('ds-bg').value;
+                u.heroTitle    = f('ds-title').value;
+                u.heroSlogan   = f('ds-slogan').value;
+                u.bgImage      = f('ds-bg').value;
                 u.welcomeImage = f('ds-w-img').value;
             } else if (designerTab === 'location') {
                 u.location = { address: f('ds-loc-addr').value, embedUrl: f('ds-loc-map').value };
@@ -568,16 +546,16 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
             } else if (designerTab === 'legal') {
                 u.legal = { impressum: f('ds-leg-imp').value, privacy: f('ds-leg-priv').value };
             }
-
             const res = await apiPost('homepage', u);
-            if (res.success) showToast('Website Designer gespeichert!');
+            if (res && res.success) showToast('Website Designer gespeichert!');
+            else showToast(res?.reason || 'Fehler beim Speichern!', 'error');
         };
     }
 
     // Upload handlers
-    const setupUpload = (btnId, inputId, hiddenId) => {
-        const btn = container.querySelector(`#${btnId}`);
-        const file = container.querySelector(`#${inputId}`);
+    const setupUpload = (previewId, fileInputId, hiddenId) => {
+        const btn    = container.querySelector(`#${previewId}`);
+        const file   = container.querySelector(`#${fileInputId}`);
         const hidden = container.querySelector(`#${hiddenId}`);
         if (!btn || !file) return;
         btn.onclick = () => file.click();
@@ -597,7 +575,7 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
         };
     };
     if (designerTab === 'visuals') {
-        setupUpload('ds-bg-preview', 'ds-bg-file', 'ds-bg');
+        setupUpload('ds-bg-preview',   'ds-bg-file',   'ds-bg');
         setupUpload('ds-wimg-preview', 'ds-wimg-file', 'ds-w-img');
     }
 }
