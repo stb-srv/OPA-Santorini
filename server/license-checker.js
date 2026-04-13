@@ -1,22 +1,24 @@
 /**
  * OPA-CMS – License Checker (Stufe 3: Periodische Online-Validierung)
  *
- * Prüft alle 24h ob die Lizenz noch gültig ist, indem er den Lizenzserver
+ * Prüft alle 72h ob die Lizenz noch gültig ist, indem er den Lizenzserver
  * kontaktiert und ein frisch signiertes Token zurückbekommt.
  *
  * Graceful Degradation: Nach 3 aufeinanderfolgenden Fehlversuchen wird
- * die Lizenz auf FREE zurückgestuft bis der Server wieder erreichbar ist.
+ * der zuletzt bekannte Plan als Fallback genutzt (nicht FREE).
+ * Erst bei widerrufener/abgelaufener Lizenz wird auf FREE umgestuft.
  *
  * Der Lizenzserver muss auf POST /api/v1/refresh antworten mit:
  * { status: 'active', token: '<RS256-signiertes JWT>' }
  */
 
+const jwt = require('jsonwebtoken');
 const { verifyLicenseToken } = require('./license.js');
 
-const CHECK_INTERVAL_MS  = 24 * 60 * 60 * 1000; // 24h
-const STARTUP_DELAY_MS   = 10 * 1000;            // 10s nach Boot (statt 5min)
-const TOKEN_REFRESH_THRESHOLD_H = 30;            // Token < 30h gültig → sofort erneuern
-const MAX_FAILURES       = 3;
+const CHECK_INTERVAL_MS       = 72 * 60 * 60 * 1000; // 72h
+const STARTUP_DELAY_MS        = 10 * 1000;            // 10s nach Boot
+const TOKEN_REFRESH_THRESHOLD_H = 78;                 // Token < 78h gültig → sofort erneuern
+const MAX_FAILURES            = 3;
 
 class LicenseChecker {
     constructor(DB, licenseServerUrl, host) {
@@ -30,12 +32,11 @@ class LicenseChecker {
     }
 
     start() {
-        // Startup-Check nach 10s – prüft ob Token bald abläuft und erneuert es sofort
         this.startupTimer = setTimeout(() => {
             this._checkIfTokenNeedsRefresh();
             this.timer = setInterval(() => this._check(), CHECK_INTERVAL_MS);
         }, STARTUP_DELAY_MS);
-        console.log(`\uD83D\uDD12 LicenseChecker gestartet \u2013 Startup-Check in 10s, dann alle 24h.`);
+        console.log(`\uD83D\uDD12 LicenseChecker gestartet \u2013 Startup-Check in 10s, dann alle 72h.`);
     }
 
     stop() {
@@ -46,28 +47,25 @@ class LicenseChecker {
     /**
      * Startup-Prüfung: Wenn das gespeicherte Token in weniger als TOKEN_REFRESH_THRESHOLD_H
      * Stunden abläuft (oder fehlt), sofort einen /refresh-Call machen.
-     * Verhindert FREE-Fallback nach Server-Neustart wenn Token fast abgelaufen ist.
      */
     async _checkIfTokenNeedsRefresh() {
         try {
             const settings = await this.DB.getKV('settings', {});
             const lic      = settings.license || {};
 
-            if (!lic.key || lic.isTrial) return; // kein Check nötig
+            if (!lic.key || lic.isTrial) return;
 
             const token   = lic.licenseToken || null;
             const payload = token ? verifyLicenseToken(token, this.host) : null;
 
             if (!payload) {
-                // Kein gültiges Token – sofort erneuern
                 console.log(`\uD83D\uDD04 [Startup] Kein gültiges Token gefunden – sofortiger Refresh...`);
                 await this._check();
                 return;
             }
 
-            const nowSec       = Math.floor(Date.now() / 1000);
-            const secondsLeft  = (payload.exp || 0) - nowSec;
-            const hoursLeft    = secondsLeft / 3600;
+            const nowSec    = Math.floor(Date.now() / 1000);
+            const hoursLeft = ((payload.exp || 0) - nowSec) / 3600;
 
             if (hoursLeft < TOKEN_REFRESH_THRESHOLD_H) {
                 console.log(`\uD83D\uDD04 [Startup] Token läuft in ${hoursLeft.toFixed(1)}h ab – sofortiger Refresh...`);
@@ -85,7 +83,6 @@ class LicenseChecker {
         const settings = await this.DB.getKV('settings', {});
         const lic      = settings.license || {};
 
-        // Trial-Lizenzen oder keine Lizenz: kein Online-Check nötig
         if (!lic.key || lic.isTrial) return;
 
         console.log(`\uD83D\uDD04 [${new Date().toISOString()}] Lizenz-Online-Check läuft...`);
@@ -98,26 +95,26 @@ class LicenseChecker {
                     license_key: lic.key,
                     domain:      this.host
                 }),
-                signal: AbortSignal.timeout(15000) // 15s Timeout
+                signal: AbortSignal.timeout(15000)
             });
 
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
             const data = await response.json();
-
-            // Rückwärtskompatibilität: token ODER license_token akzeptieren
             const rawToken = data.token || data.license_token || null;
 
             if (data.status === 'active' && rawToken) {
-                // Signatur prüfen bevor wir den Token speichern
                 const payload = verifyLicenseToken(rawToken, this.host);
                 if (!payload) {
                     throw new Error('Server returned token with invalid signature');
                 }
 
-                // Frischen Token in DB speichern
                 settings.license.licenseToken = rawToken;
-                // degraded-Flags zurücksetzen falls vorher gesetzt
+                // Fallback-Snapshot aktualisieren
+                settings.license.lastKnownType    = payload.type;
+                settings.license.lastKnownModules = payload.allowed_modules || null;
+                settings.license.lastKnownLimits  = payload.limits || null;
+                settings.license.lastKnownAt      = new Date().toISOString();
                 delete settings.license.degraded;
                 delete settings.license.degradedReason;
                 delete settings.license.degradedAt;
@@ -140,19 +137,38 @@ class LicenseChecker {
             console.warn(`\u26a0\ufe0f  [${new Date().toISOString()}] Lizenz-Check Fehler (${this.failCount}/${MAX_FAILURES}): ${e.message}`);
 
             if (this.failCount >= MAX_FAILURES) {
-                console.error(`\u274c Lizenz-Check ${MAX_FAILURES}x fehlgeschlagen \u2013 Graceful Degradation auf FREE aktiv.`);
-                this._degrade(settings, 'unreachable');
+                console.warn(`\u26a0\ufe0f  Lizenz-Check ${MAX_FAILURES}x fehlgeschlagen – Offline-Fallback aktiv (letzter bekannter Plan bleibt erhalten).`);
+                this._setOfflineFallback(settings);
             }
         }
     }
 
+    /**
+     * Offline-Fallback: Lizenzserver nicht erreichbar.
+     * Behält den zuletzt bekannten Plan bei – kein FREE-Downgrade.
+     * Setzt nur ein degraded-Flag zur Info, löscht aber NICHT das licenseToken.
+     */
+    _setOfflineFallback(settings) {
+        this.degraded = true;
+        if (settings.license) {
+            settings.license.degraded       = true;
+            settings.license.degradedReason = 'unreachable';
+            settings.license.degradedAt     = new Date().toISOString();
+            // licenseToken NICHT löschen – letzter gültiger Plan bleibt aktiv
+            this.DB.setKV('settings', settings);
+        }
+    }
+
+    /**
+     * Hard-Degrade: Nur bei explizit widerrufener/gecancelter Lizenz.
+     * Hier wird auf FREE umgestuft.
+     */
     _degrade(settings, reason) {
         this.degraded = true;
         if (settings.license) {
             settings.license.degraded        = true;
             settings.license.degradedReason  = reason;
             settings.license.degradedAt      = new Date().toISOString();
-            // licenseToken löschen – getCurrentLicense() fällt auf FREE zurück
             delete settings.license.licenseToken;
             this.DB.setKV('settings', settings);
         }

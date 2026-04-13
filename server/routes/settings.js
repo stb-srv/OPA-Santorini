@@ -11,11 +11,9 @@ const { getCurrentLicense, PLAN_DEFINITIONS, getPlan } = require('../license.js'
  * Wertet X-Forwarded-Host, Origin und Host-Header aus – entfernt Port.
  */
 function extractDomain(req) {
-    // 1) X-Forwarded-Host gesetzt durch Reverse-Proxy (nginx)?
     const forwarded = req.headers['x-forwarded-host'];
     if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
 
-    // 2) Origin-Header (z.B. beim direkten Browser-Request)
     const origin = req.headers['origin'];
     if (origin) {
         try {
@@ -23,7 +21,6 @@ function extractDomain(req) {
         } catch (_) { /* ignore */ }
     }
 
-    // 3) Host-Header – Port abschneiden
     const host = req.headers.host || 'localhost';
     return host.split(':')[0];
 }
@@ -36,7 +33,9 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
             res.json({ ...homepage, activeModules: settings.activeModules });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
-    router.post('/homepage', requireAuth, requireLicense('custom_design'), async (req, res) => {
+
+    // Homepage-Einstellungen: nur Auth erforderlich, kein Lizenz-Gate
+    router.post('/homepage', requireAuth, async (req, res) => {
         try { await DB.setKV('homepage', req.body); res.json({ success: true }); }
         catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
@@ -84,7 +83,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
     router.post('/license/validate', async (req, res) => {
         try {
             const domain = extractDomain(req);
-            console.log(`🔑 License validate: key=${req.body.key}, domain=${domain}`);
+            console.log(`\uD83D\uDD11 License validate: key=${req.body.key}, domain=${domain}`);
 
             const response = await fetch(`${LICENSE_SERVER}/api/v1/validate`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -94,8 +93,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
             const r = await response.json();
 
             if (!response.ok) {
-                // Lizenzserver hat 4xx/5xx zurückgegeben – Status + Grund klar ans Frontend
-                console.warn(`⚠️  License server rejected (HTTP ${response.status}):`, r);
+                console.warn(`\u26a0\ufe0f  License server rejected (HTTP ${response.status}):`, r);
                 return res.status(response.status).json({
                     success: false,
                     status:  r.status  || 'error',
@@ -107,7 +105,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
             if (r.status === 'active') {
                 const licenseToken = r.license_token || r.token || null;
                 if (!licenseToken) {
-                    console.error('❌ License server returned status=active but no signed token!');
+                    console.error('\u274c License server returned status=active but no signed token!');
                     return res.status(500).json({
                         success: false,
                         reason: 'Lizenzserver hat kein signiertes Token zurückgegeben. Bitte sicherstellen dass RSA_PRIVATE_KEY auf dem Lizenzserver gesetzt ist.'
@@ -127,17 +125,24 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                     limits: {
                         max_dishes: r.limits?.max_dishes ?? r.limits?.maxDishes ?? plan.menu_items,
                         max_tables: r.limits?.max_tables ?? r.limits?.maxTables ?? plan.max_tables
-                    }
+                    },
+                    // Snapshot für Offline-Fallback direkt bei Aktivierung speichern
+                    lastKnownType:    r.type || 'FREE',
+                    lastKnownModules: r.allowed_modules || plan.modules,
+                    lastKnownLimits:  {
+                        max_dishes: r.limits?.max_dishes ?? r.limits?.maxDishes ?? plan.menu_items,
+                        max_tables: r.limits?.max_tables ?? r.limits?.maxTables ?? plan.max_tables
+                    },
+                    lastKnownAt: new Date().toISOString()
                 };
                 await DB.setKV('settings', settings);
-                console.log(`✅ License activated: ${req.body.key} (${r.type}) for domain ${domain}`);
+                console.log(`\u2705 License activated: ${req.body.key} (${r.type}) for domain ${domain}`);
                 return res.json({ success: true, license: settings.license });
             }
 
-            // Lizenzserver hat HTTP 200, aber status != 'active'
             res.status(403).json({ success: false, status: r.status, reason: r.message });
         } catch (e) {
-            console.error('❌ License validate error:', e.message);
+            console.error('\u274c License validate error:', e.message);
             res.status(500).json({ success: false, reason: 'Lizenzserver nicht erreichbar: ' + e.message });
         }
     });

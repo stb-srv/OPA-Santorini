@@ -52,7 +52,6 @@ const PLAN_DEFINITIONS = {
 
 const getPlan = (type) => {
     if (!type) return PLAN_DEFINITIONS['FREE'];
-    // Normalisierung: Großbuchstaben, '+' zu '_PLUS', Leerzeichen zu '_'
     const normalizedType = type.toUpperCase()
         .replace(/\+/g, '_PLUS')
         .replace(/\s+/g, '_');
@@ -93,8 +92,44 @@ const verifyLicenseToken = (token, host = null) => {
 };
 
 /**
- * Gibt die aktuelle, verifizierte Lizenz zur\u00fcck.
- * ASYNC: DB.getKV ist bei MySQL ein Promise.
+ * Offline-Fallback: Liest den letzten bekannten Plan aus der DB.
+ * Wird genutzt wenn der Lizenzserver nicht erreichbar ist (degraded: 'unreachable').
+ * Gibt null zurück wenn kein Snapshot vorhanden.
+ */
+const getLastKnownLicense = (lic) => {
+    if (!lic || !lic.key) return null;
+    // Snapshot vom letzten erfolgreichen Check vorhanden?
+    const type = lic.lastKnownType || lic.type || null;
+    if (!type || type === 'FREE') return null;
+
+    const plan = getPlan(type);
+    const modules = lic.lastKnownModules || plan.modules;
+    const limits  = lic.lastKnownLimits  || { max_dishes: plan.menu_items, max_tables: plan.max_tables };
+
+    console.warn(`\u26a0\ufe0f  [Offline-Fallback] Lizenzserver nicht erreichbar – nutze letzten bekannten Plan: ${type} (seit ${lic.lastKnownAt || 'unbekannt'})`);
+
+    return {
+        key:      lic.key,
+        status:   'active_offline',
+        customer: lic.customer || 'Unbekannt',
+        type,
+        label:    plan.label + ' (Offline)',
+        expiresAt: lic.expiresAt || null,
+        modules,
+        limits,
+        isTrial: false, isExpired: false, trialDaysLeft: 0, plan,
+        domain:  lic.domain || null,
+        offline: true
+    };
+};
+
+/**
+ * Gibt die aktuelle, verifizierte Lizenz zurück.
+ * Fallback-Kette bei ungültigem Token:
+ *  1. Verifiziertes JWT (Normalfall)
+ *  2. Offline-Fallback: letzter bekannter Plan aus DB-Snapshot
+ *  3. JWT dekodieren ohne Signaturprüfung (Domain-Mismatch / abgelaufen)
+ *  4. FREE (kein Lizenz-Key vorhanden)
  */
 const getCurrentLicense = async (DB, host = null) => {
     const settings = await DB.getKV('settings', {});
@@ -122,40 +157,85 @@ const getCurrentLicense = async (DB, host = null) => {
         };
     }
 
-    // --- Vollizenz: signiertes JWT pflicht ---
+    // --- Vollizenz: signiertes JWT prüfen ---
     const token   = lic.licenseToken || null;
     const payload = verifyLicenseToken(token, host);
 
-    if (!payload) {
-        if (lic.key) console.warn('\u26a0\ufe0f  License key present but token invalid or missing \u2013 falling back to FREE.');
-        return FREE_RESULT();
+    if (payload) {
+        // Normalfall: Token ist gültig und verifiziert
+        const plan      = getPlan(payload.type);
+        const now       = new Date();
+        const expiresAt = payload.exp ? new Date(payload.exp * 1000) : null;
+        const isExpired = expiresAt ? expiresAt < now : false;
+
+        if (isExpired) {
+            console.warn(`\u26a0\ufe0f  License token expired at ${expiresAt?.toISOString()}`);
+            // Auch bei abgelaufenem Token: Fallback auf letzten bekannten Plan
+            const offline = getLastKnownLicense(lic);
+            if (offline) return offline;
+            return FREE_RESULT({ isExpired: true, status: 'expired', key: payload.license_key || lic.key });
+        }
+
+        return {
+            key:      payload.license_key || lic.key,
+            status:   'active',
+            customer: payload.customer_name || lic.customer || 'Unbekannt',
+            type:     payload.type     || 'FREE',
+            label:    plan.label,
+            expiresAt: expiresAt?.toISOString() || null,
+            modules:  payload.allowed_modules || plan.modules,
+            limits: {
+                max_dishes: payload.limits?.max_dishes ?? plan.menu_items,
+                max_tables: payload.limits?.max_tables ?? plan.max_tables
+            },
+            isTrial: false, isExpired: false, trialDaysLeft: 0, plan,
+            domain:  payload.domain || null
+        };
     }
 
-    const plan      = getPlan(payload.type);
-    const now       = new Date();
-    const expiresAt = payload.exp ? new Date(payload.exp * 1000) : null;
-    const isExpired = expiresAt ? expiresAt < now : false;
+    // --- Kein gültiges Token: Fallback-Kette ---
+    if (lic.key) {
+        // Fallback 1: Offline-Fallback mit letztem bekannten Plan
+        const offline = getLastKnownLicense(lic);
+        if (offline) return offline;
 
-    if (isExpired) {
-        console.warn(`\u26a0\ufe0f  License token expired at ${expiresAt?.toISOString()}`);
-        return FREE_RESULT({ isExpired: true, status: 'expired', key: payload.key });
+        // Fallback 2: Token dekodieren ohne Signaturprüfung
+        if (token) {
+            try {
+                const decoded = jwt.decode(token);
+                if (decoded && decoded.type && decoded.type !== 'FREE') {
+                    const plan = getPlan(decoded.type);
+                    const now  = new Date();
+                    const expiresAt = decoded.exp ? new Date(decoded.exp * 1000) : null;
+                    // Nur nutzen wenn nicht länger als 7 Tage abgelaufen (Toleranz)
+                    const tooOld = expiresAt ? (now - expiresAt) > (7 * 24 * 60 * 60 * 1000) : false;
+                    if (!tooOld) {
+                        console.warn(`\u26a0\ufe0f  [Decode-Fallback] Token nicht verifizierbar – nutze dekodiertes Token (Plan: ${decoded.type})`);
+                        return {
+                            key:      decoded.license_key || lic.key,
+                            status:   'active_unverified',
+                            customer: decoded.customer_name || lic.customer || 'Unbekannt',
+                            type:     decoded.type,
+                            label:    plan.label + ' (nicht verifiziert)',
+                            expiresAt: expiresAt?.toISOString() || null,
+                            modules:  decoded.allowed_modules || plan.modules,
+                            limits: {
+                                max_dishes: decoded.limits?.max_dishes ?? plan.menu_items,
+                                max_tables: decoded.limits?.max_tables ?? plan.max_tables
+                            },
+                            isTrial: false, isExpired: false, trialDaysLeft: 0, plan,
+                            domain: decoded.domain || null,
+                            offline: true
+                        };
+                    }
+                }
+            } catch (_) { /* ignore */ }
+        }
+
+        console.warn('\u26a0\ufe0f  License key present but no valid fallback available – falling back to FREE.');
     }
 
-    return {
-        key:      payload.license_key || lic.key,
-        status:   'active',
-        customer: payload.customer_name || lic.customer || 'Unbekannt',
-        type:     payload.type     || 'FREE',
-        label:    plan.label,
-        expiresAt: expiresAt?.toISOString() || null,
-        modules:  payload.allowed_modules || plan.modules,
-        limits: {
-            max_dishes: payload.limits?.max_dishes ?? plan.menu_items,
-            max_tables: payload.limits?.max_tables ?? plan.max_tables
-        },
-        isTrial: false, isExpired: false, trialDaysLeft: 0, plan,
-        domain:  payload.domain || null
-    };
+    return FREE_RESULT();
 };
 
 module.exports = { PLAN_DEFINITIONS, getPlan, getCurrentLicense, verifyLicenseToken, OPA_PUBLIC_KEY };
