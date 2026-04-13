@@ -1,12 +1,10 @@
 /**
  * OPA-CMS – Online-Bestellungen Einstellungen
- * Verwendet native CMS-Klassen: glass-panel, switch/slider, btn-primary
  */
 
 export async function initOrderSettings(container, api, license) {
     const hasModule = license && license.modules && license.modules.online_orders;
 
-    // ── LOCKED STATE ─────────────────────────────────────────────────────
     if (!hasModule) {
         container.innerHTML = `
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -29,7 +27,6 @@ export async function initOrderSettings(container, api, license) {
         return;
     }
 
-    // ── LOAD CONFIG ───────────────────────────────────────────────
     let orderConfig = {};
     try {
         const res = await api.get('settings');
@@ -38,17 +35,15 @@ export async function initOrderSettings(container, api, license) {
         console.warn('orderConfig konnte nicht geladen werden', e.message);
     }
 
-    const checked  = (key, def = false) =>
+    const checked = (key, def = false) =>
         orderConfig[key] === true ? 'checked' : (orderConfig[key] === false ? '' : (def ? 'checked' : ''));
-    const intVal   = (key, def) =>
+    const intVal  = (key, def) =>
         (orderConfig[key] !== undefined && !isNaN(parseInt(orderConfig[key], 10)))
             ? parseInt(orderConfig[key], 10) : def;
 
-    // ── RENDER ───────────────────────────────────────────────────────
     container.innerHTML = `
     <div style="max-width:720px;">
 
-        <!-- Header -->
         <div style="margin-bottom:28px;">
             <h2 style="font-size:1.3rem; font-weight:800; color:var(--primary); margin-bottom:6px;">
                 <i class="fas fa-shopping-bag" style="margin-right:10px; color:var(--accent);"></i>
@@ -56,7 +51,6 @@ export async function initOrderSettings(container, api, license) {
             </h2>
             <p style="font-size:.85rem; color:var(--text-muted); line-height:1.6;">
                 Steuere ob Gäste Bestellungen digital übermitteln können.
-                Der Warenkorb (Planungsansicht) bleibt unabhängig davon immer aktiv.
             </p>
         </div>
 
@@ -66,9 +60,7 @@ export async function initOrderSettings(container, api, license) {
                 <div style="display:flex; align-items:center; gap:16px;">
                     <div style="width:44px; height:44px; border-radius:12px;
                                 background:rgba(200,169,110,.12); display:flex;
-                                align-items:center; justify-content:center; font-size:1.4rem;">
-                        🛒
-                    </div>
+                                align-items:center; justify-content:center; font-size:1.4rem;">🛒</div>
                     <div>
                         <div style="font-weight:700; font-size:.95rem;">Bestellsystem aktiv</div>
                         <div style="font-size:.78rem; color:var(--text-muted); margin-top:2px;">
@@ -86,85 +78,55 @@ export async function initOrderSettings(container, api, license) {
         <!-- Bestellmodi -->
         <div class="glass-panel" style="padding:24px 28px; margin-bottom:16px;" id="os-modes">
             <div style="font-size:.7rem; font-weight:700; text-transform:uppercase;
-                        letter-spacing:1.5px; color:var(--text-muted); margin-bottom:16px;">
-                Aktive Bestellmodi
-            </div>
+                        letter-spacing:1.5px; color:var(--text-muted); margin-bottom:16px;">Aktive Bestellmodi</div>
 
-            <!-- Dine-in -->
             <div style="display:flex; align-items:center; justify-content:space-between;
                         padding:16px 0; border-bottom:1px solid rgba(0,0,0,.05);">
                 <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:38px; height:38px; border-radius:10px;
-                                background:rgba(27,58,92,.07); display:flex;
-                                align-items:center; justify-content:center; font-size:1.1rem;">
-                        🍽️
-                    </div>
+                    <div style="width:38px; height:38px; border-radius:10px; background:rgba(27,58,92,.07);
+                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">🍽️</div>
                     <div>
                         <div style="font-weight:700; font-size:.88rem;">Am Tisch</div>
-                        <div style="font-size:.75rem; color:var(--text-muted); margin-top:1px;">
-                            Gast bestellt während des Besuchs per Tischnummer
-                        </div>
+                        <div style="font-size:.75rem; color:var(--text-muted); margin-top:1px;">Gast bestellt während des Besuchs per Tischnummer</div>
                     </div>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" id="os-dineInEnabled" ${checked('dineInEnabled', true)}>
-                    <span class="slider"></span>
-                </label>
+                <label class="switch"><input type="checkbox" id="os-dineInEnabled" ${checked('dineInEnabled', true)}><span class="slider"></span></label>
             </div>
 
-            <!-- Abholung -->
             <div style="display:flex; align-items:center; justify-content:space-between;
                         padding:16px 0; border-bottom:1px solid rgba(0,0,0,.05);">
                 <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:38px; height:38px; border-radius:10px;
-                                background:rgba(27,58,92,.07); display:flex;
-                                align-items:center; justify-content:center; font-size:1.1rem;">
-                        🚗
-                    </div>
+                    <div style="width:38px; height:38px; border-radius:10px; background:rgba(27,58,92,.07);
+                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">🚗</div>
                     <div>
                         <div style="font-weight:700; font-size:.88rem;">Abholung</div>
-                        <div style="font-size:.75rem; color:var(--text-muted); margin-top:1px;">
-                            Gast bestellt vorab und holt selbst ab
-                        </div>
+                        <div style="font-size:.75rem; color:var(--text-muted); margin-top:1px;">Gast bestellt vorab und holt selbst ab</div>
                     </div>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" id="os-pickupEnabled" ${checked('pickupEnabled', true)}>
-                    <span class="slider"></span>
-                </label>
+                <label class="switch"><input type="checkbox" id="os-pickupEnabled" ${checked('pickupEnabled', true)}><span class="slider"></span></label>
             </div>
 
-            <!-- Lieferung -->
-            <div style="display:flex; align-items:center; justify-content:space-between;
-                        padding:16px 0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 0;">
                 <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:38px; height:38px; border-radius:10px;
-                                background:rgba(27,58,92,.07); display:flex;
-                                align-items:center; justify-content:center; font-size:1.1rem;">
-                        🚚
-                    </div>
+                    <div style="width:38px; height:38px; border-radius:10px; background:rgba(27,58,92,.07);
+                                display:flex; align-items:center; justify-content:center; font-size:1.1rem;">🚚</div>
                     <div>
                         <div style="font-weight:700; font-size:.88rem;">Lieferung</div>
-                        <div style="font-size:.75rem; color:var(--text-muted); margin-top:1px;">
-                            Gast erhält die Bestellung an die angegebene Adresse
-                        </div>
+                        <div style="font-size:.75rem; color:var(--text-muted); margin-top:1px;">Gast erhält die Bestellung an die angegebene Adresse</div>
                     </div>
                 </div>
-                <label class="switch">
-                    <input type="checkbox" id="os-deliveryEnabled" ${checked('deliveryEnabled')}>
-                    <span class="slider"></span>
-                </label>
+                <label class="switch"><input type="checkbox" id="os-deliveryEnabled" ${checked('deliveryEnabled')}><span class="slider"></span></label>
             </div>
         </div>
 
-        <!-- Zeitfenster-Einstellungen -->
+        <!-- Zeitfenster -->
         <div class="glass-panel" style="padding:24px 28px; margin-bottom:16px;">
             <div style="font-size:.7rem; font-weight:700; text-transform:uppercase;
                         letter-spacing:1.5px; color:var(--text-muted); margin-bottom:16px;">
                 <i class="fas fa-clock" style="margin-right:6px;"></i> Zeitfenster
             </div>
 
-            <!-- Bestellstopp vor Ladenschluss -->
+            <!-- Bestellstopp -->
             <div style="display:flex; align-items:center; justify-content:space-between;
                         gap:20px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,.05);">
                 <div>
@@ -179,27 +141,35 @@ export async function initOrderSettings(container, api, license) {
                            value="${intVal('orderCutoffMinutes', 30)}"
                            min="0" max="120" step="5"
                            style="width:70px; padding:8px 10px; border-radius:8px;
-                                  border:1px solid rgba(0,0,0,.15); background:var(--bg, #fff);
-                                  font-size:.9rem; font-weight:700; text-align:center;
-                                  color:var(--text, #1b3a5c);">
-                    <span style="font-size:.82rem; color:var(--text-muted);">Minuten</span>
+                                  border:1px solid rgba(0,0,0,.15); background:var(--bg,#fff);
+                                  font-size:.9rem; font-weight:700; text-align:center; color:var(--text,#1b3a5c);">
+                    <span style="font-size:.82rem; color:var(--text-muted);">Min.</span>
                 </div>
             </div>
 
-            <!-- Min. Vorlaufzeit Abholung (info-only) -->
+            <!-- Mindest-Vorlaufzeit -->
             <div style="display:flex; align-items:center; justify-content:space-between;
                         gap:20px; padding:12px 0;">
                 <div>
                     <div style="font-weight:700; font-size:.88rem;">🚗 Mindest-Vorlaufzeit Abholung</div>
                     <div style="font-size:.75rem; color:var(--text-muted); margin-top:2px;">
-                        Abholzeit muss mindestens 5 Minuten in der Zukunft liegen.
+                        Abholzeit muss mindestens X Minuten in der Zukunft liegen.
+                        Bei 0 ist sofortige Abholung möglich.
                     </div>
                 </div>
-                <div style="font-size:.85rem; font-weight:700; color:var(--text-muted); flex-shrink:0;">5 Min. (fest)</div>
+                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                    <input type="number" id="os-leadMinutes"
+                           value="${intVal('pickupLeadMinutes', 5)}"
+                           min="0" max="60" step="5"
+                           style="width:70px; padding:8px 10px; border-radius:8px;
+                                  border:1px solid rgba(0,0,0,.15); background:var(--bg,#fff);
+                                  font-size:.9rem; font-weight:700; text-align:center; color:var(--text,#1b3a5c);">
+                    <span style="font-size:.82rem; color:var(--text-muted);">Min.</span>
+                </div>
             </div>
         </div>
 
-        <!-- Info Box -->
+        <!-- Info -->
         <div style="display:flex; align-items:flex-start; gap:12px;
                     background:rgba(200,169,110,.08); border:1px solid rgba(200,169,110,.2);
                     border-radius:12px; padding:14px 18px; margin-bottom:24px;
@@ -207,26 +177,20 @@ export async function initOrderSettings(container, api, license) {
             <i class="fas fa-info-circle" style="color:var(--accent); margin-top:2px; flex-shrink:0;"></i>
             <span>
                 An Ruhetagen sowie außerhalb der Öffnungszeiten sind <strong>alle</strong> Bestellmodi
-                automatisch gesperrt – unabhängig von den Schaltern oben.
-                Der Bestellstopp gilt zusätzlich: z.B. bei Schließzeit 22:00 und 30 Min. Stopp
-                können ab 21:30 keine Bestellungen mehr aufgegeben werden.
+                automatisch gesperrt. Der Bestellstopp gilt zusätzlich:
+                z.B. Schließzeit 22:00 + 30 Min. Stopp → keine Bestellungen mehr ab 21:30.
             </span>
         </div>
 
-        <!-- Save -->
         <div style="display:flex; align-items:center; gap:16px;">
-            <button class="btn-primary" id="os-save">
-                <i class="fas fa-save"></i> Einstellungen speichern
-            </button>
+            <button class="btn-primary" id="os-save"><i class="fas fa-save"></i> Einstellungen speichern</button>
             <span id="os-feedback" style="font-size:.82rem; font-weight:600;"></span>
         </div>
 
     </div>`;
 
-    // ── LOGIC ─────────────────────────────────────────────────────────
     const globalToggle = container.querySelector('#os-ordersEnabled');
     const modesSection = container.querySelector('#os-modes');
-
     const updateModesState = () => {
         modesSection.style.opacity       = globalToggle.checked ? '1'   : '0.45';
         modesSection.style.pointerEvents = globalToggle.checked ? ''    : 'none';
@@ -235,14 +199,16 @@ export async function initOrderSettings(container, api, license) {
     updateModesState();
 
     container.querySelector('#os-save').addEventListener('click', async () => {
-        const feedback  = container.querySelector('#os-feedback');
-        const cutoffRaw = parseInt(container.querySelector('#os-cutoffMinutes').value, 10);
-        const newConfig = {
-            ordersEnabled:        container.querySelector('#os-ordersEnabled').checked,
-            dineInEnabled:        container.querySelector('#os-dineInEnabled').checked,
-            pickupEnabled:        container.querySelector('#os-pickupEnabled').checked,
-            deliveryEnabled:      container.querySelector('#os-deliveryEnabled').checked,
-            orderCutoffMinutes:   isNaN(cutoffRaw) ? 30 : Math.max(0, Math.min(120, cutoffRaw)),
+        const feedback   = container.querySelector('#os-feedback');
+        const cutoffRaw  = parseInt(container.querySelector('#os-cutoffMinutes').value, 10);
+        const leadRaw    = parseInt(container.querySelector('#os-leadMinutes').value, 10);
+        const newConfig  = {
+            ordersEnabled:       container.querySelector('#os-ordersEnabled').checked,
+            dineInEnabled:       container.querySelector('#os-dineInEnabled').checked,
+            pickupEnabled:       container.querySelector('#os-pickupEnabled').checked,
+            deliveryEnabled:     container.querySelector('#os-deliveryEnabled').checked,
+            orderCutoffMinutes:  isNaN(cutoffRaw) ? 30 : Math.max(0, Math.min(120, cutoffRaw)),
+            pickupLeadMinutes:   isNaN(leadRaw)   ?  5 : Math.max(0, Math.min(60,  leadRaw)),
         };
         try {
             const current = await api.get('settings') || {};
