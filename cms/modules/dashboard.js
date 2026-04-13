@@ -42,7 +42,7 @@ const WIDGET_TEMPLATES = {
         </div>`,
 
     dishes: (d) => `
-        <div class="stat-widget clickable full-height" onclick="window.switchTab('menu')">
+        <div class="stat-widget clickable full-height" onclick="window.switchTab('menu', 'dishes')">
             <div class="widget-header"><h3>Gerichte</h3><i class="fas fa-utensils"></i></div>
             <div class="value">${d.menu?.length || 0}</div>
             <p>auf der Speisekarte</p>
@@ -80,7 +80,7 @@ const WIDGET_TEMPLATES = {
         </div>`,
 
     categories: (d) => `
-        <div class="stat-widget clickable full-height" onclick="window.switchTab('menu')">
+        <div class="stat-widget clickable full-height" onclick="window.switchTab('menu', 'dishes')">
             <div class="widget-header"><h3>Menü-Vielfalt</h3><i class="fas fa-tags"></i></div>
             <div class="value">${d.catStats.length}</div>
             <p>Speise-Kategorien</p>
@@ -92,7 +92,6 @@ const WIDGET_TEMPLATES = {
         const total = d.menu?.length || 0;
         if (total === 0) return `<div class="stat-widget full-height" style="display:flex;align-items:center;justify-content:center;opacity:.5;"><p>Keine Gerichte vorhanden</p></div>`;
 
-        // Farbpalette für Balken
         const COLORS = ['#1b3a5c','#c8a96e','#2e86ab','#e07b39','#27ae60','#8e44ad','#e74c3c','#16a085','#d35400','#2980b9'];
 
         const rows = d.catStats.map((cs, i) => {
@@ -126,7 +125,7 @@ const WIDGET_TEMPLATES = {
         const min = prices.length ? Math.min(...prices).toFixed(2) : '—';
         const max = prices.length ? Math.max(...prices).toFixed(2) : '—';
         return `
-            <div class="stat-widget clickable full-height" onclick="window.switchTab('menu')">
+            <div class="stat-widget clickable full-height" onclick="window.switchTab('menu', 'dishes')">
                 <div class="widget-header"><h3>Preisspanne</h3><i class="fas fa-euro-sign"></i></div>
                 <div style="margin:10px 0;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -146,7 +145,7 @@ const WIDGET_TEMPLATES = {
         const prices = (d.menu || []).map(m => parseFloat(m.price)).filter(p => !isNaN(p));
         const avg = prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2) : '—';
         return `
-            <div class="stat-widget clickable full-height" onclick="window.switchTab('menu')">
+            <div class="stat-widget clickable full-height" onclick="window.switchTab('menu', 'dishes')">
                 <div class="widget-header"><h3>Durchschnittspreis</h3><i class="fas fa-calculator"></i></div>
                 <div class="value">${avg}&thinsp;&euro;</div>
                 <p>Ø über alle Gerichte</p>
@@ -203,7 +202,6 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
     const oh     = home?.openingHours || {};
     const ohToday = oh[day] || { closed: true };
 
-    // Kategorie-Statistiken berechnen
     const safeMenu = Array.isArray(menu) ? menu : [];
     const catMap   = {};
     safeMenu.forEach(m => {
@@ -227,7 +225,7 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
     const activeWidgets = config.filter(w => w.active !== false);
 
     toolbarEl.innerHTML = `
-        <button class="btn-primary" onclick="window.customizeDashboard()" ${isSortMode ? 'disabled style="opacity:.5;"' : ''}>
+        <button class="btn-primary" onclick="window.customizeDashboard()" ${isSortMode ? 'disabled style="opacity:.5;pointer-events:none;"' : ''}>
             <i class="fas fa-cog"></i> Sichtbarkeit
         </button>
         ${isSortMode ? `<button class="btn-primary" onclick="window.addDashboardSection()" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-plus"></i> Zeile hinzufügen</button>` : ''}
@@ -237,7 +235,6 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
         </button>
     `;
 
-    // Wackeln im Sort-Mode deaktivieren: Klasse "no-wobble" wird auf .stats-grid gesetzt
     container.innerHTML = `
         <style>
             .stats-grid.sort-mode .stat-widget,
@@ -255,6 +252,82 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
                 cursor: grab;
             }
             .stats-grid.sort-mode [data-id]:active { cursor: grabbing; }
+
+            /* Sichtbarkeits-Modal */
+            #visibility-modal-overlay {
+                position: fixed; inset: 0; z-index: 9999;
+                background: rgba(0,0,0,0.45);
+                display: flex; align-items: center; justify-content: center;
+                animation: fadeIn .15s ease;
+            }
+            @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+            #visibility-modal {
+                background: var(--bg-card, #fff);
+                border-radius: 16px;
+                padding: 28px 28px 20px;
+                width: min(480px, 92vw);
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 8px 48px rgba(0,0,0,0.18);
+            }
+            #visibility-modal h2 {
+                font-size: 1.1rem;
+                font-weight: 700;
+                margin-bottom: 18px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .vis-widget-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 0;
+                border-bottom: 1px solid rgba(0,0,0,0.06);
+            }
+            .vis-widget-row:last-of-type { border-bottom: none; }
+            .vis-widget-label {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-size: .9rem;
+                font-weight: 500;
+            }
+            .vis-widget-label i { width: 18px; opacity: .55; }
+            /* Toggle-Switch */
+            .vis-toggle {
+                position: relative;
+                width: 42px; height: 24px;
+                flex-shrink: 0;
+            }
+            .vis-toggle input { opacity: 0; width: 0; height: 0; }
+            .vis-toggle-track {
+                position: absolute; inset: 0;
+                background: #ccc;
+                border-radius: 99px;
+                cursor: pointer;
+                transition: background .2s;
+            }
+            .vis-toggle input:checked + .vis-toggle-track { background: var(--primary, #1b3a5c); }
+            .vis-toggle-track::after {
+                content: '';
+                position: absolute;
+                left: 3px; top: 3px;
+                width: 18px; height: 18px;
+                background: #fff;
+                border-radius: 50%;
+                transition: transform .2s;
+                box-shadow: 0 1px 4px rgba(0,0,0,.2);
+            }
+            .vis-toggle input:checked + .vis-toggle-track::after { transform: translateX(18px); }
+            .vis-modal-footer {
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                margin-top: 20px;
+                padding-top: 16px;
+                border-top: 1px solid rgba(0,0,0,0.07);
+            }
         </style>
         <div class="stats-grid ${isSortMode ? 'sort-mode' : ''}">
             ${activeWidgets.map(w => {
@@ -425,7 +498,80 @@ async function toggleSortMode() {
     document.querySelector('.nav-item.active').click();
 }
 
-function customizeDashboard() { /* Sichtbarkeits-Toggle bleibt wie bisher */ }
+async function customizeDashboard() {
+    // Aktuelle Konfiguration laden (aus Settings oder Default)
+    const settings = await apiGet('settings') || {};
+    const config = JSON.parse(JSON.stringify(settings.dashboardConfig || DEFAULT_WIDGETS));
+
+    // Alle bekannten Widget-IDs (nur echte Widgets, keine Header)
+    const knownIds = Object.keys(WIDGET_META);
+
+    // Sicherstellen dass alle Widgets in der Config vorhanden sind
+    knownIds.forEach(id => {
+        if (!config.find(w => w.id === id)) {
+            config.push({ id, size: 'span-4', active: false });
+        }
+    });
+
+    // Modal bauen
+    const overlay = document.createElement('div');
+    overlay.id = 'visibility-modal-overlay';
+    overlay.innerHTML = `
+        <div id="visibility-modal">
+            <h2><i class="fas fa-eye"></i> Widget-Sichtbarkeit</h2>
+            ${knownIds.map(id => {
+                const meta = WIDGET_META[id];
+                const entry = config.find(w => w.id === id) || { active: true };
+                const isActive = entry.active !== false;
+                return `
+                    <div class="vis-widget-row">
+                        <div class="vis-widget-label">
+                            <i class="fas ${meta.icon}"></i>
+                            <span>${meta.label}</span>
+                        </div>
+                        <label class="vis-toggle">
+                            <input type="checkbox" data-widget-id="${id}" ${isActive ? 'checked' : ''}>
+                            <div class="vis-toggle-track"></div>
+                        </label>
+                    </div>`;
+            }).join('')}
+            <div class="vis-modal-footer">
+                <button class="btn-secondary" id="vis-modal-cancel">Abbrechen</button>
+                <button class="btn-primary" id="vis-modal-save"><i class="fas fa-save"></i> Speichern</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Schließen bei Klick auf Overlay-Hintergrund
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+    document.getElementById('vis-modal-cancel').onclick = () => overlay.remove();
+
+    document.getElementById('vis-modal-save').onclick = async () => {
+        const checkboxes = overlay.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            const entry = config.find(w => w.id === cb.dataset.widgetId);
+            if (entry) entry.active = cb.checked;
+        });
+        const freshSettings = await apiGet('settings') || {};
+        freshSettings.dashboardConfig = config;
+        const res = await apiPost('settings', freshSettings);
+        overlay.remove();
+        if (res.success) {
+            showToast('Sichtbarkeit gespeichert!');
+            // Dashboard neu rendern
+            const contentView    = document.getElementById('content-view');
+            const viewTitle      = document.getElementById('view-title');
+            const dashToolbar    = document.getElementById('dashboard-toolbar');
+            await renderDashboard(contentView, viewTitle, dashToolbar);
+        } else {
+            showToast('Fehler beim Speichern', 'error');
+        }
+    };
+}
+
 function addDashboardSection() {
     localDashboardConfig.push({ id: 'header-' + Date.now(), type: 'header', title: 'Neue Sektion', description: '', size: 'span-12' });
 }
