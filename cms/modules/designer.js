@@ -477,7 +477,7 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
                     const res = await _clearConsentLog();
                     if (res && res.success) {
                         showToast('Consent-Log geleert.');
-                        renderDesigner(container, titleEl);
+                        renderDesigner(container, titleEl, 'consent_log');
                     } else {
                         showToast(res?.reason || 'Fehler beim Leeren.', 'error');
                     }
@@ -502,13 +502,14 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
                     <div class="form-group"><label>Inhalt (HTML erlaubt)</label><textarea id="mp-content" class="input-styled" style="height:300px;">${page.content || ''}</textarea></div>
                     <div class="modal-actions">
                         <button class="btn-secondary" id="mp-cancel">Abbrechen</button>
-                        <button class="btn-primary" id="mp-save">Speichern</button>
+                        <button class="btn-primary" id="mp-save"><i class="fas fa-save"></i> Speichern</button>
                     </div>
                 </div>
             `;
             document.body.appendChild(modal);
             modal.querySelector('#mp-cancel').onclick = () => modal.remove();
             modal.querySelector('#mp-save').onclick = async () => {
+                const saveBtn = modal.querySelector('#mp-save');
                 const updated = {
                     id: page.id,
                     title: modal.querySelector('#mp-title').value,
@@ -520,17 +521,30 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
                 const idx = home.pages.findIndex(p => p.id === page.id);
                 if (idx >= 0) home.pages[idx] = updated;
                 else home.pages.push(updated);
-                
-                await apiPost('homepage', home);
-                modal.remove();
-                renderDesigner(container, titleEl);
+
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Speichern...';
+
+                const res = await apiPost('homepage', home);
+                if (res && res.success) {
+                    modal.remove();
+                    renderDesigner(container, titleEl, 'pages');
+                } else {
+                    showToast(res?.reason || 'Fehler beim Speichern!', 'error');
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Speichern';
+                }
             };
         };
 
         window.deleteCustomPage = async (id) => {
             home.pages = home.pages.filter(p => p.id !== id);
-            await apiPost('homepage', home);
-            renderDesigner(container, titleEl);
+            const res = await apiPost('homepage', home);
+            if (res && res.success) {
+                renderDesigner(container, titleEl, 'pages');
+            } else {
+                showToast(res?.reason || 'Fehler beim Löschen!', 'error');
+            }
         };
     }
 

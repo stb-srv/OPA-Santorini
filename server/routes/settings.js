@@ -35,9 +35,13 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
     });
 
     // Homepage-Einstellungen: nur Auth erforderlich, kein Lizenz-Gate
+    // activeModules wird herausgefiltert – es gehört zu settings, nicht zu homepage
     router.post('/homepage', requireAuth, async (req, res) => {
-        try { await DB.setKV('homepage', req.body); res.json({ success: true }); }
-        catch(e) { res.status(500).json({ success: false, reason: e.message }); }
+        try {
+            const { activeModules, ...homepageData } = req.body;
+            await DB.setKV('homepage', homepageData);
+            res.json({ success: true });
+        } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
 
     router.get('/branding', async (req, res) => {
