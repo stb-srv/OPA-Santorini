@@ -15,7 +15,7 @@
 
     const STORAGE_KEY = 'opa_cart';
     let cartItems   = [];
-    let cartConfig  = { ordersEnabled: false, deliveryEnabled: false, pickupEnabled: false, dineInEnabled: false };
+    let cartConfig  = { ordersEnabled: false, deliveryEnabled: false, pickupEnabled: false, dineInEnabled: false, isOpenNow: true, closedReason: null };
     let configLoaded = false;
 
     function loadCart() {
@@ -177,7 +177,9 @@
             });
         });
 
-        const ordersReady = configLoaded && cartConfig.ordersEnabled &&
+        // Restaurant geschlossen?
+        const isClosed   = configLoaded && !cartConfig.isOpenNow;
+        const ordersReady = configLoaded && cartConfig.ordersEnabled && !isClosed &&
                             (cartConfig.dineInEnabled || cartConfig.pickupEnabled || cartConfig.deliveryEnabled);
 
         footer.innerHTML = `
@@ -190,7 +192,8 @@
                 <button class="opa-cart-btn-clear" id="opa-clear-btn">Warenkorb leeren</button>
             </div>
             ${!configLoaded ? '<p class="opa-cart-hint">Lade Verfügbarkeit…</p>' : ''}
-            ${configLoaded && !cartConfig.ordersEnabled ? '<p class="opa-cart-hint">ℹ️ Zeige dem Personal diesen Warenkorb oder bestelle direkt.</p>' : ''}`;
+            ${isClosed ? `<p class="opa-cart-hint opa-cart-hint--closed">🕑 ${escHtml(cartConfig.closedReason || 'Derzeit keine Bestellungen möglich.')}</p>` : ''}
+            ${configLoaded && !isClosed && !cartConfig.ordersEnabled ? '<p class="opa-cart-hint">ℹ️ Zeige dem Personal diesen Warenkorb oder bestelle direkt.</p>' : ''}`;
 
         document.getElementById('opa-clear-btn')?.addEventListener('click', () => {
             if (confirm('Warenkorb leeren?')) clearCart();
@@ -261,6 +264,9 @@
                 <label class="opa-form-label">Tischnummer *
                     <input class="opa-form-input" type="text" id="co-table" placeholder="z.B. 5" required>
                 </label>
+                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
+                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" required>
+                </label>
                 <label class="opa-form-label">Anmerkung (optional)
                     <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie…"></textarea>
                 </label>`;
@@ -268,6 +274,9 @@
             form.innerHTML = `
                 <label class="opa-form-label">Name *
                     <input class="opa-form-input" type="text" id="co-name" placeholder="Dein Name" required>
+                </label>
+                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
+                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" required>
                 </label>
                 <label class="opa-form-label">Gewünschte Abholzeit *
                     <input class="opa-form-input" type="time" id="co-time" required>
@@ -283,7 +292,7 @@
                 <label class="opa-form-label">Lieferadresse *
                     <input class="opa-form-input" type="text" id="co-address" placeholder="Straße, Hausnummer, PLZ" required>
                 </label>
-                <label class="opa-form-label">Telefon *
+                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
                     <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" required>
                 </label>
                 <label class="opa-form-label">Anmerkung (optional)
@@ -304,13 +313,20 @@
 
         if (mode === 'dine_in') {
             const table = document.getElementById('co-table')?.value.trim();
+            const phone = document.getElementById('co-phone')?.value.trim();
             if (!table) { showMsg(msg, 'error', 'Bitte Tischnummer eingeben.'); return; }
+            if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer für Rückfragen angeben.'); return; }
             payload.tableNumber = table;
+            payload.phone       = phone;
             payload.guestNote   = document.getElementById('co-note')?.value.trim() || null;
         } else if (mode === 'pickup') {
-            const name = document.getElementById('co-name')?.value.trim();
-            const time = document.getElementById('co-time')?.value;
-            if (!name || !time) { showMsg(msg, 'error', 'Bitte Name und Abholzeit angeben.'); return; }
+            const name  = document.getElementById('co-name')?.value.trim();
+            const phone = document.getElementById('co-phone')?.value.trim();
+            const time  = document.getElementById('co-time')?.value;
+            if (!name)  { showMsg(msg, 'error', 'Bitte Name angeben.'); return; }
+            if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer für Rückfragen angeben.'); return; }
+            if (!time)  { showMsg(msg, 'error', 'Bitte Abholzeit angeben.'); return; }
+            payload.phone      = phone;
             payload.pickupTime = time;
             payload.guestNote  = (name ? `Name: ${name}\n` : '') + (document.getElementById('co-note')?.value.trim() || '');
         } else if (mode === 'delivery') {
@@ -354,10 +370,6 @@
 
     // =========================================================================
     // Add-Buttons + Kachel-Klick injizieren
-    // Modus wird aus window.OPA_CART_CLICK_MODE gelesen:
-    //   'button' – nur + Button
-    //   'tile'   – Kachel klickbar, kein + Button (Standard)
-    //   'both'   – Kachel UND + Button
     // =========================================================================
     function injectAddButtons() {
         const mode = window.OPA_CART_CLICK_MODE || 'tile';
@@ -369,7 +381,6 @@
             const name  = card.dataset.itemName  || card.querySelector('[data-item-name]')?.textContent || 'Artikel';
             const price = card.dataset.itemPrice || '0';
 
-            // + Button (nur wenn Modus 'button' oder 'both')
             if (showBtn && !card.querySelector('.opa-add-to-cart')) {
                 const btn = document.createElement('button');
                 btn.className = 'opa-add-to-cart';
@@ -382,7 +393,6 @@
                 card.appendChild(btn);
             }
 
-            // Kachel-Klick (Modus 'tile' oder 'both')
             if (showTile && !card.dataset.cartTileAttached) {
                 card.dataset.cartTileAttached = '1';
                 card.style.cursor = 'pointer';
@@ -396,7 +406,6 @@
         });
     }
 
-    // Expose für app.js (direkte Aufruf nach renderMenu)
     window._opaInjectAddButtons = injectAddButtons;
 
     const observer = new MutationObserver(() => injectAddButtons());
