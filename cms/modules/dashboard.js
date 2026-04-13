@@ -1,35 +1,67 @@
 /**
- * Dashboard Module for Grieche-CMS
+ * Dashboard Module for OPA-CMS
  */
 
 import { apiGet, apiPost } from './api.js';
 import { showToast } from './utils.js';
 
 const DEFAULT_WIDGETS = [
-    { id: 'branding', size: 'span-6' },
-    { id: 'dishes', size: 'span-3' },
-    { id: 'categories', size: 'span-3' },
-    { id: 'reservations', size: 'span-4' },
-    { id: 'status', size: 'span-4' },
-    { id: 'vacation', size: 'span-4' },
-    { id: 'website', size: 'span-12' }
+    { id: 'branding',       size: 'span-6' },
+    { id: 'dishes',         size: 'span-3' },
+    { id: 'categories',     size: 'span-3' },
+    { id: 'reservations',   size: 'span-4' },
+    { id: 'status',         size: 'span-4' },
+    { id: 'vacation',       size: 'span-4' },
+    { id: 'menu_breakdown', size: 'span-6' },
+    { id: 'price_stats',    size: 'span-3' },
+    { id: 'avg_price',      size: 'span-3' },
+    { id: 'website',        size: 'span-12' }
 ];
 
 const WIDGET_META = {
-    branding: { label: 'Restaurant Info', icon: 'fa-store' },
-    dishes: { label: 'Gerichte-Zähler', icon: 'fa-utensils' },
-    reservations: { label: 'Reservierungen', icon: 'fa-calendar-check' },
-    status: { label: 'Heutige Zeiten', icon: 'fa-clock' },
-    vacation: { label: 'Urlaubs-Status', icon: 'fa-umbrella-beach' },
-    website: { label: 'Website Status', icon: 'fa-magic' },
-    categories: { label: 'Kategorien', icon: 'fa-tags' }
+    branding:       { label: 'Restaurant Info',           icon: 'fa-store' },
+    dishes:         { label: 'Gerichte-Zähler',           icon: 'fa-utensils' },
+    reservations:   { label: 'Reservierungen',            icon: 'fa-calendar-check' },
+    status:         { label: 'Heutige Zeiten',            icon: 'fa-clock' },
+    vacation:       { label: 'Urlaubs-Status',            icon: 'fa-umbrella-beach' },
+    website:        { label: 'Website Status',            icon: 'fa-magic' },
+    categories:     { label: 'Kategorien',                icon: 'fa-tags' },
+    menu_breakdown: { label: 'Speisen nach Kategorie',    icon: 'fa-chart-bar' },
+    price_stats:    { label: 'Preisspanne',               icon: 'fa-euro-sign' },
+    avg_price:      { label: 'Durchschnittspreis',        icon: 'fa-calculator' },
 };
 
 const WIDGET_TEMPLATES = {
-    branding: (d) => `<div class="stat-widget accent full-height"><i class="fas fa-store"></i><div><h3 style="color:#fff;">${d.branding?.name || 'Restaurant'}</h3><p style="color:rgba(255,255,255,.8);">Lizenz: ${d.l.type || 'PRO'} • ${d.l.status || 'aktiv'}</p></div></div>`,
-    dishes: (d) => `<div class="stat-widget clickable full-height" onclick="window.switchTab('menu')"><div class="widget-header"><h3>Gerichte</h3><i class="fas fa-utensils"></i></div><div class="value">${d.menu?.length || 0}</div><p>auf der Speisekarte</p></div>`,
-    reservations: (d) => `<div class="stat-widget clickable full-height" onclick="window.switchTab('reservations')"><div class="widget-header"><h3>Reservierungen</h3><i class="fas fa-calendar-check"></i></div><div class="value">${d.reservations?.length || 0}</div><p>insgesamt empfangen</p></div>`,
-    status: (d) => `<div class="stat-widget clickable full-height" onclick="window.switchTab('opening')"><div class="widget-header"><h3>Status</h3><i class="fas fa-clock"></i></div><div class="value" style="font-size:1.4rem;margin:10px 0;">${d.ohText}</div><p>Öffnungszeiten heute</p></div>`,
+    branding: (d) => `
+        <div class="stat-widget accent full-height">
+            <i class="fas fa-store"></i>
+            <div>
+                <h3 style="color:#fff;">${d.branding?.name || 'Restaurant'}</h3>
+                <p style="color:rgba(255,255,255,.8);">Lizenz: ${d.l.type || 'PRO'} &bull; ${d.l.status || 'aktiv'}</p>
+            </div>
+        </div>`,
+
+    dishes: (d) => `
+        <div class="stat-widget clickable full-height" onclick="window.switchTab('menu')">
+            <div class="widget-header"><h3>Gerichte</h3><i class="fas fa-utensils"></i></div>
+            <div class="value">${d.menu?.length || 0}</div>
+            <p>auf der Speisekarte</p>
+        </div>`,
+
+    reservations: (d) => `
+        <div class="stat-widget clickable full-height" onclick="window.switchTab('reservations')">
+            <div class="widget-header"><h3>Reservierungen</h3><i class="fas fa-calendar-check"></i></div>
+            <div class="value">${d.reservations?.length || 0}</div>
+            <p>insgesamt empfangen</p>
+        </div>`,
+
+    status: (d) => `
+        <div class="stat-widget clickable full-height" onclick="window.switchTab('opening')">
+            <div class="widget-header"><h3>Status</h3><i class="fas fa-clock"></i></div>
+            <div class="value" style="font-size:1.4rem;margin:10px 0;">${d.ohText}</div>
+            <p>Öffnungszeiten heute</p>
+        </div>`,
+
     vacation: (d) => {
         const h = d.home || {};
         const st = getVacationStatus(h.vacation || {});
@@ -39,20 +71,98 @@ const WIDGET_TEMPLATES = {
             <p>${st.subText}</p>
         </div>`;
     },
-    website: (d) => `<div class="stat-widget clickable full-height" onclick="window.switchTab('home-editor')"><div class="widget-header"><h3>Website</h3><i class="fas fa-magic"></i></div><div class="value" style="font-size:1.4rem;margin:10px 0;">${d.home?.promotionEnabled ? 'Aktion Aktiv' : 'Kein Banner'}</div><p>${d.home?.promotionText || 'Tagesempfehlung'}</p></div>`,
-    categories: (d) => `<div class="stat-widget clickable full-height" onclick="window.switchTab('menu')"><div class="widget-header"><h3>Menü-Vielfalt</h3><i class="fas fa-tags"></i></div><div class="value">${d.categories.length}</div><p>Speise-Kategorien</p></div>`
+
+    website: (d) => `
+        <div class="stat-widget clickable full-height" onclick="window.switchTab('home-editor')">
+            <div class="widget-header"><h3>Website</h3><i class="fas fa-magic"></i></div>
+            <div class="value" style="font-size:1.4rem;margin:10px 0;">${d.home?.promotionEnabled ? 'Aktion Aktiv' : 'Kein Banner'}</div>
+            <p>${d.home?.promotionText || 'Tagesempfehlung'}</p>
+        </div>`,
+
+    categories: (d) => `
+        <div class="stat-widget clickable full-height" onclick="window.switchTab('menu')">
+            <div class="widget-header"><h3>Menü-Vielfalt</h3><i class="fas fa-tags"></i></div>
+            <div class="value">${d.catStats.length}</div>
+            <p>Speise-Kategorien</p>
+        </div>`,
+
+    // --- Neue Widgets ---
+
+    menu_breakdown: (d) => {
+        const total = d.menu?.length || 0;
+        if (total === 0) return `<div class="stat-widget full-height" style="display:flex;align-items:center;justify-content:center;opacity:.5;"><p>Keine Gerichte vorhanden</p></div>`;
+
+        // Farbpalette für Balken
+        const COLORS = ['#1b3a5c','#c8a96e','#2e86ab','#e07b39','#27ae60','#8e44ad','#e74c3c','#16a085','#d35400','#2980b9'];
+
+        const rows = d.catStats.map((cs, i) => {
+            const pct = total > 0 ? Math.round((cs.count / total) * 100) : 0;
+            const color = COLORS[i % COLORS.length];
+            return `
+                <div style="margin-bottom:10px;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                        <span style="font-size:.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;">${cs.label}</span>
+                        <span style="font-size:.78rem;opacity:.65;white-space:nowrap;">${cs.count} Gerichte &bull; ${pct}%</span>
+                    </div>
+                    <div style="height:7px;border-radius:99px;background:rgba(0,0,0,0.07);overflow:hidden;">
+                        <div style="height:100%;width:${pct}%;background:${color};border-radius:99px;transition:width .5s cubic-bezier(.4,0,.2,1);"></div>
+                    </div>
+                </div>`;
+        }).join('');
+
+        return `
+            <div class="stat-widget full-height" style="overflow:auto;">
+                <div class="widget-header" style="margin-bottom:14px;">
+                    <h3>Speisen nach Kategorie</h3>
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div style="font-size:.75rem;opacity:.5;margin-bottom:12px;">${total} Gerichte gesamt</div>
+                ${rows}
+            </div>`;
+    },
+
+    price_stats: (d) => {
+        const prices = (d.menu || []).map(m => parseFloat(m.price)).filter(p => !isNaN(p));
+        const min = prices.length ? Math.min(...prices).toFixed(2) : '—';
+        const max = prices.length ? Math.max(...prices).toFixed(2) : '—';
+        return `
+            <div class="stat-widget clickable full-height" onclick="window.switchTab('menu')">
+                <div class="widget-header"><h3>Preisspanne</h3><i class="fas fa-euro-sign"></i></div>
+                <div style="margin:10px 0;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <span style="font-size:.72rem;opacity:.55;width:32px;">MIN</span>
+                        <span style="font-size:1.3rem;font-weight:800;color:#27ae60;">${min}&thinsp;&euro;</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:.72rem;opacity:.55;width:32px;">MAX</span>
+                        <span style="font-size:1.3rem;font-weight:800;color:#e07b39;">${max}&thinsp;&euro;</span>
+                    </div>
+                </div>
+                <p>${prices.length} Preise ausgewertet</p>
+            </div>`;
+    },
+
+    avg_price: (d) => {
+        const prices = (d.menu || []).map(m => parseFloat(m.price)).filter(p => !isNaN(p));
+        const avg = prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2) : '—';
+        return `
+            <div class="stat-widget clickable full-height" onclick="window.switchTab('menu')">
+                <div class="widget-header"><h3>Durchschnittspreis</h3><i class="fas fa-calculator"></i></div>
+                <div class="value">${avg}&thinsp;&euro;</div>
+                <p>Ø über alle Gerichte</p>
+            </div>`;
+    },
 };
 
 function getVacationStatus(vac) {
     if (!vac) return { label: 'Inaktiv', color: 'var(--text-muted)', icon: 'fa-umbrella-beach', subText: 'Kein Urlaub geplant' };
     const now = new Date();
     const start = vac.start ? new Date(vac.start) : null;
-    const end = vac.end ? new Date(vac.end) : null;
-    const manuallyActive = vac.enabled === true;
-    if (manuallyActive) return { label: 'Aktiv (Manuell)', color: 'var(--primary)', icon: 'fa-exclamation-circle', subText: 'Sofort-Modus ist AN', type: 'active' };
+    const end   = vac.end   ? new Date(vac.end)   : null;
+    if (vac.enabled === true) return { label: 'Aktiv (Manuell)', color: 'var(--primary)', icon: 'fa-exclamation-circle', subText: 'Sofort-Modus ist AN', type: 'active' };
     if (start && end) {
-        if (now >= start && now <= end) return { label: 'Aktuell aktiv', color: 'var(--primary)', icon: 'fa-umbrella-beach', subText: `Bis ${end.toLocaleDateString('de-DE')}`, type: 'active' };
-        if (now < start) return { label: 'In Kürze', color: '#f59e0b', icon: 'fa-calendar-alt', subText: `Ab ${start.toLocaleDateString('de-DE')}`, type: 'planned' };
+        if (now >= start && now <= end) return { label: 'Aktuell aktiv',  color: 'var(--primary)', icon: 'fa-umbrella-beach', subText: `Bis ${end.toLocaleDateString('de-DE')}`,   type: 'active'  };
+        if (now < start)               return { label: 'In Kürze',       color: '#f59e0b',         icon: 'fa-calendar-alt',  subText: `Ab ${start.toLocaleDateString('de-DE')}`, type: 'planned' };
     }
     return { label: 'Inaktiv', color: 'var(--text-muted)', icon: 'fa-plane-departure', subText: 'Kein Zeitplan aktiv', type: 'off' };
 }
@@ -74,56 +184,90 @@ let dragOffsetY = 0;
 export async function renderDashboard(container, titleEl, toolbarEl) {
     toolbarEl.style.display = 'flex';
     titleEl.innerHTML = '<i class="fas fa-th-large"></i> Dashboard';
-    
-    // Inject global hooks for inline events (Temp solution for refactoring)
-    window.toggleSortMode = toggleSortMode;
-    window.customizeDashboard = customizeDashboard;
+
+    window.toggleSortMode      = toggleSortMode;
+    window.customizeDashboard  = customizeDashboard;
     window.addDashboardSection = addDashboardSection;
     window.removeDashboardSection = removeDashboardSection;
-    window.updateSectionText = updateSectionText;
-    window.dispatchDragStart = handlePointerDown;
+    window.updateSectionText   = updateSectionText;
+    window.dispatchDragStart   = handlePointerDown;
     window.dispatchResizeStart = handleResizeStart;
 
     const [menu, orders, reservations, home, branding, settings] = await Promise.all([
-        apiGet('menu'), apiGet('orders').catch(()=>[]), apiGet('reservations'), 
+        apiGet('menu'), apiGet('orders').catch(() => []), apiGet('reservations'),
         apiGet('homepage'), apiGet('branding'), apiGet('settings')
     ]);
 
     const config = isSortMode ? localDashboardConfig : (settings?.dashboardConfig || DEFAULT_WIDGETS);
-    const day = ['So','Mo','Di','Mi','Do','Fr','Sa'][new Date().getDay()];
-    const oh = home?.openingHours || {};
+    const day    = ['So','Mo','Di','Mi','Do','Fr','Sa'][new Date().getDay()];
+    const oh     = home?.openingHours || {};
     const ohToday = oh[day] || { closed: true };
-    
+
+    // Kategorie-Statistiken berechnen
+    const safeMenu = Array.isArray(menu) ? menu : [];
+    const catMap   = {};
+    safeMenu.forEach(m => {
+        const label = m.cat && typeof m.cat === 'object' ? (m.cat.label || m.cat.id || 'Unsortiert') : (m.cat || 'Unsortiert');
+        catMap[label] = (catMap[label] || 0) + 1;
+    });
+    const catStats = Object.entries(catMap)
+        .map(([label, count]) => ({ label, count }))
+        .sort((a, b) => b.count - a.count);
+
     const d = {
-        menu, reservations, home, branding, l: settings?.license || {},
-        categories: [...new Set((menu || []).map(m => m.cat))],
+        menu: safeMenu,
+        reservations,
+        home,
+        branding,
+        l: settings?.license || {},
+        catStats,
         ohText: ohToday.closed ? 'Heute geschlossen' : `${ohToday.open} - ${ohToday.close}`
     };
 
     const activeWidgets = config.filter(w => w.active !== false);
 
     toolbarEl.innerHTML = `
-        <button class="btn-primary" onclick="window.customizeDashboard()" ${isSortMode ? 'disabled style="opacity:.5;"' : ''}><i class="fas fa-cog"></i> Sichtbarkeit</button>
+        <button class="btn-primary" onclick="window.customizeDashboard()" ${isSortMode ? 'disabled style="opacity:.5;"' : ''}>
+            <i class="fas fa-cog"></i> Sichtbarkeit
+        </button>
         ${isSortMode ? `<button class="btn-primary" onclick="window.addDashboardSection()" style="background:var(--primary-light); color:var(--primary);"><i class="fas fa-plus"></i> Zeile hinzufügen</button>` : ''}
         <button class="btn-primary ${isSortMode ? 'active' : ''}" onclick="window.toggleSortMode()" style="${isSortMode ? 'background:#16a34a; border-color:#16a34a;' : ''}">
-            <i class="fas ${isSortMode ? 'fa-save' : 'fa-arrows-alt'}"></i> 
+            <i class="fas ${isSortMode ? 'fa-save' : 'fa-arrows-alt'}"></i>
             ${isSortMode ? 'Anordnung Speichern' : 'Anordnung ändern'}
         </button>
     `;
 
+    // Wackeln im Sort-Mode deaktivieren: Klasse "no-wobble" wird auf .stats-grid gesetzt
     container.innerHTML = `
+        <style>
+            .stats-grid.sort-mode .stat-widget,
+            .stats-grid.sort-mode .dashboard-section-header {
+                animation: none !important;
+                transform: none !important;
+            }
+            .stats-grid.sort-mode [data-id]:hover .stat-widget {
+                box-shadow: 0 0 0 2px var(--primary, #1b3a5c), 0 4px 24px rgba(0,0,0,0.10);
+            }
+            .stats-grid.sort-mode [data-id] {
+                outline: 1.5px dashed rgba(0,0,0,0.13);
+                outline-offset: 3px;
+                border-radius: 16px;
+                cursor: grab;
+            }
+            .stats-grid.sort-mode [data-id]:active { cursor: grabbing; }
+        </style>
         <div class="stats-grid ${isSortMode ? 'sort-mode' : ''}">
             ${activeWidgets.map(w => {
                 if (w.type === 'header') {
                     return `
-                        <div class="dashboard-section-header ${isSortMode ? 'is-draggable' : ''}" 
+                        <div class="dashboard-section-header ${isSortMode ? 'is-draggable' : ''}"
                              data-id="${w.id}"
                              onpointerdown="window.dispatchDragStart(event, '${w.id}')"
                              style="${isSortMode ? 'cursor:grab;' : ''}">
                             <div style="flex:1;">
                                 ${isSortMode ? `
-                                    <input type="text" class="section-edit-input" style="font-size:1.5rem; font-weight:800; padding:0; background:none; border:none; width:100%; outline:none;" value="${w.title}" oninput="window.updateSectionText('${w.id}', 'title', this.value)" onpointerdown="event.stopPropagation()">
-                                    <input type="text" class="section-edit-input" style="font-size:0.9rem; opacity:0.6; padding:0; margin-top:5px; background:none; border:none; width:100%; outline:none;" value="${w.description}" oninput="window.updateSectionText('${w.id}', 'description', this.value)" onpointerdown="event.stopPropagation()">
+                                    <input type="text" class="section-edit-input" style="font-size:1.5rem;font-weight:800;padding:0;background:none;border:none;width:100%;outline:none;" value="${w.title}" oninput="window.updateSectionText('${w.id}', 'title', this.value)" onpointerdown="event.stopPropagation()">
+                                    <input type="text" class="section-edit-input" style="font-size:0.9rem;opacity:0.6;padding:0;margin-top:5px;background:none;border:none;width:100%;outline:none;" value="${w.description}" oninput="window.updateSectionText('${w.id}', 'description', this.value)" onpointerdown="event.stopPropagation()">
                                 ` : `
                                     <h3>${w.title}</h3>
                                     <p>${w.description}</p>
@@ -135,16 +279,12 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
                 }
 
                 const template = WIDGET_TEMPLATES[w.id];
-                let widgetHtml = '';
-                if (!template) {
-                    // Logic for plugin widgets would go here
-                    widgetHtml = `<div class="stat-widget full-height" style="opacity:.5; display:flex; align-items:center; justify-content:center;"><i class="fas fa-plug" style="margin-right:10px;"></i> ${w.id}</div>`;
-                } else {
-                    widgetHtml = template(d);
-                }
+                const widgetHtml = template
+                    ? template(d)
+                    : `<div class="stat-widget full-height" style="opacity:.5;display:flex;align-items:center;justify-content:center;"><i class="fas fa-plug" style="margin-right:10px;"></i>${w.id}</div>`;
 
                 return `
-                    <div class="${w.size || 'span-4'} ${w.vSize || 'span-h-1'} ${isSortMode ? 'is-draggable' : ''} ${isResizing && resizingWidgetId === w.id ? 'resizing' : ''}" 
+                    <div class="${w.size || 'span-4'} ${w.vSize || 'span-h-1'} ${isSortMode ? 'is-draggable' : ''} ${isResizing && resizingWidgetId === w.id ? 'resizing' : ''}"
                          style="position:relative;"
                          data-id="${w.id}"
                          onmouseenter="this.classList.add('widget-hover')"
@@ -159,14 +299,14 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
         ${activeWidgets.length === 0 ? '<div style="padding:100px;text-align:center;opacity:.5;"><h3>Keine Widgets aktiv</h3></div>' : ''}
     `;
 
-    // Internal Drag & Resize Handlers (Local to module)
+    // --- Drag & Drop ---
     function handlePointerDown(e, id) {
         if (!isSortMode || isResizing || e.button !== 0) return;
         if (e.target.closest('button, input, textarea')) return;
         isPointerDragging = true;
-        draggedWidgetId = id;
-        draggedGroupIds = [];
-        const sourceEl = document.querySelector(`[data-id="${id}"]`);
+        draggedWidgetId   = id;
+        draggedGroupIds   = [];
+        const sourceEl    = document.querySelector(`[data-id="${id}"]`);
         if (!sourceEl) return;
         const sourceIdx = localDashboardConfig.findIndex(w => w.id === id);
         if (sourceIdx !== -1 && localDashboardConfig[sourceIdx].type === 'header') {
@@ -176,15 +316,12 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
                 draggedGroupIds.push(localDashboardConfig[i].id);
             }
         }
-        const rect = sourceEl.getBoundingClientRect();
-        dragOffsetX = e.clientX - rect.left;
-        dragOffsetY = e.clientY - rect.top;
-        dragProxyEl = sourceEl.cloneNode(true);
+        const rect    = sourceEl.getBoundingClientRect();
+        dragOffsetX   = e.clientX - rect.left;
+        dragOffsetY   = e.clientY - rect.top;
+        dragProxyEl   = sourceEl.cloneNode(true);
         dragProxyEl.classList.add('drag-proxy');
-        dragProxyEl.style.width = rect.width + 'px';
-        dragProxyEl.style.height = rect.height + 'px';
-        dragProxyEl.style.left = rect.left + 'px';
-        dragProxyEl.style.top = rect.top + 'px';
+        dragProxyEl.style.cssText += `width:${rect.width}px;height:${rect.height}px;left:${rect.left}px;top:${rect.top}px;`;
         document.body.appendChild(dragProxyEl);
         sourceEl.classList.add('drag-source-hidden');
         document.addEventListener('pointermove', handlePointerMove);
@@ -195,7 +332,7 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
     function handlePointerMove(e) {
         if (!isPointerDragging || !dragProxyEl) return;
         dragProxyEl.style.left = (e.clientX - dragOffsetX) + 'px';
-        dragProxyEl.style.top = (e.clientY - dragOffsetY) + 'px';
+        dragProxyEl.style.top  = (e.clientY - dragOffsetY) + 'px';
         dragProxyEl.style.display = 'none';
         const target = document.elementFromPoint(e.clientX, e.clientY);
         dragProxyEl.style.display = 'flex';
@@ -208,24 +345,21 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
         if (now - lastSwapTime < 350) return;
         const sourceIdx = localDashboardConfig.findIndex(w => w.id === draggedWidgetId);
         const targetIdx = localDashboardConfig.findIndex(w => w.id === targetId);
-        if (sourceIdx !== -1 && targetIdx !== -1) {
-            lastSwapTime = now;
-            const grid = document.querySelector('.stats-grid');
-            const targetEl = document.querySelector(`[data-id="${targetId}"]`);
-            if (draggedGroupIds.length > 1) {
-                const group = localDashboardConfig.splice(sourceIdx, draggedGroupIds.length);
-                const newTargetIdx = localDashboardConfig.findIndex(w => w.id === targetId);
-                localDashboardConfig.splice(newTargetIdx, 0, ...group);
-                const nodes = draggedGroupIds.map(gid => document.querySelector(`[data-id="${gid}"]`)).filter(n => !!n);
-                if (sourceIdx < targetIdx) nodes.forEach(node => grid.insertBefore(node, targetEl.nextElementSibling));
-                else nodes.forEach(node => grid.insertBefore(node, targetEl));
-            } else {
-                const [moved] = localDashboardConfig.splice(sourceIdx, 1);
-                localDashboardConfig.splice(targetIdx, 0, moved);
-                const sourceEl = document.querySelector(`[data-id="${draggedWidgetId}"]`);
-                if (sourceIdx < targetIdx) grid.insertBefore(sourceEl, targetEl.nextElementSibling);
-                else grid.insertBefore(sourceEl, targetEl);
-            }
+        if (sourceIdx === -1 || targetIdx === -1) return;
+        lastSwapTime = now;
+        const grid     = document.querySelector('.stats-grid');
+        const targetEl = document.querySelector(`[data-id="${targetId}"]`);
+        if (draggedGroupIds.length > 1) {
+            const group = localDashboardConfig.splice(sourceIdx, draggedGroupIds.length);
+            const newTargetIdx = localDashboardConfig.findIndex(w => w.id === targetId);
+            localDashboardConfig.splice(newTargetIdx, 0, ...group);
+            const nodes = draggedGroupIds.map(gid => document.querySelector(`[data-id="${gid}"]`)).filter(Boolean);
+            nodes.forEach(node => grid.insertBefore(node, sourceIdx < targetIdx ? targetEl.nextElementSibling : targetEl));
+        } else {
+            const [moved] = localDashboardConfig.splice(sourceIdx, 1);
+            localDashboardConfig.splice(targetIdx, 0, moved);
+            const sourceEl = document.querySelector(`[data-id="${draggedWidgetId}"]`);
+            grid.insertBefore(sourceEl, sourceIdx < targetIdx ? targetEl.nextElementSibling : targetEl);
         }
     }
 
@@ -239,6 +373,7 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
         renderDashboard(container, titleEl, toolbarEl);
     }
 
+    // --- Resize ---
     function handleResizeStart(e, id) {
         e.preventDefault(); e.stopPropagation();
         isResizing = true; resizingWidgetId = id;
@@ -248,21 +383,23 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
         document.addEventListener('mousemove', handleResizing);
         document.addEventListener('mouseup', handleResizeEnd);
     }
+
     function handleResizing(e) {
         if (!isResizing) return;
-        const currentWidth = startWidth + (e.pageX - startX);
+        const currentWidth  = startWidth  + (e.pageX - startX);
         const currentHeight = startHeight + (e.pageY - startY);
         const gridWidth = document.querySelector('.stats-grid').offsetWidth;
-        const cols = (currentWidth / gridWidth) * 12;
-        let newSize = cols > 9 ? 'span-12' : cols > 5 ? 'span-6' : cols > 3.5 ? 'span-4' : 'span-3';
-        const rows = Math.round(currentHeight / 150);
-        let newVSize = rows >= 3 ? 'span-h-3' : rows >= 2 ? 'span-h-2' : 'span-h-1';
+        const cols   = (currentWidth / gridWidth) * 12;
+        const newSize  = cols > 9 ? 'span-12' : cols > 5 ? 'span-6' : cols > 3.5 ? 'span-4' : 'span-3';
+        const rows     = Math.round(currentHeight / 150);
+        const newVSize = rows >= 3 ? 'span-h-3' : rows >= 2 ? 'span-h-2' : 'span-h-1';
         const widget = localDashboardConfig.find(w => w.id === resizingWidgetId);
         if (widget && (widget.size !== newSize || widget.vSize !== newVSize)) {
             widget.size = newSize; widget.vSize = newVSize;
             renderDashboard(container, titleEl, toolbarEl);
         }
     }
+
     function handleResizeEnd() {
         isResizing = false; resizingWidgetId = null;
         document.removeEventListener('mousemove', handleResizing);
@@ -273,19 +410,29 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
 async function toggleSortMode() {
     if (!isSortMode) {
         const settings = await apiGet('settings') || {};
-        localDashboardConfig = [...(settings.dashboardConfig || DEFAULT_WIDGETS)];
+        localDashboardConfig = JSON.parse(JSON.stringify(settings.dashboardConfig || DEFAULT_WIDGETS));
         isSortMode = true;
     } else {
         const settings = await apiGet('settings') || {};
         settings.dashboardConfig = localDashboardConfig;
         const res = await apiPost('settings', settings);
-        if (res.success) { isSortMode = false; localDashboardConfig = null; showToast('Anordnung gespeichert!'); }
+        if (res.success) {
+            isSortMode = false;
+            localDashboardConfig = null;
+            showToast('Anordnung gespeichert!');
+        }
     }
-    // Re-render handled by main app or internally if container preserved
-    document.querySelector('.nav-item.active').click(); 
+    document.querySelector('.nav-item.active').click();
 }
 
-function customizeDashboard() { /* Similarly refactored... */ }
-function addDashboardSection() { localDashboardConfig.push({ id: 'header-' + Date.now(), type: 'header', title: 'Neue Sektion', description: '', size: 'span-12' }); }
-function removeDashboardSection(id) { localDashboardConfig = localDashboardConfig.filter(w => w.id !== id); }
-function updateSectionText(id, field, value) { const h = localDashboardConfig.find(w => w.id === id); if (h) h[field] = value; }
+function customizeDashboard() { /* Sichtbarkeits-Toggle bleibt wie bisher */ }
+function addDashboardSection() {
+    localDashboardConfig.push({ id: 'header-' + Date.now(), type: 'header', title: 'Neue Sektion', description: '', size: 'span-12' });
+}
+function removeDashboardSection(id) {
+    localDashboardConfig = localDashboardConfig.filter(w => w.id !== id);
+}
+function updateSectionText(id, field, value) {
+    const h = localDashboardConfig.find(w => w.id === id);
+    if (h) h[field] = value;
+}
