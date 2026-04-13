@@ -44,6 +44,24 @@ function scheduleTokenExpiryWarning() {
     } catch (e) {}
 }
 
+/**
+ * Erzeugt ein Inline-SVG Avatar mit den Initialen des Nutzers.
+ * Kein externer Request nötig – funktioniert immer.
+ */
+function buildInitialsAvatar(name) {
+    const parts = name.trim().split(/\s+/);
+    const initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : name.slice(0, 2).toUpperCase();
+    const colors = ['#2b6cb0','#276749','#744210','#702459','#553c9a','#2c7a7b','#9b2c2c'];
+    const bg = colors[name.charCodeAt(0) % colors.length];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">`
+        + `<circle cx="18" cy="18" r="18" fill="${bg}"/>`
+        + `<text x="18" y="23" text-anchor="middle" font-size="14" font-family="sans-serif" fill="#fff" font-weight="600">${initials}</text>`
+        + `</svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
 /** Liest den Benutzernamen aus dem JWT-Token und zeigt ihn im Header an */
 function applyUserFromToken() {
     const token = sessionStorage.getItem('opa_admin_token');
@@ -54,7 +72,7 @@ function applyUserFromToken() {
         const nameEl   = document.getElementById('disp-user-name');
         const avatarEl = document.getElementById('disp-user-avatar');
         if (nameEl)   nameEl.textContent = name;
-        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2b6cb0&color=fff`;
+        if (avatarEl) avatarEl.src = buildInitialsAvatar(name);
     } catch (e) {}
 }
 
@@ -95,6 +113,13 @@ async function init() {
         document.getElementById('disp-res-name').textContent    = branding.name   || 'OPA! Santorini';
         document.getElementById('disp-res-slogan').textContent  = branding.slogan || 'Restaurant Management';
         if (branding.name) document.title = branding.name + ' CMS';
+
+        // Haupt-Logo im CMS-Header setzen (falls vorhanden)
+        const cmsLogoEl = document.getElementById('cms-header-logo');
+        if (cmsLogoEl && branding.logo) {
+            cmsLogoEl.src = branding.logo;
+            cmsLogoEl.style.display = 'block';
+        }
 
         if (branding.favicon) {
             let link = document.querySelector("link[rel~='icon']");

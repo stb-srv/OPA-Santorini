@@ -48,6 +48,27 @@ const MODULE_LABELS = {
     qr_pay:         { label: 'QR-Pay',                  icon: 'qrcode', desc: 'Bezahlung per QR-Code am Tisch' },
 };
 
+/** Hilfsfunktion: Gibt true zurück wenn der Wert eine echte Bild-URL/DataURL ist */
+function isValidImageSrc(val) {
+    if (!val || typeof val !== 'string') return false;
+    return val.startsWith('data:image') || val.startsWith('http') || val.startsWith('/');
+}
+
+/** Rendert eine Vorschau-Box für Logo/Favicon/Bild */
+function renderImagePreview(id, src, width, height, label) {
+    const hasImg = isValidImageSrc(src);
+    const placeholderStyle = `
+        display:flex; align-items:center; justify-content:center;
+        width:${width}; height:${height};
+        background:rgba(0,0,0,0.06); border-radius:8px;
+        border:2px dashed rgba(0,0,0,0.15);
+        color:rgba(0,0,0,0.3); font-size:.8rem; text-align:center; padding:8px;
+    `;
+    return hasImg
+        ? `<img id="${id}" src="${src}" style="width:${width}; height:${height}; object-fit:contain; border-radius:8px; background:rgba(0,0,0,0.05); display:block;" alt="${label}">`
+        : `<div id="${id}" style="${placeholderStyle}"><span><i class="fas fa-image" style="display:block; font-size:1.2rem; margin-bottom:4px;"></i>${label}</span></div>`;
+}
+
 function renderSettingsTab(settings, branding, users, licInfo) {
     if (settingsTab === 'license') {
         const l = settings.license || {};
@@ -186,30 +207,34 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                 <div class="form-group full"><label>Restaurant Name</label><input id="br-name" class="input-styled" value="${branding.name || ''}" placeholder="z.B. OPA! Santorini"></div>
                 <div class="form-group"><label>Slogan</label><input id="br-slogan" class="input-styled" value="${branding.slogan || ''}" placeholder="z.B. Griechische Meeresfrüchte"></div>
                 <div class="form-group"><label>Telefon (Gästeansicht)</label><input id="br-phone" class="input-styled" value="${branding.phone || ''}" placeholder="0123 / 456789"></div>
-                
+
                 <div class="form-group full" style="border-top:1px solid rgba(0,0,0,0.05); padding-top:15px; margin-top:10px;">
                     <label>Logo & Favicon</label>
                 </div>
-                
+
                 <div class="form-group">
                     <label>Haupt-Logo</label>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img id="br-logo-preview" src="${branding.logo || ''}" style="height:60px; object-fit:contain; border-radius:8px; background:rgba(0,0,0,0.05); ${!branding.logo ? 'display:none;' : ''}">
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        ${renderImagePreview('br-logo-preview', branding.logo, 'auto', '60px', 'Kein Logo')}
                         <input type="file" id="br-logo-upload" accept="image/*" style="display:none;">
-                        <button class="btn-secondary" onclick="document.getElementById('br-logo-upload').click()"><i class="fas fa-upload"></i> Hochladen</button>
+                        <button class="btn-secondary" id="btn-upload-logo"><i class="fas fa-upload"></i> Hochladen</button>
+                        ${isValidImageSrc(branding.logo) ? '<button class="btn-edit" id="btn-remove-logo" style="color:#ef4444;" title="Logo entfernen"><i class="fas fa-times"></i></button>' : ''}
                     </div>
+                    <input type="hidden" id="br-logo-value" value="${isValidImageSrc(branding.logo) ? branding.logo : ''}">
                 </div>
 
                 <div class="form-group">
                     <label>Favicon (Browser-Tab Symbol)</label>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img id="br-favicon-preview" src="${branding.favicon || ''}" style="width:32px; height:32px; object-fit:contain; border-radius:50%; background:rgba(0,0,0,0.05); ${!branding.favicon ? 'display:none;' : ''}">
+                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                        ${renderImagePreview('br-favicon-preview', branding.favicon, '32px', '32px', 'Kein Favicon')}
                         <input type="file" id="br-favicon-upload" accept="image/*" style="display:none;">
-                        <button class="btn-secondary" onclick="document.getElementById('br-favicon-upload').click()"><i class="fas fa-upload"></i> Hochladen</button>
+                        <button class="btn-secondary" id="btn-upload-favicon"><i class="fas fa-upload"></i> Hochladen</button>
+                        ${isValidImageSrc(branding.favicon) ? '<button class="btn-edit" id="btn-remove-favicon" style="color:#ef4444;" title="Favicon entfernen"><i class="fas fa-times"></i></button>' : ''}
                     </div>
+                    <input type="hidden" id="br-favicon-value" value="${isValidImageSrc(branding.favicon) ? branding.favicon : ''}">
                 </div>
 
-                <p class="field-hint" style="grid-column:1/-1;">Wird Gästen angezeigt, wenn keine Online-Reservierung möglich ist. Logos werden im Gäste-Web und im CMS genutzt.</p>
+                <p class="field-hint" style="grid-column:1/-1;">Logos werden im Gäste-Web und im CMS-Header angezeigt.</p>
             </div>
         `;
     }
@@ -355,23 +380,85 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
         };
     }
 
-    // --- Branding Uploads ---
-    const handleUpload = (input, preview) => {
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                preview.src = ev.target.result;
-                preview.style.display = 'block';
+    // --- Branding: Upload-Handler mit Datei-Reader (kein externer Upload nötig für Vorschau) ---
+    if (settingsTab === 'branding') {
+        /**
+         * Richtet einen Upload-Button + FileReader-Vorschau ein.
+         * Schreibt das Ergebnis in das hidden Input, damit der Speichern-Handler es liest.
+         */
+        const setupImageUpload = (btnId, fileInputId, previewId, hiddenId, previewWidth, previewHeight) => {
+            const btn       = container.querySelector(`#${btnId}`);
+            const fileInput = container.querySelector(`#${fileInputId}`);
+            const hidden    = container.querySelector(`#${hiddenId}`);
+            if (!btn || !fileInput || !hidden) return;
+
+            btn.onclick = () => fileInput.click();
+
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const dataUrl = ev.target.result;
+                    hidden.value  = dataUrl;
+
+                    // Vorschau-Element austauschen (div → img oder img.src aktualisieren)
+                    const existing = container.querySelector(`#${previewId}`);
+                    if (existing) {
+                        if (existing.tagName === 'IMG') {
+                            existing.src = dataUrl;
+                        } else {
+                            // Placeholder-div durch <img> ersetzen
+                            const img = document.createElement('img');
+                            img.id    = previewId;
+                            img.src   = dataUrl;
+                            img.alt   = 'Vorschau';
+                            img.style.cssText = `width:${previewWidth}; height:${previewHeight}; object-fit:contain; border-radius:8px; background:rgba(0,0,0,0.05); display:block;`;
+                            existing.replaceWith(img);
+                        }
+                    }
+                    showToast('Bild ausgewählt – bitte speichern.');
+                };
+                reader.readAsDataURL(file);
             };
-            reader.readAsDataURL(file);
         };
-    };
-    const logoInput = container.querySelector('#br-logo-upload');
-    const favInput = container.querySelector('#br-favicon-upload');
-    if (logoInput) handleUpload(logoInput, container.querySelector('#br-logo-preview'));
-    if (favInput) handleUpload(favInput, container.querySelector('#br-favicon-preview'));
+
+        setupImageUpload('btn-upload-logo',    'br-logo-upload',    'br-logo-preview',    'br-logo-value',    'auto', '60px');
+        setupImageUpload('btn-upload-favicon', 'br-favicon-upload', 'br-favicon-preview', 'br-favicon-value', '32px', '32px');
+
+        // Entfernen-Buttons
+        const btnRemoveLogo = container.querySelector('#btn-remove-logo');
+        if (btnRemoveLogo) {
+            btnRemoveLogo.onclick = () => {
+                container.querySelector('#br-logo-value').value = '';
+                const el = container.querySelector('#br-logo-preview');
+                if (el) {
+                    const placeholder = document.createElement('div');
+                    placeholder.id = 'br-logo-preview';
+                    placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;width:auto;height:60px;background:rgba(0,0,0,0.06);border-radius:8px;border:2px dashed rgba(0,0,0,0.15);color:rgba(0,0,0,0.3);font-size:.8rem;padding:8px;min-width:80px;';
+                    placeholder.innerHTML = '<span><i class="fas fa-image" style="display:block;font-size:1.2rem;margin-bottom:4px;"></i>Kein Logo</span>';
+                    el.replaceWith(placeholder);
+                }
+                btnRemoveLogo.remove();
+            };
+        }
+
+        const btnRemoveFav = container.querySelector('#btn-remove-favicon');
+        if (btnRemoveFav) {
+            btnRemoveFav.onclick = () => {
+                container.querySelector('#br-favicon-value').value = '';
+                const el = container.querySelector('#br-favicon-preview');
+                if (el) {
+                    const placeholder = document.createElement('div');
+                    placeholder.id = 'br-favicon-preview';
+                    placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:rgba(0,0,0,0.06);border-radius:8px;border:2px dashed rgba(0,0,0,0.15);color:rgba(0,0,0,0.3);font-size:.7rem;';
+                    placeholder.innerHTML = '<i class="fas fa-image"></i>';
+                    el.replaceWith(placeholder);
+                }
+                btnRemoveFav.remove();
+            };
+        }
+    }
 
     // --- Speichern ---
     const saveBtn = container.querySelector('#save-settings');
@@ -379,32 +466,41 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
         saveBtn.onclick = async () => {
             if (settingsTab === 'branding') {
                 const b = { ...branding };
-                b.name = container.querySelector('#br-name').value;
+                b.name   = container.querySelector('#br-name').value;
                 b.slogan = container.querySelector('#br-slogan').value;
-                b.phone = container.querySelector('#br-phone').value;
-                
-                const logoImg = container.querySelector('#br-logo-preview').src;
-                if (!logoImg.includes(window.location.host) && logoImg.length > 50) b.logo = logoImg;
-                else if (logoImg) b.logo = logoImg;
+                b.phone  = container.querySelector('#br-phone').value;
 
-                const favImg = container.querySelector('#br-favicon-preview').src;
-                if (!favImg.includes(window.location.host) && favImg.length > 50) b.favicon = favImg;
-                else if (favImg) b.favicon = favImg;
+                // Werte aus den hidden inputs lesen (sicher, kein window.location Bug)
+                const logoVal    = container.querySelector('#br-logo-value').value;
+                const faviconVal = container.querySelector('#br-favicon-value').value;
+
+                if (isValidImageSrc(logoVal))    b.logo    = logoVal;
+                else                              b.logo    = '';
+                if (isValidImageSrc(faviconVal)) b.favicon = faviconVal;
+                else                              b.favicon = '';
 
                 const r = await apiPost('branding', b);
                 if (r?.success) {
                     showToast('Branding aktualisiert!');
-                    // Apply immediately to current CMS view
-                    document.getElementById('disp-res-name').textContent = b.name;
-                    document.getElementById('disp-res-slogan').textContent = b.slogan;
-                    if (b.name) document.title = b.name + ' CMS';
+                    // Sofort im CMS-Header anwenden
+                    const nameEl   = document.getElementById('disp-res-name');
+                    const sloganEl = document.getElementById('disp-res-slogan');
+                    if (nameEl)   nameEl.textContent   = b.name;
+                    if (sloganEl) sloganEl.textContent = b.slogan;
+                    if (b.name)   document.title = b.name + ' CMS';
+
+                    // Logo im CMS-Header aktualisieren
+                    const cmsLogoEl = document.getElementById('cms-header-logo');
+                    if (cmsLogoEl) {
+                        if (b.logo) { cmsLogoEl.src = b.logo; cmsLogoEl.style.display = 'block'; }
+                        else          cmsLogoEl.style.display = 'none';
+                    }
+
+                    // Favicon aktualisieren
                     if (b.favicon) {
                         let link = document.querySelector("link[rel~='icon']");
                         if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
                         link.href = b.favicon;
-                    }
-                    if (b.logo) {
-                        document.querySelectorAll('.login-logo').forEach(el => el.src = b.logo);
                     }
                 }
             } else if (settingsTab === 'visibility') {
@@ -481,7 +577,7 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                 email: modal.querySelector('#mu-email').value,
                 role: modal.querySelector('#mu-role').value
             };
-            
+
             let res, data;
             const headers = { 'Content-Type': 'application/json', 'x-admin-token': sessionStorage.getItem('opa_admin_token') };
             if (isNew) {
@@ -489,7 +585,7 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
             } else {
                 res = await fetch(`/api/users/${u.user}`, { method: 'PUT', headers, body: JSON.stringify(payload) });
             }
-            
+
             data = await res.json();
             if (data.success) {
                 modal.remove();
