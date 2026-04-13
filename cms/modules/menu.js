@@ -1,5 +1,5 @@
 /**
- * Menu Management Module for Grieche-CMS
+ * Menu Management Module for OPA-CMS
  */
 
 import { apiGet, apiPost, apiUpload } from './api.js';
@@ -38,13 +38,20 @@ export async function renderMenu(container, titleEl, tab = 'dishes', forceRefres
     const currentTab = tab || 'dishes';
     titleEl.innerHTML = `<div style="display:flex;align-items:center;">Speisekarte <i class="fas fa-chevron-right" style="margin:0 10px; font-size:.8rem; opacity:.3;"></i> ${currentTab.charAt(0).toUpperCase() + currentTab.slice(1)} ${renderHelpIcon('menu')}</div>`;
     
-    // Fetch data
+    // Fetch data – null-safe mit ?? Fallback
     if (!cachedMenuData || forceRefresh) {
         const [menu, categories, allergens, additives] = await Promise.all([
-            apiGet('menu') || [], apiGet('categories') || [], 
-            apiGet('allergens') || {}, apiGet('additives') || {}
+            apiGet('menu'),
+            apiGet('categories'),
+            apiGet('allergens'),
+            apiGet('additives')
         ]);
-        cachedMenuData = { menu, categories, allergens, additives };
+        cachedMenuData = {
+            menu:       Array.isArray(menu)       ? menu       : [],
+            categories: Array.isArray(categories) ? categories : [],
+            allergens:  (allergens  && typeof allergens  === 'object' && !Array.isArray(allergens))  ? allergens  : {},
+            additives:  (additives  && typeof additives  === 'object' && !Array.isArray(additives))  ? additives  : {},
+        };
     }
     const { menu, categories, allergens, additives } = cachedMenuData;
 
@@ -85,36 +92,48 @@ function renderCurrentTab(tab, menu, categories, allergens, additives) {
 }
 
 function renderDishesTab(menu, categories, allergens, additives) {
-    const filtered = menu.map((m, i) => ({ ...m, _idx: i }))
+    // Null-safe Fallbacks
+    const safeMenu       = Array.isArray(menu)       ? menu       : [];
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const safeAllergens  = (allergens && typeof allergens === 'object') ? allergens : {};
+    const safeAdditives  = (additives && typeof additives === 'object') ? additives : {};
+
+    const filtered = safeMenu.map((m, i) => ({ ...m, _idx: i }))
         .filter(d => {
             const dCatLabel = getCatLabel(d.cat);
             const matchCat = (cmsCatFilter === 'All' || dCatLabel.trim() === cmsCatFilter.trim());
-            // Fix: DB-Spalte heißt 'number', nicht 'nr'
             const matchSearch = ((d.name || '').toLowerCase().includes(cmsSearch.toLowerCase()) || (d.number || '').toString().includes(cmsSearch));
             return matchCat && matchSearch;
         })
         .sort((a,b) => {
             if (cmsSort === 'price') return parseFloat(a.price) - parseFloat(b.price);
-            // Fix: DB-Spalte heißt 'number', nicht 'nr'
             if (cmsSort === 'nr') return (a.number || '').toString().localeCompare((b.number || '').toString(), undefined, {numeric: true});
             return a.name.localeCompare(b.name);
         });
 
-    const cats = [...new Set(menu.map(m => getCatLabel(m.cat)))].sort();
+    // Filter-Dropdown: Kategorien aus den vorhandenen Gerichten ODER aus der Kategorie-Liste
+    const catFromDishes = [...new Set(safeMenu.map(m => getCatLabel(m.cat)).filter(Boolean))].sort();
+    const catFromDB     = safeCategories.map(c => getCatLabel(c)).filter(Boolean);
+    const cats          = [...new Set([...catFromDB, ...catFromDishes])].sort();
     
-    const allergenChecks = Object.entries(allergens).map(([code, name]) => `
+    const allergenChecks = Object.entries(safeAllergens).map(([code, name]) => `
         <label class="check-item">
             <input type="checkbox" class="dish-allergen-cb" value="${code}">
             <span><strong>${code}</strong> ${name}</span>
         </label>
     `).join('');
 
-    const additiveChecks = Object.entries(additives).map(([code, name]) => `
+    const additiveChecks = Object.entries(safeAdditives).map(([code, name]) => `
         <label class="check-item">
             <input type="checkbox" class="dish-additive-cb" value="${code}">
             <span><strong>${code}</strong> ${name}</span>
         </label>
     `).join('');
+
+    // Kategorie-Optionen für das Formular
+    const catOptions = safeCategories.length > 0
+        ? safeCategories.map(c => `<option value="${getCatLabel(c)}">${getCatLabel(c)}</option>`).join('')
+        : cats.map(c => `<option value="${c}">${c}</option>`).join('');
 
     return `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:15px;flex-wrap:wrap;">
@@ -148,7 +167,7 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 <div class="form-group"><label>Name</label><input class="input-styled" id="df-name" placeholder="z.B. Gyros Teller"></div>
                 <div class="form-group"><label>Kategorie</label>
                     <select class="input-styled" id="df-cat">
-                         ${categories.map(c => `<option value="${getCatLabel(c)}">${getCatLabel(c)}</option>`).join('')}
+                        ${catOptions || '<option value="">Keine Kategorien vorhanden</option>'}
                     </select>
                 </div>
                 <div class="form-group"><label>Preis (&euro;)</label><input class="input-styled" id="df-price" type="number" step="0.10" placeholder="0.00"></div>
@@ -194,12 +213,14 @@ function renderDishesTab(menu, categories, allergens, additives) {
                         </td>
                     </tr>
                 `).join('')}
+                ${filtered.length === 0 ? `<tr><td colspan="6" style="text-align:center;opacity:.5;padding:40px;">Keine Gerichte vorhanden.</td></tr>` : ''}
             </tbody>
         </table>
     `;
 }
 
 function renderCategoriesTab(categories) {
+    const safeCats = Array.isArray(categories) ? categories : [];
     return `
         <div style="margin-bottom:24px;"><h3>Kategorien verwalten</h3></div>
         <div class="glass-panel" style="padding:30px; margin-bottom:30px;">
@@ -208,22 +229,27 @@ function renderCategoriesTab(categories) {
                 <button class="btn-primary" id="add-cat-btn" style="background:var(--accent);"><i class="fas fa-plus"></i> Hinzuf&uuml;gen</button>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:12px;">
-                ${categories.filter(c => c).map((c, i) => {
-                    const label = getCatLabel(c);
-                    return `
-                        <div class="glass-pill" style="padding:10px 20px; display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); border-radius:100px;">
-                            <span style="font-weight:700; color:var(--primary);">${label}</span>
-                            <button onclick="window.deleteCategory(${i})" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:5px;"><i class="fas fa-times"></i></button>
-                        </div>
-                    `;
-                }).join('')}
+                ${safeCats.length === 0
+                    ? '<p style="opacity:.5;">Noch keine Kategorien vorhanden. Oben eine neue hinzuf&uuml;gen.</p>'
+                    : safeCats.filter(c => c).map((c, i) => {
+                        const label = getCatLabel(c);
+                        const catId = (typeof c === 'object' ? c.id : null) || label;
+                        return `
+                            <div class="glass-pill" style="padding:10px 20px; display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); border-radius:100px;">
+                                <span style="font-weight:700; color:var(--primary);">${label}</span>
+                                <button onclick="window.deleteCategory(${i})" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:5px;"><i class="fas fa-times"></i></button>
+                            </div>
+                        `;
+                    }).join('')
+                }
             </div>
         </div>
     `;
 }
 
 function renderKVTab(title, data, keyName, placeholder) {
-    const entries = Object.entries(data);
+    const safeData = (data && typeof data === 'object' && !Array.isArray(data)) ? data : {};
+    const entries = Object.entries(safeData);
     return `
         <div style="margin-bottom:24px;"><h3>${title}</h3></div>
         <div class="glass-panel" style="padding:30px;">
@@ -251,22 +277,42 @@ function renderAllergensTab(allergens) { return renderKVTab('Allergene', allerge
 function renderAdditivesTab(additives) { return renderKVTab('Zusatzstoffe', additives, 'additives', 'Name des Zusatzstoffes...'); }
 
 function attachMenuHandlers(container, menu, categories, allergens, additives, currentTab) {
+    const safeMenu       = Array.isArray(menu)       ? menu       : [];
+    const safeCategories = Array.isArray(categories) ? categories : [];
+    const safeAllergens  = (allergens && typeof allergens === 'object') ? allergens : {};
+    const safeAdditives  = (additives && typeof additives === 'object') ? additives : {};
+
     window.editDish = (idx) => {
         editingDishIndex = idx;
-        const d = menu[idx];
+        const d = safeMenu[idx];
+        if (!d) return;
         const f = container.querySelector('#dish-form');
         const bt = container.querySelector('#toggle-dish-form');
         if (f && bt) {
             f.style.display = 'block';
             bt.style.display = 'none';
             container.querySelector('#dish-form-title').textContent = 'Gericht bearbeiten';
-            // Fix: DB-Spalte heißt 'number', nicht 'nr'
-            container.querySelector('#df-nr').value = d.number || '';
-            container.querySelector('#df-name').value = d.name || '';
-            container.querySelector('#df-price').value = d.price || '';
-            container.querySelector('#df-cat').value = getCatLabel(d.cat);
-            container.querySelector('#df-desc').value = d.desc || '';
-            container.querySelector('#df-img').value = d.image || '';
+            // number = DB-Spaltenname
+            container.querySelector('#df-nr').value    = d.number || '';
+            container.querySelector('#df-name').value  = d.name   || '';
+            container.querySelector('#df-price').value = d.price  || '';
+            // cat ist in der DB ein String (der Label-Wert)
+            const catSelect = container.querySelector('#df-cat');
+            if (catSelect) {
+                const catVal = getCatLabel(d.cat);
+                // Versuche Option direkt zu setzen
+                catSelect.value = catVal;
+                // Falls Option nicht existiert, füge sie temporär hinzu
+                if (catSelect.value !== catVal) {
+                    const opt = document.createElement('option');
+                    opt.value = catVal;
+                    opt.textContent = catVal;
+                    catSelect.appendChild(opt);
+                    catSelect.value = catVal;
+                }
+            }
+            container.querySelector('#df-desc').value = d.desc  || '';
+            container.querySelector('#df-img').value  = d.image || '';
             const preview = container.querySelector('#df-img-preview');
             if (d.image) preview.innerHTML = `<img src="${d.image}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
             else preview.innerHTML = `<i class="fas fa-cloud-upload-alt"></i><span>Bild hochladen</span>`;
@@ -284,22 +330,25 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
     };
 
     window.deleteDish = async (idx) => {
-        const dish = menu[idx];
+        const dish = safeMenu[idx];
+        if (!dish) return;
         if (await showConfirm('L\u00f6schen?', `M\u00f6chten Sie das Gericht "${dish.name}" wirklich entfernen?`)) {
             const res = await (await import('./api.js')).apiDelete(`menu/${dish.id}`);
             if (res?.success) {
-                menu.splice(idx, 1);
+                cachedMenuData = null;
                 renderMenu(container, document.getElementById('view-title'), 'dishes', true);
             }
         }
     };
 
     window.deleteCategory = async (idx) => {
-        const cat = categories[idx];
+        const cat = safeCategories[idx];
+        if (!cat) return;
         if (await showConfirm('L\u00f6schen?', 'Dies entfernt die Kategorie dauerhaft.')) {
-            const res = await (await import('./api.js')).apiDelete(`categories/${cat.id}`);
+            const catId = typeof cat === 'object' ? cat.id : cat;
+            const res = await (await import('./api.js')).apiDelete(`categories/${catId}`);
             if (res?.success) {
-                categories.splice(idx, 1);
+                cachedMenuData = null;
                 renderMenu(container, document.getElementById('view-title'), 'categories', true);
             }
         }
@@ -307,9 +356,10 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
 
     window.deleteKV = async (key, code) => {
         if (await showConfirm('L\u00f6schen?', `M\u00f6chten Sie den Eintrag "${code}" wirklich entfernen?`)) {
-            const data = key === 'allergens' ? allergens : additives;
+            const data = key === 'allergens' ? { ...safeAllergens } : { ...safeAdditives };
             delete data[code];
             await apiPost(key, data);
+            cachedMenuData = null;
             renderMenu(container, document.getElementById('view-title'), key, true);
         }
     };
@@ -349,8 +399,10 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             }
         };
 
-        container.querySelector('#btn-export-pdf').onclick = () => {
+        const pdfBtn = container.querySelector('#btn-export-pdf');
+        if (pdfBtn) pdfBtn.onclick = () => {
              const { jsPDF } = window.jspdf;
+             if (!jsPDF) return showToast('jsPDF nicht geladen', 'error');
              const doc = new jsPDF();
              const resName = document.getElementById('disp-res-name')?.textContent || 'OPA!';
              doc.setFontSize(22); doc.setTextColor(27, 58, 92);
@@ -359,18 +411,18 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
              doc.text('SPEISEKARTE', 14, 30);
              const data = [];
              let curCat = '';
-             [...menu].sort((a,b) => (getCatLabel(a.cat)).localeCompare(getCatLabel(b.cat))).forEach(d => {
+             [...safeMenu].sort((a,b) => (getCatLabel(a.cat)).localeCompare(getCatLabel(b.cat))).forEach(d => {
                  const dCat = getCatLabel(d.cat);
                  if (dCat !== curCat) { curCat = dCat; data.push([{ content: curCat.toUpperCase(), colSpan: 3, styles: { fillColor: [27, 58, 92], textColor: 255, fontStyle: 'bold' } }]); }
-                 // Fix: DB-Spalte heißt 'number', nicht 'nr'
                  data.push([d.number || '-', d.name + (d.desc ? '\n' + d.desc : ''), parseFloat(d.price).toFixed(2) + ' \u20ac']);
              });
              doc.autoTable({ startY: 40, head: [['Nr.', 'Gericht', 'Preis']], body: data, theme: 'striped', headStyles: { fillColor: [200, 169, 110] }, styles: { font: 'helvetica' } });
              doc.save('speisekarte.pdf');
         };
 
-        container.querySelector('#btn-export-menu').onclick = () => {
-             const backup = { menu, categories, allergens, additives };
+        const exportBtn = container.querySelector('#btn-export-menu');
+        if (exportBtn) exportBtn.onclick = () => {
+             const backup = { menu: safeMenu, categories: safeCategories, allergens: safeAllergens, additives: safeAdditives };
              const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
              const url = URL.createObjectURL(blob);
              const a = document.createElement('a'); a.href = url; a.download = `backup_menu.json`;
@@ -378,7 +430,8 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
              URL.revokeObjectURL(url);
         };
 
-        container.querySelector('#btn-import-menu').onclick = () => {
+        const importBtn = container.querySelector('#btn-import-menu');
+        if (importBtn) importBtn.onclick = () => {
              const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
              inp.onchange = async (e) => {
                  const file = e.target.files[0];
@@ -403,18 +456,21 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
              inp.click();
         };
 
-        container.querySelector('#df-save').onclick = async () => {
-            const number = container.querySelector('#df-nr').value;
-            const name = container.querySelector('#df-name').value;
-            const price = container.querySelector('#df-price').value;
-            const cat = container.querySelector('#df-cat').value;
+        const saveBtn = container.querySelector('#df-save');
+        if (saveBtn) saveBtn.onclick = async () => {
+            const number = (container.querySelector('#df-nr').value || '').trim();
+            const name   = (container.querySelector('#df-name').value || '').trim();
+            const price  = container.querySelector('#df-price').value;
+            const cat    = container.querySelector('#df-cat').value;
             if (!name || !price) return showToast('Name und Preis erforderlich', 'error');
             const dish = {
-                id: editingDishIndex !== -1 ? menu[editingDishIndex].id : Date.now().toString(),
-                // Fix: Feld heißt 'number' (DB-Spaltenname), nicht 'nr'
-                number, name, price, cat,
-                desc: container.querySelector('#df-desc').value,
-                image: container.querySelector('#df-img').value,
+                id:        editingDishIndex !== -1 ? safeMenu[editingDishIndex].id : Date.now().toString(),
+                number,   // DB-Spaltenname: number
+                name,
+                price:     parseFloat(price),
+                cat,
+                desc:      (container.querySelector('#df-desc').value || '').trim(),
+                image:     container.querySelector('#df-img').value || null,
                 allergens: Array.from(container.querySelectorAll('.dish-allergen-cb:checked')).map(cb => cb.value),
                 additives: Array.from(container.querySelectorAll('.dish-additive-cb:checked')).map(cb => cb.value)
             };
@@ -435,26 +491,43 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             }
         };
     } else if (currentTab === 'categories') {
-        container.querySelector('#add-cat-btn').onclick = async () => {
-            const label = container.querySelector('#new-cat-input').value;
-            if (!label) return;
-            const newCat = { id: label.toLowerCase().replace(/\s/g, '_'), label, icon: 'utensils', active: true };
+        const addCatBtn = container.querySelector('#add-cat-btn');
+        if (addCatBtn) addCatBtn.onclick = async () => {
+            const label = (container.querySelector('#new-cat-input').value || '').trim();
+            if (!label) return showToast('Bitte einen Namen eingeben', 'error');
+            const newCat = {
+                id:     label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_'),
+                label,
+                icon:   'utensils',
+                active: true,
+                sort_order: safeCategories.length
+            };
             const res = await apiPost('categories', newCat);
             if (res?.success) {
                 cachedMenuData = null;
+                container.querySelector('#new-cat-input').value = '';
                 renderMenu(container, document.getElementById('view-title'), 'categories', true);
+            } else {
+                showToast(res?.reason || 'Fehler beim Anlegen', 'error');
             }
         };
     } else {
-        container.querySelector('#kv-add-btn').onclick = async () => {
-            const code = container.querySelector('#kv-code').value;
-            const name = container.querySelector('#kv-name').value;
+        const kvAddBtn = container.querySelector('#kv-add-btn');
+        if (kvAddBtn) kvAddBtn.onclick = async () => {
+            const code = (container.querySelector('#kv-code').value || '').trim();
+            const name = (container.querySelector('#kv-name').value || '').trim();
             if (!code || !name) return showToast('Code und Name n\u00f6tig', 'error');
-            const data = currentTab === 'allergens' ? allergens : additives;
+            const data = currentTab === 'allergens' ? { ...safeAllergens } : { ...safeAdditives };
             data[code] = name;
-            await apiPost(currentTab, data);
-            cachedMenuData = null;
-            renderMenu(container, document.getElementById('view-title'), currentTab, true);
+            const res = await apiPost(currentTab, data);
+            if (res?.success) {
+                cachedMenuData = null;
+                container.querySelector('#kv-code').value = '';
+                container.querySelector('#kv-name').value = '';
+                renderMenu(container, document.getElementById('view-title'), currentTab, true);
+            } else {
+                showToast(res?.reason || 'Fehler beim Speichern', 'error');
+            }
         };
     }
 }

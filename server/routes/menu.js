@@ -5,10 +5,6 @@ const router = require('express').Router();
 const DB = require('../database.js');
 const { getCurrentLicense } = require('../license.js');
 
-/**
- * Extrahiert die saubere Domain aus dem Request.
- * Konsistent mit settings.js – verhindert FREE-Fallback durch Domain-Mismatch.
- */
 function extractDomain(req) {
     const forwarded = req.headers['x-forwarded-host'];
     if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
@@ -20,52 +16,43 @@ function extractDomain(req) {
     return host.split(':')[0];
 }
 
-/**
- * Gibt das Speisenlimit zuverlässig zurück.
- * Fix: verified kann null/undefined sein – NullPointer-Crash verhindert.
- */
 const jwt = require('jsonwebtoken');
 async function getMaxDishes(DB, domain) {
-    // DB.getKV ist synchron – kein await nötig
     const settings = DB.getKV('settings', {});
     const lic      = (settings && settings.license) ? settings.license : {};
 
-    // 1. Verifiziertes Token (Normalfall)
     let verified = null;
-    try {
-        verified = await getCurrentLicense(DB, domain);
-    } catch (_) { /* getCurrentLicense kann werfen */ }
+    try { verified = await getCurrentLicense(DB, domain); } catch (_) {}
 
     if (verified && verified.status === 'active') {
         return verified.limits?.max_dishes ?? 999;
     }
 
-    // 2. Fallback: Token dekodieren ohne Signaturprüfung
     if (lic.licenseToken) {
         try {
             const payload = jwt.decode(lic.licenseToken);
             if (payload?.limits?.max_dishes) {
-                console.warn('⚠️  [menu/import] Token nicht verifizierbar – nutze dekodiertes Limit:', payload.limits.max_dishes);
+                console.warn('\u26a0\ufe0f  [menu/import] Token nicht verifizierbar – nutze dekodiertes Limit:', payload.limits.max_dishes);
                 return payload.limits.max_dishes;
             }
-        } catch (_) { /* ignore */ }
+        } catch (_) {}
     }
 
-    // 3. Fallback: License-Key vorhanden aber kein Token – großzügiges Limit
     if (lic.key && !lic.isTrial) {
-        console.warn('⚠️  [menu/import] Kein verifizierbares Token, aber License-Key vorhanden – Limit 9999.');
+        console.warn('\u26a0\ufe0f  [menu/import] Kein verifizierbares Token, aber License-Key vorhanden – Limit 9999.');
         return 9999;
     }
 
-    // 4. Trial oder keine Lizenz – Plan-Limit (verified kann null sein!)
     return verified?.limits?.max_dishes ?? 30;
 }
 
 module.exports = (requireAuth, requireLicense) => {
     // --- Menu ---
     router.get('/menu', async (req, res) => {
-        try { res.json(await DB.getMenu()); }
-        catch(e) { res.status(500).json({ success: false, reason: e.message }); }
+        try {
+            const result = await DB.getMenu();
+            res.json(Array.isArray(result) ? result : []);
+        } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
 
     router.post('/menu', requireAuth, requireLicense('menu_edit'), async (req, res) => {
@@ -78,8 +65,9 @@ module.exports = (requireAuth, requireLicense) => {
             if (menu.length >= maxDishes)
                 return res.status(403).json({ success: false, reason: `Ihr ${lic?.label || lic?.type || 'Free'}-Plan erlaubt maximal ${maxDishes} Speisen.` });
             const m = req.body;
-            // Kompatibilitäts-Mapping falls Frontend 'nr' statt 'number' sendet
+            // Kompatibilitäts-Mapping: 'nr' → 'number'
             if (typeof m.number === 'undefined' && typeof m.nr !== 'undefined') m.number = m.nr;
+            if (typeof m.number === 'string') m.number = m.number.trim() || null;
             m.id = m.id || Date.now().toString();
             await DB.addMenu(m);
             res.json({ success: true, id: m.id });
@@ -89,8 +77,9 @@ module.exports = (requireAuth, requireLicense) => {
     router.put('/menu/:id', requireAuth, requireLicense('menu_edit'), async (req, res) => {
         try {
             const body = req.body;
-            // Kompatibilitäts-Mapping falls Frontend 'nr' statt 'number' sendet
+            // Kompatibilitäts-Mapping: 'nr' → 'number'
             if (typeof body.number === 'undefined' && typeof body.nr !== 'undefined') body.number = body.nr;
+            if (typeof body.number === 'string') body.number = body.number.trim() || null;
             const updated = await DB.updateMenu(req.params.id, body);
             if (!updated) return res.status(404).json({ success: false, reason: 'Gericht nicht gefunden.' });
             res.json({ success: true, item: updated });
@@ -104,14 +93,21 @@ module.exports = (requireAuth, requireLicense) => {
 
     // --- Categories ---
     router.get('/categories', async (req, res) => {
-        try { res.json(await DB.getCategories()); }
-        catch(e) { res.status(500).json({ success: false, reason: e.message }); }
+        try {
+            const result = await DB.getCategories();
+            // Immer ein Array zurückgeben – verhindert null.map() im Frontend
+            res.json(Array.isArray(result) ? result : []);
+        } catch(e) {
+            console.error('[GET /categories] Fehler:', e.message);
+            res.json([]); // Kein 500 – leeres Array verhindert Frontend-Crash
+        }
     });
 
     router.post('/categories', requireAuth, async (req, res) => {
         try {
             const c = req.body;
-            c.id = c.id || Date.now().toString();
+            if (!c.label) return res.status(400).json({ success: false, reason: 'Label erforderlich.' });
+            c.id = c.id || c.label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_') || Date.now().toString();
             await DB.addCategory(c);
             res.json({ success: true, id: c.id });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
@@ -132,16 +128,20 @@ module.exports = (requireAuth, requireLicense) => {
 
     // --- Allergens / Additives ---
     router.get('/allergens', async (req, res) => {
-        try { res.json(await DB.getKV('allergens', {})); }
-        catch(e) { res.status(500).json({ success: false, reason: e.message }); }
+        try {
+            const result = await DB.getKV('allergens', {});
+            res.json((result && typeof result === 'object' && !Array.isArray(result)) ? result : {});
+        } catch(e) { res.json({}); }
     });
     router.post('/allergens', requireAuth, async (req, res) => {
         try { await DB.setKV('allergens', req.body); res.json({ success: true }); }
         catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
     router.get('/additives', async (req, res) => {
-        try { res.json(await DB.getKV('additives', {})); }
-        catch(e) { res.status(500).json({ success: false, reason: e.message }); }
+        try {
+            const result = await DB.getKV('additives', {});
+            res.json((result && typeof result === 'object' && !Array.isArray(result)) ? result : {});
+        } catch(e) { res.json({}); }
     });
     router.post('/additives', requireAuth, async (req, res) => {
         try { await DB.setKV('additives', req.body); res.json({ success: true }); }
