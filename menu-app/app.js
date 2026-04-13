@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         get: (r) => get(r)
     };
 
-    // --- Smart Reservations (New) ---
+    // --- Smart Reservations ---
     async function checkLiveAvailability() {
         const guests = window.resGuests || 2;
         const date = window.resDate;
@@ -51,21 +51,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) { console.error("Grid update failed:", e); }
     }
 
-    async function loadPlugins() {
-        const plugins = await get('plugins');
-        if (!plugins) return;
-        const loaders = plugins.filter(p => p.enabled).map(p => {
-            return new Promise((resolve) => {
-                const script = document.createElement('script');
-                script.src = `/plugins/${p.id}/website.js`;
-                script.onload = resolve;
-                script.onerror = resolve;
-                document.head.appendChild(script);
-            });
-        });
-        await Promise.all(loaders);
-    }
-
     // --- API ---
     async function get(r) { try { return await (await fetch(`${API}/${r}`)).json(); } catch { return null; } }
 
@@ -80,6 +65,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             homeData = hp;
             applyBranding(hp);
             renderNav(hp.tabs, hp.activeModules, hp.pages);
+            // FIX: initConsentEngine setzt KEINE window.*-Funktionen mehr.
+            // cookie-consent.js setzt window.acceptAllCookies etc. selbst.
             initConsentEngine(hp.cookieBanner);
 
             if (hp.activeModules?.reservations === false) {
@@ -144,13 +131,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (resForm) {
             resForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const rawTime = document.getElementById('res-time').value.replace(' Uhr', '');
+                const rawTime = document.getElementById('res-time')?.value.replace(' Uhr', '') || '';
                 const data = {
                     name: document.getElementById('res-name').value,
                     email: document.getElementById('res-email').value,
                     phone: document.getElementById('res-phone').value,
-                    date: document.getElementById('res-date').value,
-                    time: rawTime,
+                    date: document.getElementById('res-date')?.value || window.resDate,
+                    time: rawTime || window.resTime,
                     guests: document.getElementById('res-guests').value,
                     note: document.getElementById('res-note').value
                 };
@@ -228,6 +215,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     let activeCat = 'all';
     let searchQuery = '';
 
+    // Kachel-Klick-Modus: wird aus homeData.cartClickMode gelesen
+    // Mögliche Werte: 'button' (nur +), 'tile' (nur Kachel), 'both' (beides)
+    // Wird von cart.js via window.OPA_CART_CLICK_MODE ausgelesen
+    window.OPA_CART_CLICK_MODE = 'button';
+
     function renderCategories() {
         const c = document.getElementById('categories');
         if (!c) return;
@@ -274,18 +266,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (empty) empty.style.display = 'none';
 
-        // FIX: data-menu-item, data-item-name, data-item-price damit cart.js
-        //      injectAddButtons() den "+"-Button korrekt einfügen kann
+        // Kachel-Klick-Modus aus homeData laden
+        const clickMode = homeData.cartClickMode || 'button';
+        window.OPA_CART_CLICK_MODE = clickMode;
+
+        // tile / both: Kachel bekommt cursor:pointer + data-cart-tile Marker
+        const tileClickable = (clickMode === 'tile' || clickMode === 'both');
+
         list.innerHTML = items.map(item => {
             const id    = String(item.id || item._id || item.name);
             const price = parseFloat(item.price).toFixed(2);
             const allergenBadges = (item.allergens || []).length
                 ? `<span class="dish-badges">${item.allergens.map(a => `<span class="badge">${a}</span>`).join('')}</span>` : '';
             return `
-            <div class="dish-card"
+            <div class="dish-card${tileClickable ? ' dish-card--clickable' : ''}"
                  data-menu-item="${id}"
                  data-item-name="${item.name.replace(/"/g, '&quot;')}"
-                 data-item-price="${price}">
+                 data-item-price="${price}"
+                 ${tileClickable ? 'data-cart-tile="1"' : ''}>
                 <div class="dish-card-img">
                     ${item.image
                         ? `<img src="${item.image}" alt="${item.name}" loading="lazy">`
@@ -299,6 +297,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="dish-card-footer">
                         <span class="dish-price">${price} €</span>
                         ${allergenBadges}
+                        ${tileClickable ? '<span class="dish-card-add-hint">+ Hinzufügen</span>' : ''}
                     </div>
                 </div>
             </div>`;
@@ -306,42 +305,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // --- COOKIE CONSENT ENGINE ---
-    // FIX: app.js überschreibt NICHT mehr die Funktionen aus cookie-consent.js.
-    //      initConsentEngine() prüft nur ob der Banner angezeigt werden soll
-    //      und delegiert alles an window.OPAConsent (cookie-consent.js).
+    // FIX: app.js überschreibt KEINE Cookie-Funktionen mehr.
+    // cookie-consent.js setzt window.acceptAllCookies / rejectNonEssential /
+    // saveCustomCookies / toggleCookieView selbst – und wird NACH app.js geladen,
+    // sodass es immer gewinnt. initConsentEngine() hier tut nichts weiter als
+    // den Trigger-Button ggf. zu verstecken wenn der Banner deaktiviert ist.
     function initConsentEngine(cfg) {
-        if (!cfg?.enabled) return;
-        // cookie-consent.js initialisiert sich selbst via DOMContentLoaded.
-        // Wir stellen nur sicher dass der Trigger-Button sichtbar ist
-        // sobald OPAConsent geladen ist.
-        const showTrigger = () => {
+        if (!cfg?.enabled) {
+            // Cookie-Banner vom Admin deaktiviert → Banner und Trigger ausblenden
+            const banner  = document.getElementById('cookie-banner');
             const trigger = document.getElementById('cookie-settings-trigger');
-            if (trigger && window.OPAConsent) {
-                // Trigger nur anzeigen wenn Consent bereits gegeben wurde
-                if (window.OPAConsent.getChoices()) trigger.style.display = 'flex';
-            }
-        };
-        // OPAConsent ist evtl. noch nicht initialisiert → kurz warten
-        if (window.OPAConsent) showTrigger();
-        else window.addEventListener('load', showTrigger);
+            if (banner)  banner.style.display  = 'none';
+            if (trigger) trigger.style.display = 'none';
+        }
+        // Alle anderen Aktionen übernimmt cookie-consent.js vollständig.
     }
-
-    // FIX: Diese Funktionen wurden früher von app.js überschrieben und haben
-    //      einen anderen localStorage-Key ('opa_cookie_consent') geschrieben,
-    //      während cookie-consent.js 'opa_consent' liest/schreibt.
-    //      → Alle Cookie-Aktionen delegieren jetzt an window.OPAConsent.
-    window.acceptAllCookies   = () => window.OPAConsent?.acceptAll   ? window.OPAConsent.acceptAll()   : null;
-    window.rejectNonEssential = () => window.OPAConsent?.rejectAll   ? window.OPAConsent.rejectAll()   : null;
-    window.saveCustomCookies  = () => window.OPAConsent?.saveCustom  ? window.OPAConsent.saveCustom()  : null;
-    window.showCookieBanner   = (force) => {
-        if (force && window.OPAConsent) window.OPAConsent.showPreferences();
-    };
-    window.toggleCookieView   = (toSettings) => {
-        const overview = document.getElementById('cookie-view-overview');
-        const settings = document.getElementById('cookie-view-settings');
-        if (overview) overview.style.display = toSettings ? 'none' : '';
-        if (settings) settings.style.display = toSettings ? '' : 'none';
-    };
 
     // --- VIEW SWITCHING ---
     window.switchTab = (id) => {
@@ -493,7 +471,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isPast  = d < today;
             const isToday = d.getTime() === today.getTime();
             const isSel   = window.resDate === dStr;
-            html += `<div class="cal-modern-day ${isPast?'past':''} ${isToday?'today':''} ${isSel?'selected':""}" 
+            html += `<div class="cal-modern-day ${isPast?'past':''} ${isToday?'today':''} ${isSel?'selected':''}" 
                           onclick="${isPast ? '' : `window.selectResDate('${dStr}')`}">${i}</div>`;
         }
         grid.innerHTML = html;
@@ -552,9 +530,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderResCalendar();
     };
 
-    const resForm = document.getElementById('res-form');
-    if (resForm) {
-        resForm.onsubmit = async (e) => {
+    const resForm2 = document.getElementById('res-form');
+    if (resForm2) {
+        resForm2.onsubmit = async (e) => {
             e.preventDefault();
             const btn = document.getElementById('res-submit');
             btn.disabled = true;
@@ -579,7 +557,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     toast('Reservierung erfolgreich!');
                     window.closeResModal();
                     window.switchTab('home');
-                    resForm.reset();
+                    resForm2.reset();
                 } else { toast('Fehler: ' + (res.reason || 'Unbekannt')); }
             } catch (e) { toast('Verbindungsfehler!'); }
             btn.disabled = false;

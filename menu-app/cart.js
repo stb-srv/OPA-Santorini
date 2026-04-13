@@ -4,29 +4,20 @@
  * Komplett clientseitig (localStorage). Kein Login nötig.
  * Funktioniert unabhängig vom gewählten Lizenzplan.
  *
- * Checkout-Flow (Bestellung übermitteln) wird nur angezeigt wenn:
- *  - /api/cart/config meldet ordersEnabled: true
- *  - Mindestens ein Modus (dineIn / pickup / delivery) aktiv
- *
- * Einbinden in menu-app/index.html:
- *   <link rel="stylesheet" href="cart.css">
- *   <script src="cart.js" defer></script>
+ * Kachel-Klick-Modus: window.OPA_CART_CLICK_MODE (gesetzt von app.js)
+ *   'button' – nur der + Button fügt hinzu (Standard)
+ *   'tile'   – Klick auf die ganze Kachel fügt hinzu (kein + Button)
+ *   'both'   – Kachel UND + Button fügen hinzu
  */
 
 (function () {
     'use strict';
 
-    // =========================================================================
-    // State
-    // =========================================================================
     const STORAGE_KEY = 'opa_cart';
-    let cartItems   = [];   // [{ id, name, price, quantity, image? }]
+    let cartItems   = [];
     let cartConfig  = { ordersEnabled: false, deliveryEnabled: false, pickupEnabled: false, dineInEnabled: false };
     let configLoaded = false;
 
-    // =========================================================================
-    // Persistenz (localStorage)
-    // =========================================================================
     function loadCart() {
         try { cartItems = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
         catch (_) { cartItems = []; }
@@ -34,12 +25,9 @@
 
     function saveCart() {
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cartItems)); }
-        catch (_) { /* Fallback: in-memory */ }
+        catch (_) { }
     }
 
-    // =========================================================================
-    // Cart Logik
-    // =========================================================================
     function addItem(item) {
         const existing = cartItems.find(i => i.id === item.id);
         if (existing) { existing.quantity += 1; }
@@ -67,29 +55,23 @@
 
     function totalCount() { return cartItems.reduce((s, i) => s + i.quantity, 0); }
     function totalPrice() { return cartItems.reduce((s, i) => s + (parseFloat(i.price) || 0) * i.quantity, 0); }
-    function fmt(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+    function fmt(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
 
-    // =========================================================================
-    // Config vom Server laden (einmalig)
-    // =========================================================================
     async function loadConfig() {
         try {
             const res = await fetch('/api/cart/config');
-            if (res.ok) {
-                cartConfig = await res.json();
-            }
-        } catch (_) { /* bleibt bei Default */ }
+            if (res.ok) cartConfig = await res.json();
+        } catch (_) { }
         configLoaded = true;
         render();
     }
 
     // =========================================================================
-    // DOM: Warenkorb-Button + Drawer aufbauen
+    // DOM aufbauen
     // =========================================================================
     function buildCartDOM() {
-        if (document.getElementById('opa-cart-btn')) return; // schon gebaut
+        if (document.getElementById('opa-cart-btn')) return;
 
-        // --- Floating Button ---
         const btn = document.createElement('button');
         btn.id = 'opa-cart-btn';
         btn.className = 'opa-cart-fab';
@@ -104,14 +86,12 @@
         btn.addEventListener('click', openDrawer);
         document.body.appendChild(btn);
 
-        // --- Backdrop ---
         const backdrop = document.createElement('div');
         backdrop.id = 'opa-cart-backdrop';
         backdrop.className = 'opa-cart-backdrop';
         backdrop.addEventListener('click', closeDrawer);
         document.body.appendChild(backdrop);
 
-        // --- Drawer ---
         const drawer = document.createElement('aside');
         drawer.id = 'opa-cart-drawer';
         drawer.className = 'opa-cart-drawer';
@@ -126,8 +106,6 @@
         document.body.appendChild(drawer);
 
         document.getElementById('opa-cart-close').addEventListener('click', closeDrawer);
-
-        // Keyboard: Escape schließt Drawer
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
     }
 
@@ -155,25 +133,26 @@
         const count = totalCount();
         const price = totalPrice();
 
-        // Badge
         badge.textContent = count > 99 ? '99+' : count;
         badge.classList.toggle('has-items', count > 0);
 
         if (!body) return;
 
-        // Leerer Warenkorb
         if (cartItems.length === 0) {
+            const mode = window.OPA_CART_CLICK_MODE || 'button';
+            const hint = mode === 'tile' ? 'Tippe auf ein Gericht um es hinzuzufügen.'
+                       : mode === 'both' ? 'Tippe auf ein Gericht oder den + Button.'
+                       : 'Tippe auf <strong>+</strong> bei einem Gericht um es hinzuzufügen.';
             body.innerHTML = `
                 <div class="opa-cart-empty">
                     <div class="opa-cart-empty-icon">🛒</div>
                     <p>Dein Warenkorb ist leer.</p>
-                    <small>Tippe auf <strong>+</strong> bei einem Gericht um es hinzuzufügen.</small>
+                    <small>${hint}</small>
                 </div>`;
             footer.innerHTML = '';
             return;
         }
 
-        // Artikel-Liste
         body.innerHTML = cartItems.map(item => `
             <div class="opa-cart-item" data-id="${escHtml(String(item.id))}">
                 <div class="opa-cart-item-info">
@@ -187,7 +166,6 @@
                 </div>
             </div>`).join('');
 
-        // Qty-Button Events
         body.querySelectorAll('.opa-cart-qty-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const id     = btn.dataset.id;
@@ -199,7 +177,6 @@
             });
         });
 
-        // Footer: Gesamt + Aktionen
         const ordersReady = configLoaded && cartConfig.ordersEnabled &&
                             (cartConfig.dineInEnabled || cartConfig.pickupEnabled || cartConfig.deliveryEnabled);
 
@@ -218,7 +195,6 @@
         document.getElementById('opa-clear-btn')?.addEventListener('click', () => {
             if (confirm('Warenkorb leeren?')) clearCart();
         });
-
         document.getElementById('opa-checkout-btn')?.addEventListener('click', openCheckout);
     }
 
@@ -232,9 +208,9 @@
         }
 
         const modes = [];
-        if (cartConfig.dineInEnabled)  modes.push({ key: 'dine_in',  label: '🍽️ Am Tisch',  icon: '🍽️' });
-        if (cartConfig.pickupEnabled)  modes.push({ key: 'pickup',   label: '🚗 Abholung', icon: '🚗' });
-        if (cartConfig.deliveryEnabled) modes.push({ key: 'delivery', label: '🚚 Lieferung',icon: '🚚' });
+        if (cartConfig.dineInEnabled)   modes.push({ key: 'dine_in',  label: '🍽️ Am Tisch',  icon: '🍽️' });
+        if (cartConfig.pickupEnabled)   modes.push({ key: 'pickup',   label: '🚗 Abholung',  icon: '🚗' });
+        if (cartConfig.deliveryEnabled) modes.push({ key: 'delivery', label: '🚚 Lieferung', icon: '🚚' });
 
         const modal = document.createElement('div');
         modal.id = 'opa-checkout-modal';
@@ -245,7 +221,6 @@
                     <h2>Bestellung aufgeben</h2>
                     <button class="opa-cart-close" id="opa-checkout-close" aria-label="Schließen">&times;</button>
                 </div>
-
                 <div class="opa-checkout-modes" id="opa-checkout-modes">
                     ${modes.map(m => `
                         <button class="opa-mode-tile" data-mode="${m.key}">
@@ -253,26 +228,19 @@
                             <span>${m.label.replace(/^.+?\s/, '')}</span>
                         </button>`).join('')}
                 </div>
-
                 <div id="opa-checkout-form"></div>
-
                 <div class="opa-checkout-summary">
                     <span>Gesamt:</span>
                     <strong>${fmt(totalPrice())}</strong>
                 </div>
-
                 <button class="opa-cart-btn-checkout" id="opa-checkout-submit" disabled>Übermitteln</button>
                 <div id="opa-checkout-msg"></div>
             </div>`;
 
         document.body.appendChild(modal);
-
-        document.getElementById('opa-checkout-close').addEventListener('click', () => {
-            modal.classList.remove('is-open');
-        });
+        document.getElementById('opa-checkout-close').addEventListener('click', () => modal.classList.remove('is-open'));
 
         let selectedMode = null;
-
         modal.querySelectorAll('.opa-mode-tile').forEach(tile => {
             tile.addEventListener('click', () => {
                 modal.querySelectorAll('.opa-mode-tile').forEach(t => t.classList.remove('active'));
@@ -282,7 +250,6 @@
                 document.getElementById('opa-checkout-submit').disabled = false;
             });
         });
-
         document.getElementById('opa-checkout-submit').addEventListener('click', () => submitOrder(selectedMode));
     }
 
@@ -359,20 +326,15 @@
 
         try {
             const res  = await fetch('/api/cart/order', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify(payload)
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
             const data = await res.json();
-
             if (res.ok && data.success) {
-                showMsg(msg, 'success',
-                    `✅ Bestellung wurde übermittelt! (Nr. ${data.orderId})`);
+                showMsg(msg, 'success', `✅ Bestellung übermittelt! (Nr. ${data.orderId})`);
                 clearCart();
                 closeDrawer();
-                setTimeout(() => {
-                    document.getElementById('opa-checkout-modal')?.classList.remove('is-open');
-                }, 2500);
+                setTimeout(() => document.getElementById('opa-checkout-modal')?.classList.remove('is-open'), 2500);
             } else {
                 showMsg(msg, 'error', '❌ ' + (data.reason || 'Fehler beim Senden.'));
                 submitBtn.disabled = false;
@@ -391,51 +353,65 @@
     }
 
     // =========================================================================
-    // "+ Warenkorb" Buttons auf Speisekarten-Karten injizieren
-    // MutationObserver damit auch dynamisch geladene Karten erfasst werden
+    // Add-Buttons + Kachel-Klick injizieren
+    // Modus wird aus window.OPA_CART_CLICK_MODE gelesen:
+    //   'button' – nur + Button (Standard)
+    //   'tile'   – Kachel klickbar, kein + Button
+    //   'both'   – Kachel UND + Button
     // =========================================================================
     function injectAddButtons() {
+        const mode = window.OPA_CART_CLICK_MODE || 'button';
+        const showBtn  = (mode === 'button' || mode === 'both');
+        const showTile = (mode === 'tile'   || mode === 'both');
+
         document.querySelectorAll('[data-menu-item]').forEach(card => {
-            if (card.querySelector('.opa-add-to-cart')) return; // bereits vorhanden
             const id    = card.dataset.menuItem;
             const name  = card.dataset.itemName  || card.querySelector('[data-item-name]')?.textContent || 'Artikel';
             const price = card.dataset.itemPrice || '0';
 
-            const btn = document.createElement('button');
-            btn.className = 'opa-add-to-cart';
-            btn.setAttribute('aria-label', `${name} in den Warenkorb`);
-            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                addItem({ id, name, price });
-            });
-            card.appendChild(btn);
+            // + Button
+            if (showBtn && !card.querySelector('.opa-add-to-cart')) {
+                const btn = document.createElement('button');
+                btn.className = 'opa-add-to-cart';
+                btn.setAttribute('aria-label', `${name} in den Warenkorb`);
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    addItem({ id, name, price });
+                });
+                card.appendChild(btn);
+            }
+
+            // Kachel-Klick
+            if (showTile && !card.dataset.cartTileAttached) {
+                card.dataset.cartTileAttached = '1';
+                card.style.cursor = 'pointer';
+                card.addEventListener('click', (e) => {
+                    // Klick auf + Button nicht doppelt zählen
+                    if (e.target.closest('.opa-add-to-cart')) return;
+                    addItem({ id, name, price });
+                    // Kurzes visuelles Feedback auf der Kachel
+                    card.classList.add('opa-tile-added');
+                    setTimeout(() => card.classList.remove('opa-tile-added'), 600);
+                });
+            }
         });
     }
 
     const observer = new MutationObserver(() => injectAddButtons());
 
-    // =========================================================================
-    // Badge-Animation
-    // =========================================================================
     function animateBadge() {
         const badge = document.getElementById('opa-cart-badge');
         if (!badge) return;
         badge.classList.remove('bounce');
-        void badge.offsetWidth; // reflow
+        void badge.offsetWidth;
         badge.classList.add('bounce');
     }
 
-    // =========================================================================
-    // Hilfsfunktionen
-    // =========================================================================
     function escHtml(str) {
         return str.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
-    // =========================================================================
-    // Init
-    // =========================================================================
     function init() {
         loadCart();
         buildCartDOM();
@@ -451,6 +427,5 @@
         init();
     }
 
-    // Public API für menu-app (optional)
     window.OpaCart = { addItem, removeItem, clearCart, totalCount, totalPrice, open: openDrawer, close: closeDrawer };
 }());
