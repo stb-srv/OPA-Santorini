@@ -92,7 +92,6 @@ function renderCurrentTab(tab, menu, categories, allergens, additives) {
 }
 
 function renderDishesTab(menu, categories, allergens, additives) {
-    // Null-safe Fallbacks
     const safeMenu       = Array.isArray(menu)       ? menu       : [];
     const safeCategories = Array.isArray(categories) ? categories : [];
     const safeAllergens  = (allergens && typeof allergens === 'object') ? allergens : {};
@@ -111,7 +110,6 @@ function renderDishesTab(menu, categories, allergens, additives) {
             return a.name.localeCompare(b.name);
         });
 
-    // Filter-Dropdown: Kategorien aus den vorhandenen Gerichten ODER aus der Kategorie-Liste
     const catFromDishes = [...new Set(safeMenu.map(m => getCatLabel(m.cat)).filter(Boolean))].sort();
     const catFromDB     = safeCategories.map(c => getCatLabel(c)).filter(Boolean);
     const cats          = [...new Set([...catFromDB, ...catFromDishes])].sort();
@@ -130,7 +128,6 @@ function renderDishesTab(menu, categories, allergens, additives) {
         </label>
     `).join('');
 
-    // Kategorie-Optionen für das Formular
     const catOptions = safeCategories.length > 0
         ? safeCategories.map(c => `<option value="${getCatLabel(c)}">${getCatLabel(c)}</option>`).join('')
         : cats.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -175,8 +172,8 @@ function renderDishesTab(menu, categories, allergens, additives) {
             </div>
             <div style="margin-top:20px;">
                 <label>Bilder-Upload</label>
-                <div id="df-img-preview" class="image-upload-preview">
-                    <i class="fas fa-cloud-upload-alt"></i><span>Bild hochladen</span>
+                <div id="df-img-preview" class="image-upload-preview" style="width:120px;height:120px;cursor:pointer;border-radius:12px;border:2px dashed rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden;background:rgba(255,255,255,0.5);font-size:.75rem;color:#888;transition:border-color .2s;">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:1.4rem;opacity:.4;"></i><span>Bild hochladen</span>
                 </div>
                 <input type="file" id="df-img-file" style="display:none;" accept="image/*">
                 <input type="hidden" id="df-img">
@@ -196,20 +193,41 @@ function renderDishesTab(menu, categories, allergens, additives) {
         <table class="premium-table">
             <thead>
                 <tr>
-                    <th>NR</th><th>Bild</th><th>Name</th><th>Kategorie</th><th>Preis</th><th>Aktionen</th>
+                    <th style="width:52px;">NR</th>
+                    <th style="width:52px;">Bild</th>
+                    <th>Name</th>
+                    <th>Kategorie</th>
+                    <th style="width:90px;">Preis</th>
+                    <th style="width:96px;">Aktionen</th>
                 </tr>
             </thead>
             <tbody>
                 ${filtered.map(d => `
                     <tr>
-                        <td>${d.number || '&mdash;'}</td>
-                        <td>${d.image ? `<img src="${d.image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">` : '&mdash;'}</td>
-                        <td><strong>${d.name}</strong><br><small style="opacity:.6;">${d.desc || ''}</small></td>
-                        <td>${getCatLabel(d.cat)}</td>
-                        <td>${parseFloat(d.price).toFixed(2)} &euro;</td>
+                        <td style="font-weight:600;color:var(--primary);font-size:.85rem;">${d.number || '&mdash;'}</td>
                         <td>
-                            <button class="btn-edit" onclick="window.editDish(${d._idx})"><i class="fas fa-pen"></i></button>
-                            <button class="btn-delete" onclick="window.deleteDish(${d._idx})"><i class="fas fa-trash"></i></button>
+                            ${d.image
+                                ? `<img src="${d.image}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;display:block;">`
+                                : `<div style="width:36px;height:36px;border-radius:6px;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;"><i class="fas fa-utensils" style="font-size:.7rem;opacity:.35;"></i></div>`
+                            }
+                        </td>
+                        <td>
+                            <span style="font-weight:600;">${d.name}</span>
+                            ${d.desc ? `<br><span style="font-size:.78rem;opacity:.55;line-height:1.3;">${d.desc}</span>` : ''}
+                        </td>
+                        <td>
+                            <span style="font-size:.8rem;background:rgba(0,0,0,0.05);padding:3px 10px;border-radius:20px;white-space:nowrap;">${getCatLabel(d.cat)}</span>
+                        </td>
+                        <td style="font-weight:600;font-size:.9rem;">${parseFloat(d.price).toFixed(2)}&nbsp;&euro;</td>
+                        <td>
+                            <div style="display:flex;gap:5px;">
+                                <button title="Bearbeiten" onclick="window.editDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(59,130,246,0.12);color:#2563eb;transition:background .15s;" onmouseover="this.style.background='rgba(59,130,246,0.22)'" onmouseout="this.style.background='rgba(59,130,246,0.12)'">
+                                    <i class="fas fa-pen" style="font-size:.72rem;"></i>
+                                </button>
+                                <button title="Löschen" onclick="window.deleteDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;transition:background .15s;" onmouseover="this.style.background='rgba(239,68,68,0.22)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
+                                    <i class="fas fa-trash" style="font-size:.72rem;"></i>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `).join('')}
@@ -237,7 +255,7 @@ function renderCategoriesTab(categories) {
                         return `
                             <div class="glass-pill" style="padding:10px 20px; display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); border-radius:100px;">
                                 <span style="font-weight:700; color:var(--primary);">${label}</span>
-                                <button onclick="window.deleteCategory(${i})" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:5px;"><i class="fas fa-times"></i></button>
+                                <button onclick="window.deleteCategory(${i})" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;" title="Löschen"><i class="fas fa-times" style="font-size:.65rem;"></i></button>
                             </div>
                         `;
                     }).join('')
@@ -260,12 +278,12 @@ function renderKVTab(title, data, keyName, placeholder) {
             </div>
             <div class="cms-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:15px;">
                 ${entries.length === 0 ? '<p style="grid-column:1/-1; opacity:.5;">Keine Eintr&auml;ge vorhanden.</p>' : entries.map(([code, name]) => `
-                    <div style="background:rgba(255,255,255,0.6); padding:15px; border-radius:12px; border:1px solid rgba(0,0,0,0.03); display:flex; justify-content:space-between; align-items:center;">
+                    <div style="background:rgba(255,255,255,0.6); padding:12px 16px; border-radius:12px; border:1px solid rgba(0,0,0,0.03); display:flex; justify-content:space-between; align-items:center;">
                         <div>
-                            <strong style="color:var(--primary); font-size:1.1rem; margin-right:8px;">${code}</strong>
+                            <strong style="color:var(--primary); font-size:1rem; margin-right:8px;">${code}</strong>
                             <span style="font-size:.9rem;">${name}</span>
                         </div>
-                        <button onclick="window.deleteKV('${keyName}', '${code}')" style="background:none; border:none; color:#ef4444; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                        <button onclick="window.deleteKV('${keyName}', '${code}')" title="Löschen" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;"><i class="fas fa-trash" style="font-size:.7rem;"></i></button>
                     </div>
                 `).join('')}
             </div>
@@ -292,17 +310,13 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             f.style.display = 'block';
             bt.style.display = 'none';
             container.querySelector('#dish-form-title').textContent = 'Gericht bearbeiten';
-            // number = DB-Spaltenname
             container.querySelector('#df-nr').value    = d.number || '';
             container.querySelector('#df-name').value  = d.name   || '';
             container.querySelector('#df-price').value = d.price  || '';
-            // cat ist in der DB ein String (der Label-Wert)
             const catSelect = container.querySelector('#df-cat');
             if (catSelect) {
                 const catVal = getCatLabel(d.cat);
-                // Versuche Option direkt zu setzen
                 catSelect.value = catVal;
-                // Falls Option nicht existiert, füge sie temporär hinzu
                 if (catSelect.value !== catVal) {
                     const opt = document.createElement('option');
                     opt.value = catVal;
@@ -314,8 +328,8 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             container.querySelector('#df-desc').value = d.desc  || '';
             container.querySelector('#df-img').value  = d.image || '';
             const preview = container.querySelector('#df-img-preview');
-            if (d.image) preview.innerHTML = `<img src="${d.image}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
-            else preview.innerHTML = `<i class="fas fa-cloud-upload-alt"></i><span>Bild hochladen</span>`;
+            if (d.image) preview.innerHTML = `<img src="${d.image}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">`;
+            else preview.innerHTML = `<i class="fas fa-cloud-upload-alt" style="font-size:1.4rem;opacity:.4;"></i><span>Bild hochladen</span>`;
             container.querySelectorAll('.dish-allergen-cb').forEach(cb => cb.checked = (d.allergens || []).includes(cb.value));
             container.querySelectorAll('.dish-additive-cb').forEach(cb => cb.checked = (d.additives || []).includes(cb.value));
             f.scrollIntoView({ behavior: 'smooth' });
@@ -382,7 +396,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             toggleBtn.style.display = 'none';
             container.querySelector('#dish-form-title').textContent = 'Neues Gericht';
             container.querySelectorAll('#dish-form .input-styled').forEach(inp => inp.value = '');
-            container.querySelector('#df-img-preview').innerHTML = `<i class="fas fa-cloud-upload-alt"></i><span>Bild hochladen</span>`;
+            container.querySelector('#df-img-preview').innerHTML = `<i class="fas fa-cloud-upload-alt" style="font-size:1.4rem;opacity:.4;"></i><span>Bild hochladen</span>`;
             container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
         };
         
@@ -395,7 +409,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             const res = await apiUpload(file);
             if (res.success) {
                 container.querySelector('#df-img').value = res.url;
-                imgPreview.innerHTML = `<img src="${res.url}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
+                imgPreview.innerHTML = `<img src="${res.url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">`;
             }
         };
 
@@ -465,7 +479,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             if (!name || !price) return showToast('Name und Preis erforderlich', 'error');
             const dish = {
                 id:        editingDishIndex !== -1 ? safeMenu[editingDishIndex].id : Date.now().toString(),
-                number,   // DB-Spaltenname: number
+                number,
                 name,
                 price:     parseFloat(price),
                 cat,
