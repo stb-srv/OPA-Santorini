@@ -6,7 +6,7 @@
 export async function initOrderSettings(container, api, license) {
     const hasModule = license && license.modules && license.modules.online_orders;
 
-    // ── LOCKED STATE ────────────────────────────────────────────────
+    // ── LOCKED STATE ─────────────────────────────────────────────────────
     if (!hasModule) {
         container.innerHTML = `
         <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -29,7 +29,7 @@ export async function initOrderSettings(container, api, license) {
         return;
     }
 
-    // ── LOAD CONFIG ─────────────────────────────────────────────────
+    // ── LOAD CONFIG ───────────────────────────────────────────────
     let orderConfig = {};
     try {
         const res = await api.get('settings');
@@ -38,10 +38,13 @@ export async function initOrderSettings(container, api, license) {
         console.warn('orderConfig konnte nicht geladen werden', e.message);
     }
 
-    const checked = (key, def = false) =>
+    const checked  = (key, def = false) =>
         orderConfig[key] === true ? 'checked' : (orderConfig[key] === false ? '' : (def ? 'checked' : ''));
+    const intVal   = (key, def) =>
+        (orderConfig[key] !== undefined && !isNaN(parseInt(orderConfig[key], 10)))
+            ? parseInt(orderConfig[key], 10) : def;
 
-    // ── RENDER ──────────────────────────────────────────────────────
+    // ── RENDER ───────────────────────────────────────────────────────
     container.innerHTML = `
     <div style="max-width:720px;">
 
@@ -154,14 +157,60 @@ export async function initOrderSettings(container, api, license) {
             </div>
         </div>
 
+        <!-- Zeitfenster-Einstellungen -->
+        <div class="glass-panel" style="padding:24px 28px; margin-bottom:16px;">
+            <div style="font-size:.7rem; font-weight:700; text-transform:uppercase;
+                        letter-spacing:1.5px; color:var(--text-muted); margin-bottom:16px;">
+                <i class="fas fa-clock" style="margin-right:6px;"></i> Zeitfenster
+            </div>
+
+            <!-- Bestellstopp vor Ladenschluss -->
+            <div style="display:flex; align-items:center; justify-content:space-between;
+                        gap:20px; padding:12px 0; border-bottom:1px solid rgba(0,0,0,.05);">
+                <div>
+                    <div style="font-weight:700; font-size:.88rem;">⏱️ Bestellstopp vor Ladenschluss</div>
+                    <div style="font-size:.75rem; color:var(--text-muted); margin-top:2px;">
+                        Keine neuen Bestellungen mehr X Minuten vor Schließzeit.
+                        Gilt auch als maximale Abholzeit bei Abholungen.
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                    <input type="number" id="os-cutoffMinutes"
+                           value="${intVal('orderCutoffMinutes', 30)}"
+                           min="0" max="120" step="5"
+                           style="width:70px; padding:8px 10px; border-radius:8px;
+                                  border:1px solid rgba(0,0,0,.15); background:var(--bg, #fff);
+                                  font-size:.9rem; font-weight:700; text-align:center;
+                                  color:var(--text, #1b3a5c);">
+                    <span style="font-size:.82rem; color:var(--text-muted);">Minuten</span>
+                </div>
+            </div>
+
+            <!-- Min. Vorlaufzeit Abholung (info-only) -->
+            <div style="display:flex; align-items:center; justify-content:space-between;
+                        gap:20px; padding:12px 0;">
+                <div>
+                    <div style="font-weight:700; font-size:.88rem;">🚗 Mindest-Vorlaufzeit Abholung</div>
+                    <div style="font-size:.75rem; color:var(--text-muted); margin-top:2px;">
+                        Abholzeit muss mindestens 5 Minuten in der Zukunft liegen.
+                    </div>
+                </div>
+                <div style="font-size:.85rem; font-weight:700; color:var(--text-muted); flex-shrink:0;">5 Min. (fest)</div>
+            </div>
+        </div>
+
         <!-- Info Box -->
         <div style="display:flex; align-items:flex-start; gap:12px;
                     background:rgba(200,169,110,.08); border:1px solid rgba(200,169,110,.2);
                     border-radius:12px; padding:14px 18px; margin-bottom:24px;
                     font-size:.82rem; color:var(--text-muted); line-height:1.6;">
             <i class="fas fa-info-circle" style="color:var(--accent); margin-top:2px; flex-shrink:0;"></i>
-            <span>Wenn das Bestellsystem deaktiviert ist, können Gäste den Warenkorb weiterhin
-            zur Planung nutzen – der Checkout-Button wird jedoch ausgeblendet.</span>
+            <span>
+                An Ruhetagen sowie außerhalb der Öffnungszeiten sind <strong>alle</strong> Bestellmodi
+                automatisch gesperrt – unabhängig von den Schaltern oben.
+                Der Bestellstopp gilt zusätzlich: z.B. bei Schließzeit 22:00 und 30 Min. Stopp
+                können ab 21:30 keine Bestellungen mehr aufgegeben werden.
+            </span>
         </div>
 
         <!-- Save -->
@@ -174,12 +223,12 @@ export async function initOrderSettings(container, api, license) {
 
     </div>`;
 
-    // ── LOGIC ────────────────────────────────────────────────────────
+    // ── LOGIC ─────────────────────────────────────────────────────────
     const globalToggle = container.querySelector('#os-ordersEnabled');
     const modesSection = container.querySelector('#os-modes');
 
     const updateModesState = () => {
-        modesSection.style.opacity      = globalToggle.checked ? '1'   : '0.45';
+        modesSection.style.opacity       = globalToggle.checked ? '1'   : '0.45';
         modesSection.style.pointerEvents = globalToggle.checked ? ''    : 'none';
     };
     globalToggle.addEventListener('change', updateModesState);
@@ -187,11 +236,13 @@ export async function initOrderSettings(container, api, license) {
 
     container.querySelector('#os-save').addEventListener('click', async () => {
         const feedback  = container.querySelector('#os-feedback');
+        const cutoffRaw = parseInt(container.querySelector('#os-cutoffMinutes').value, 10);
         const newConfig = {
-            ordersEnabled:   container.querySelector('#os-ordersEnabled').checked,
-            dineInEnabled:   container.querySelector('#os-dineInEnabled').checked,
-            pickupEnabled:   container.querySelector('#os-pickupEnabled').checked,
-            deliveryEnabled: container.querySelector('#os-deliveryEnabled').checked,
+            ordersEnabled:        container.querySelector('#os-ordersEnabled').checked,
+            dineInEnabled:        container.querySelector('#os-dineInEnabled').checked,
+            pickupEnabled:        container.querySelector('#os-pickupEnabled').checked,
+            deliveryEnabled:      container.querySelector('#os-deliveryEnabled').checked,
+            orderCutoffMinutes:   isNaN(cutoffRaw) ? 30 : Math.max(0, Math.min(120, cutoffRaw)),
         };
         try {
             const current = await api.get('settings') || {};
