@@ -1,6 +1,10 @@
 /**
  * OPA-CMS – Server Entry Point
  * All route logic lives in server/routes/*, helpers in server/helpers.js
+ *
+ * SECURITY:
+ *  - SEC-06: helmet.js für Security-HTTP-Header
+ *  - Upload-Pfad mit nosniff + X-Frame-Options gesichert
  */
 const express = require('express');
 const cors    = require('cors');
@@ -32,6 +36,29 @@ const PLUGINS_DIR  = path.join(__dirname, 'plugins');
 
 // Ensure required directories exist
 [path.join(__dirname, 'server'), UPLOADS_DIR, PLUGINS_DIR].forEach(d => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
+
+// --- SEC-06: Security-HTTP-Header via helmet ---
+try {
+    const helmet = require('helmet');
+    app.use(helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc:  ["'self'"],
+                scriptSrc:   ["'self'", "'unsafe-inline'", "'unsafe-eval'"],  // CMS/Frontend benötigt inline scripts
+                styleSrc:    ["'self'", "'unsafe-inline'"],
+                imgSrc:      ["'self'", 'data:', 'blob:'],
+                fontSrc:     ["'self'", 'data:'],
+                connectSrc:  ["'self'", 'ws:', 'wss:'],  // Socket.IO
+                frameSrc:    ["'none'"],
+                objectSrc:   ["'none'"],
+            }
+        },
+        crossOriginEmbedderPolicy: false,  // Verhindert Probleme mit externen Ressourcen im CMS
+    }));
+    console.log('🛡️  Helmet Security-Header aktiv.');
+} catch (e) {
+    console.warn('⚠️  helmet nicht gefunden – Security-Header deaktiviert. Bitte: npm install helmet');
+}
 
 // CORS
 const rawOrigins = CONFIG.CORS_ORIGINS || process.env.CORS_ORIGINS || '';
@@ -158,7 +185,15 @@ app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, 'cms', 'setup.
 
 // --- Static ---
 app.use('/plugins', express.static(PLUGINS_DIR));
-app.use('/uploads', express.static(UPLOADS_DIR));
+
+// SEC-06: /uploads mit zusätzlichen Sicherheits-Headern ausliefern
+app.use('/uploads', (req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
+    res.setHeader('X-Frame-Options', 'DENY');
+    next();
+}, express.static(UPLOADS_DIR));
+
 app.use('/admin',   express.static(path.join(__dirname, 'cms')));
 app.use('/',        express.static(path.join(__dirname, 'menu-app')));
 
