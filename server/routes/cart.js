@@ -11,11 +11,20 @@
  *
  * POST /api/cart/order    → öffentlich für Gäste, aber Lizenzgate online_orders
  *                           Schreibt Bestellung in die DB, feuert Socket.IO Event
+ *
+ * SECURITY:
+ *  - SEC-01: Preise werden IMMER serverseitig aus der DB geladen (nie vom Client übernommen)
+ *  - BUG-03: Item-Limit max. 50 gegen DoS / Speichererschöpfung
  */
 
 const express = require('express');
 const DB      = require('../database.js');
 const { getCurrentLicense } = require('../license.js');
+
+// Maximale Anzahl Artikel pro Bestellung (DoS-Schutz)
+const MAX_ITEMS_PER_ORDER = 50;
+// Maximale Bestellmenge pro Artikel
+const MAX_QTY_PER_ITEM = 99;
 
 module.exports = function cartRoutes(requireLicense, io) {
     const router = express.Router();
@@ -39,7 +48,7 @@ module.exports = function cartRoutes(requireLicense, io) {
                 // Warenkorb (Planungsansicht) ist IMMER aktiv – kein Flag nötig
                 onlineOrdersEnabled,
                 // Globaler Schalter – nur relevant wenn Lizenz online_orders hat
-                ordersEnabled:  onlineOrdersEnabled && (orderConfig.ordersEnabled  === true),
+                ordersEnabled:   onlineOrdersEnabled && (orderConfig.ordersEnabled  === true),
                 deliveryEnabled: onlineOrdersEnabled && (orderConfig.ordersEnabled === true) && (orderConfig.deliveryEnabled === true),
                 pickupEnabled:   onlineOrdersEnabled && (orderConfig.ordersEnabled === true) && (orderConfig.pickupEnabled   === true),
                 dineInEnabled:   onlineOrdersEnabled && (orderConfig.ordersEnabled === true) && (orderConfig.dineInEnabled   === true)
@@ -57,19 +66,24 @@ module.exports = function cartRoutes(requireLicense, io) {
         try {
             const {
                 type,        // 'dine_in' | 'pickup' | 'delivery'
-                items,       // [{ id, name, price, quantity, extras? }]
+                items,       // [{ id, quantity, extras? }]
                 tableNumber, // bei dine_in
                 pickupTime,  // bei pickup
                 delivery,    // bei delivery: { name, address, phone, note? }
                 guestNote    // optionaler Gesamtkommentar
             } = req.body;
 
-            // --- Validierung ---
+            // --- Typ-Validierung ---
             if (!type || !['dine_in', 'pickup', 'delivery'].includes(type)) {
                 return res.status(400).json({ success: false, reason: 'Ungültiger Bestelltyp. Erlaubt: dine_in, pickup, delivery' });
             }
             if (!Array.isArray(items) || items.length === 0) {
                 return res.status(400).json({ success: false, reason: 'Warenkorb ist leer.' });
+            }
+
+            // BUG-03: Item-Limit prüfen (DoS-Schutz)
+            if (items.length > MAX_ITEMS_PER_ORDER) {
+                return res.status(400).json({ success: false, reason: `Maximale Artikelanzahl (${MAX_ITEMS_PER_ORDER}) überschritten.` });
             }
 
             // Prüfen ob der gewählte Modus vom Admin aktiviert wurde
@@ -88,41 +102,57 @@ module.exports = function cartRoutes(requireLicense, io) {
                 return res.status(403).json({ success: false, reason: 'Tisch-Bestellung ist derzeit deaktiviert.' });
             }
 
-            // --- Gesamtpreis berechnen ---
-            const total = items.reduce((sum, item) => {
-                const price = parseFloat(item.price) || 0;
-                const qty   = parseInt(item.quantity, 10) || 1;
-                return sum + price * qty;
-            }, 0);
+            // ----------------------------------------------------------------
+            // SEC-01: Preisvalidierung – Preise IMMER aus der DB laden
+            // Client-seitige Preise werden komplett ignoriert.
+            // ----------------------------------------------------------------
+            const menuItems = await DB.getMenu();
+            const validatedItems = [];
+            for (const item of items) {
+                const dbItem = menuItems.find(m => m.id === item.id);
+                if (!dbItem) {
+                    return res.status(400).json({ success: false, reason: `Unbekanntes Gericht: ${item.id}` });
+                }
+                if (!dbItem.active) {
+                    return res.status(400).json({ success: false, reason: `Gericht nicht verfügbar: ${dbItem.name}` });
+                }
+                const qty = Math.max(1, Math.min(MAX_QTY_PER_ITEM, parseInt(item.quantity, 10) || 1));
+                validatedItems.push({
+                    id:       dbItem.id,
+                    name:     dbItem.name,
+                    price:    parseFloat(dbItem.price) || 0,  // Preis aus DB, nicht vom Client
+                    quantity: qty,
+                    extras:   item.extras || null
+                });
+            }
+
+            // --- Gesamtpreis serverseitig berechnen ---
+            const total = validatedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
             // --- Bestellung erstellen ---
             const orderId = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
             const order = {
                 id:          orderId,
-                type,        // 'dine_in' | 'pickup' | 'delivery'
+                type,
                 status:      'new',
-                items,
+                items:       validatedItems,
                 total:       parseFloat(total.toFixed(2)),
                 tableNumber: type === 'dine_in'  ? (tableNumber || null) : null,
                 pickupTime:  type === 'pickup'   ? (pickupTime  || null) : null,
                 delivery:    type === 'delivery' ? (delivery    || null) : null,
-                guestNote:   guestNote || null,
+                guestNote:   guestNote ? String(guestNote).slice(0, 500) : null,
                 createdAt:   new Date().toISOString()
             };
 
-            // In DB speichern (gleiche orders-Liste wie Küchen-Monitor)
-            const orders = await DB.getKV('orders', []);
-            orders.unshift(order);
-            // Maximal 500 Bestellungen im Speicher halten
-            if (orders.length > 500) orders.splice(500);
-            await DB.setKV('orders', orders);
+            // In DB speichern via addOrder (verhindert Race Condition des KV-Stores)
+            await DB.addOrder(order);
 
             // Socket.IO: Küchen-Monitor in Echtzeit benachrichtigen
             if (io) {
                 io.emit('new_order', order);
             }
 
-            console.log(`🛒 Neue Gast-Bestellung: ${orderId} | Typ: ${type} | Artikel: ${items.length} | Gesamt: ${total.toFixed(2)} €`);
+            console.log(`🛒 Neue Gast-Bestellung: ${orderId} | Typ: ${type} | Artikel: ${validatedItems.length} | Gesamt: ${total.toFixed(2)} €`);
 
             res.status(201).json({
                 success:  true,
