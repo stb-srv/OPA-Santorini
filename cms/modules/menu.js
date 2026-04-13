@@ -89,12 +89,14 @@ function renderDishesTab(menu, categories, allergens, additives) {
         .filter(d => {
             const dCatLabel = getCatLabel(d.cat);
             const matchCat = (cmsCatFilter === 'All' || dCatLabel.trim() === cmsCatFilter.trim());
-            const matchSearch = ((d.name || '').toLowerCase().includes(cmsSearch.toLowerCase()) || (d.nr || '').toString().includes(cmsSearch));
+            // Fix: DB-Spalte heißt 'number', nicht 'nr'
+            const matchSearch = ((d.name || '').toLowerCase().includes(cmsSearch.toLowerCase()) || (d.number || '').toString().includes(cmsSearch));
             return matchCat && matchSearch;
         })
         .sort((a,b) => {
             if (cmsSort === 'price') return parseFloat(a.price) - parseFloat(b.price);
-            if (cmsSort === 'nr') return (a.nr || '').toString().localeCompare((b.nr || '').toString(), undefined, {numeric: true});
+            // Fix: DB-Spalte heißt 'number', nicht 'nr'
+            if (cmsSort === 'nr') return (a.number || '').toString().localeCompare((b.number || '').toString(), undefined, {numeric: true});
             return a.name.localeCompare(b.name);
         });
 
@@ -149,7 +151,7 @@ function renderDishesTab(menu, categories, allergens, additives) {
                          ${categories.map(c => `<option value="${getCatLabel(c)}">${getCatLabel(c)}</option>`).join('')}
                     </select>
                 </div>
-                <div class="form-group"><label>Preis (€)</label><input class="input-styled" id="df-price" type="number" step="0.10" placeholder="0.00"></div>
+                <div class="form-group"><label>Preis (&euro;)</label><input class="input-styled" id="df-price" type="number" step="0.10" placeholder="0.00"></div>
                 <div class="form-group" style="grid-column:1/-1;"><label>Beschreibung (optional)</label><textarea class="input-styled" id="df-desc" rows="2" placeholder="Zutaten, Zubereitungsart..."></textarea></div>
             </div>
             <div style="margin-top:20px;">
@@ -162,7 +164,7 @@ function renderDishesTab(menu, categories, allergens, additives) {
             </div>
             
             <div style="margin-top:24px;">
-                <label>Allergene & Zusatzstoffe</label>
+                <label>Allergene &amp; Zusatzstoffe</label>
                 <div class="check-grid" style="margin-top:10px;">${allergenChecks} ${additiveChecks}</div>
             </div>
 
@@ -181,11 +183,11 @@ function renderDishesTab(menu, categories, allergens, additives) {
             <tbody>
                 ${filtered.map(d => `
                     <tr>
-                        <td>${d.nr || '—'}</td>
-                        <td>${d.image ? `<img src="${d.image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">` : '—'}</td>
+                        <td>${d.number || '&mdash;'}</td>
+                        <td>${d.image ? `<img src="${d.image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">` : '&mdash;'}</td>
                         <td><strong>${d.name}</strong><br><small style="opacity:.6;">${d.desc || ''}</small></td>
                         <td>${getCatLabel(d.cat)}</td>
-                        <td>${parseFloat(d.price).toFixed(2)} €</td>
+                        <td>${parseFloat(d.price).toFixed(2)} &euro;</td>
                         <td>
                             <button class="btn-edit" onclick="window.editDish(${d._idx})"><i class="fas fa-pen"></i></button>
                             <button class="btn-delete" onclick="window.deleteDish(${d._idx})"><i class="fas fa-trash"></i></button>
@@ -203,7 +205,7 @@ function renderCategoriesTab(categories) {
         <div class="glass-panel" style="padding:30px; margin-bottom:30px;">
             <div style="display:flex;gap:12px;margin-bottom:24px;">
                 <input class="input-styled" id="new-cat-input" placeholder="Name der neuen Kategorie (z.B. Desserts)..." style="flex:1;">
-                <button class="btn-primary" id="add-cat-btn" style="background:var(--accent);"><i class="fas fa-plus"></i> Hinzufügen</button>
+                <button class="btn-primary" id="add-cat-btn" style="background:var(--accent);"><i class="fas fa-plus"></i> Hinzuf&uuml;gen</button>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:12px;">
                 ${categories.filter(c => c).map((c, i) => {
@@ -226,12 +228,12 @@ function renderKVTab(title, data, keyName, placeholder) {
         <div style="margin-bottom:24px;"><h3>${title}</h3></div>
         <div class="glass-panel" style="padding:30px;">
             <div style="display:flex;gap:12px;margin-bottom:24px;">
-                <input class="input-styled" id="kv-code" placeholder="Kürzel (z.B. A1)" style="width:120px;">
+                <input class="input-styled" id="kv-code" placeholder="K&uuml;rzel (z.B. A1)" style="width:120px;">
                 <input class="input-styled" id="kv-name" placeholder="${placeholder}" style="flex:1;">
                 <button class="btn-primary" id="kv-add-btn" style="background:var(--accent);"><i class="fas fa-plus"></i> Speichern</button>
             </div>
             <div class="cms-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:15px;">
-                ${entries.length === 0 ? '<p style="grid-column:1/-1; opacity:.5;">Keine Einträge vorhanden.</p>' : entries.map(([code, name]) => `
+                ${entries.length === 0 ? '<p style="grid-column:1/-1; opacity:.5;">Keine Eintr&auml;ge vorhanden.</p>' : entries.map(([code, name]) => `
                     <div style="background:rgba(255,255,255,0.6); padding:15px; border-radius:12px; border:1px solid rgba(0,0,0,0.03); display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <strong style="color:var(--primary); font-size:1.1rem; margin-right:8px;">${code}</strong>
@@ -258,7 +260,8 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             f.style.display = 'block';
             bt.style.display = 'none';
             container.querySelector('#dish-form-title').textContent = 'Gericht bearbeiten';
-            container.querySelector('#df-nr').value = d.nr || '';
+            // Fix: DB-Spalte heißt 'number', nicht 'nr'
+            container.querySelector('#df-nr').value = d.number || '';
             container.querySelector('#df-name').value = d.name || '';
             container.querySelector('#df-price').value = d.price || '';
             container.querySelector('#df-cat').value = getCatLabel(d.cat);
@@ -282,7 +285,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
 
     window.deleteDish = async (idx) => {
         const dish = menu[idx];
-        if (await showConfirm('Löschen?', `Möchten Sie das Gericht "${dish.name}" wirklich entfernen?`)) {
+        if (await showConfirm('L\u00f6schen?', `M\u00f6chten Sie das Gericht "${dish.name}" wirklich entfernen?`)) {
             const res = await (await import('./api.js')).apiDelete(`menu/${dish.id}`);
             if (res?.success) {
                 menu.splice(idx, 1);
@@ -293,7 +296,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
 
     window.deleteCategory = async (idx) => {
         const cat = categories[idx];
-        if (await showConfirm('Löschen?', 'Dies entfernt die Kategorie dauerhaft.')) {
+        if (await showConfirm('L\u00f6schen?', 'Dies entfernt die Kategorie dauerhaft.')) {
             const res = await (await import('./api.js')).apiDelete(`categories/${cat.id}`);
             if (res?.success) {
                 categories.splice(idx, 1);
@@ -303,7 +306,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
     };
 
     window.deleteKV = async (key, code) => {
-        if (await showConfirm('Löschen?', `Möchten Sie den Eintrag "${code}" wirklich entfernen?`)) {
+        if (await showConfirm('L\u00f6schen?', `M\u00f6chten Sie den Eintrag "${code}" wirklich entfernen?`)) {
             const data = key === 'allergens' ? allergens : additives;
             delete data[code];
             await apiPost(key, data);
@@ -359,7 +362,8 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
              [...menu].sort((a,b) => (getCatLabel(a.cat)).localeCompare(getCatLabel(b.cat))).forEach(d => {
                  const dCat = getCatLabel(d.cat);
                  if (dCat !== curCat) { curCat = dCat; data.push([{ content: curCat.toUpperCase(), colSpan: 3, styles: { fillColor: [27, 58, 92], textColor: 255, fontStyle: 'bold' } }]); }
-                 data.push([d.nr || '-', d.name + (d.desc ? '\n' + d.desc : ''), parseFloat(d.price).toFixed(2) + ' €']);
+                 // Fix: DB-Spalte heißt 'number', nicht 'nr'
+                 data.push([d.number || '-', d.name + (d.desc ? '\n' + d.desc : ''), parseFloat(d.price).toFixed(2) + ' \u20ac']);
              });
              doc.autoTable({ startY: 40, head: [['Nr.', 'Gericht', 'Preis']], body: data, theme: 'striped', headStyles: { fillColor: [200, 169, 110] }, styles: { font: 'helvetica' } });
              doc.save('speisekarte.pdf');
@@ -382,7 +386,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
                  reader.onload = async (ev) => {
                      try {
                          const data = JSON.parse(ev.target.result);
-                         if (await showConfirm('Wiederherstellen?', 'Dies überschreibt Ihre aktuelle Speisekarte unwiderruflich.')) {
+                         if (await showConfirm('Wiederherstellen?', 'Dies \u00fcberschreibt Ihre aktuelle Speisekarte unwiderruflich.')) {
                              const res = await apiPost('menu/import', data);
                              if (res && res.success) {
                                  cachedMenuData = null;
@@ -392,7 +396,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
                                  showToast(res?.reason || 'Import fehlgeschlagen.', 'error');
                              }
                          }
-                     } catch (err) { showToast('Ungültige Datei', 'error'); }
+                     } catch (err) { showToast('Ung\u00fcltige Datei', 'error'); }
                  };
                  reader.readAsText(file);
              };
@@ -400,14 +404,15 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
         };
 
         container.querySelector('#df-save').onclick = async () => {
-            const nr = container.querySelector('#df-nr').value;
+            const number = container.querySelector('#df-nr').value;
             const name = container.querySelector('#df-name').value;
             const price = container.querySelector('#df-price').value;
             const cat = container.querySelector('#df-cat').value;
             if (!name || !price) return showToast('Name und Preis erforderlich', 'error');
             const dish = {
                 id: editingDishIndex !== -1 ? menu[editingDishIndex].id : Date.now().toString(),
-                nr, name, price, cat,
+                // Fix: Feld heißt 'number' (DB-Spaltenname), nicht 'nr'
+                number, name, price, cat,
                 desc: container.querySelector('#df-desc').value,
                 image: container.querySelector('#df-img').value,
                 allergens: Array.from(container.querySelectorAll('.dish-allergen-cb:checked')).map(cb => cb.value),
@@ -444,7 +449,7 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
         container.querySelector('#kv-add-btn').onclick = async () => {
             const code = container.querySelector('#kv-code').value;
             const name = container.querySelector('#kv-name').value;
-            if (!code || !name) return showToast('Code und Name nötig', 'error');
+            if (!code || !name) return showToast('Code und Name n\u00f6tig', 'error');
             const data = currentTab === 'allergens' ? allergens : additives;
             data[code] = name;
             await apiPost(currentTab, data);

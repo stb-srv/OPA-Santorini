@@ -74,6 +74,8 @@ module.exports = (requireAuth, requireLicense) => {
             if (menu.length >= maxDishes)
                 return res.status(403).json({ success: false, reason: `Ihr ${lic.label || lic.type}-Plan erlaubt maximal ${maxDishes} Speisen.` });
             const m = req.body;
+            // Fix: Kompatibilitäts-Mapping falls Frontend 'nr' statt 'number' sendet
+            if (typeof m.number === 'undefined' && typeof m.nr !== 'undefined') m.number = m.nr;
             m.id = m.id || Date.now().toString();
             await DB.addMenu(m);
             res.json({ success: true, id: m.id });
@@ -82,7 +84,10 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.put('/menu/:id', requireAuth, requireLicense('menu_edit'), async (req, res) => {
         try {
-            const updated = await DB.updateMenu(req.params.id, req.body);
+            const body = req.body;
+            // Fix: Kompatibilitäts-Mapping falls Frontend 'nr' statt 'number' sendet
+            if (typeof body.number === 'undefined' && typeof body.nr !== 'undefined') body.number = body.nr;
+            const updated = await DB.updateMenu(req.params.id, body);
             if (!updated) return res.status(404).json({ success: false, reason: 'Gericht nicht gefunden.' });
             res.json({ success: true, item: updated });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
