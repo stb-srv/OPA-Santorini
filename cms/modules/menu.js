@@ -11,6 +11,8 @@ let editingDishIndex = -1;
 let cmsSearch = '';
 let cmsCatFilter = 'All';
 let cmsSort = 'name';
+let cmsPage = 1;
+let cmsPageSize = 25; // Standard: 25 Einträge pro Seite
 
 // --- Helpers ---
 const getCatLabel = (cat) => {
@@ -38,7 +40,6 @@ export async function renderMenu(container, titleEl, tab = 'dishes', forceRefres
     const currentTab = tab || 'dishes';
     titleEl.innerHTML = `<div style="display:flex;align-items:center;">Speisekarte <i class="fas fa-chevron-right" style="margin:0 10px; font-size:.8rem; opacity:.3;"></i> ${currentTab.charAt(0).toUpperCase() + currentTab.slice(1)} ${renderHelpIcon('menu')}</div>`;
     
-    // Fetch data – null-safe mit ?? Fallback
     if (!cachedMenuData || forceRefresh) {
         const [menu, categories, allergens, additives] = await Promise.all([
             apiGet('menu'),
@@ -55,7 +56,6 @@ export async function renderMenu(container, titleEl, tab = 'dishes', forceRefres
     }
     const { menu, categories, allergens, additives } = cachedMenuData;
 
-    // Save scroll & focus
     const focusedId = document.activeElement?.id;
     
     container.innerHTML = `
@@ -68,14 +68,13 @@ export async function renderMenu(container, titleEl, tab = 'dishes', forceRefres
 
     attachMenuHandlers(container, menu, categories, allergens, additives, currentTab);
 
-    // Restore focus
     if (focusedId) {
         const el = document.getElementById(focusedId);
         if (el) {
             el.focus();
             if (el.tagName === 'INPUT') {
-                 const len = el.value.length;
-                 el.setSelectionRange(len, len);
+                const len = el.value.length;
+                el.setSelectionRange(len, len);
             }
         }
     }
@@ -91,6 +90,52 @@ function renderCurrentTab(tab, menu, categories, allergens, additives) {
     }
 }
 
+function renderPagination(totalItems, currentPage, pageSize) {
+    if (pageSize === 0) return ''; // "Alle" – keine Pagination nötig
+    const totalPages = Math.ceil(totalItems / pageSize);
+    if (totalPages <= 1) return '';
+
+    const start = (currentPage - 1) * pageSize + 1;
+    const end   = Math.min(currentPage * pageSize, totalItems);
+
+    // Seitenzahlen berechnen: max 7 Buttons
+    const pages = [];
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        pages.push(1);
+        if (currentPage > 3) pages.push('...');
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+        if (currentPage < totalPages - 2) pages.push('...');
+        pages.push(totalPages);
+    }
+
+    const btnBase = `display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;padding:0 6px;border-radius:7px;border:none;cursor:pointer;font-size:.82rem;font-weight:500;transition:background .15s;`;
+    const btnNormal  = `${btnBase}background:rgba(0,0,0,0.05);color:var(--text);`;
+    const btnActive  = `${btnBase}background:var(--accent,#1b3a5c);color:#fff;`;
+    const btnDisable = `${btnBase}background:transparent;color:rgba(0,0,0,0.2);cursor:default;`;
+
+    const pageButtons = pages.map(p => {
+        if (p === '...') return `<span style="${btnBase}background:transparent;color:rgba(0,0,0,0.3);cursor:default;">…</span>`;
+        return `<button style="${p === currentPage ? btnActive : btnNormal}" ${p === currentPage ? 'disabled' : `onclick="window.cmsGoToPage(${p})"`}>${p}</button>`;
+    }).join('');
+
+    return `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;flex-wrap:wrap;gap:10px;">
+            <span style="font-size:.82rem;opacity:.55;">${start}–${end} von ${totalItems} Einträgen</span>
+            <div style="display:flex;gap:4px;align-items:center;">
+                <button style="${currentPage <= 1 ? btnDisable : btnNormal}" ${currentPage <= 1 ? 'disabled' : `onclick="window.cmsGoToPage(${currentPage - 1})"`}>
+                    <i class="fas fa-chevron-left" style="font-size:.7rem;"></i>
+                </button>
+                ${pageButtons}
+                <button style="${currentPage >= totalPages ? btnDisable : btnNormal}" ${currentPage >= totalPages ? 'disabled' : `onclick="window.cmsGoToPage(${currentPage + 1})"`}>
+                    <i class="fas fa-chevron-right" style="font-size:.7rem;"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
 function renderDishesTab(menu, categories, allergens, additives) {
     const safeMenu       = Array.isArray(menu)       ? menu       : [];
     const safeCategories = Array.isArray(categories) ? categories : [];
@@ -100,20 +145,32 @@ function renderDishesTab(menu, categories, allergens, additives) {
     const filtered = safeMenu.map((m, i) => ({ ...m, _idx: i }))
         .filter(d => {
             const dCatLabel = getCatLabel(d.cat);
-            const matchCat = (cmsCatFilter === 'All' || dCatLabel.trim() === cmsCatFilter.trim());
+            const matchCat    = (cmsCatFilter === 'All' || dCatLabel.trim() === cmsCatFilter.trim());
             const matchSearch = ((d.name || '').toLowerCase().includes(cmsSearch.toLowerCase()) || (d.number || '').toString().includes(cmsSearch));
             return matchCat && matchSearch;
         })
         .sort((a,b) => {
             if (cmsSort === 'price') return parseFloat(a.price) - parseFloat(b.price);
-            if (cmsSort === 'nr') return (a.number || '').toString().localeCompare((b.number || '').toString(), undefined, {numeric: true});
+            if (cmsSort === 'nr')    return (a.number || '').toString().localeCompare((b.number || '').toString(), undefined, {numeric: true});
             return a.name.localeCompare(b.name);
         });
+
+    // Pagination berechnen
+    const totalItems  = filtered.length;
+    const pageSize    = cmsPageSize; // 0 = alle
+    const totalPages  = pageSize > 0 ? Math.ceil(totalItems / pageSize) : 1;
+    // Seite clampen falls Filter die Gesamtzahl reduziert hat
+    const safePage    = Math.max(1, Math.min(cmsPage, totalPages));
+    if (safePage !== cmsPage) cmsPage = safePage;
+
+    const paginated = pageSize > 0
+        ? filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
+        : filtered;
 
     const catFromDishes = [...new Set(safeMenu.map(m => getCatLabel(m.cat)).filter(Boolean))].sort();
     const catFromDB     = safeCategories.map(c => getCatLabel(c)).filter(Boolean);
     const cats          = [...new Set([...catFromDB, ...catFromDishes])].sort();
-    
+
     const allergenChecks = Object.entries(safeAllergens).map(([code, name]) => `
         <label class="check-item">
             <input type="checkbox" class="dish-allergen-cb" value="${code}">
@@ -134,16 +191,23 @@ function renderDishesTab(menu, categories, allergens, additives) {
 
     return `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:15px;flex-wrap:wrap;">
-            <div style="display:flex;gap:10px;flex:1;min-width:300px;">
-                <input class="input-styled" id="cms-dish-search" value="${cmsSearch}" placeholder="Name oder Nummer suchen..." style="flex:1;">
+            <div style="display:flex;gap:10px;flex:1;min-width:300px;flex-wrap:wrap;">
+                <input class="input-styled" id="cms-dish-search" value="${cmsSearch}" placeholder="Name oder Nummer suchen..." style="flex:1;min-width:160px;">
                 <select class="input-styled" id="cms-cat-filter" style="width:160px;">
                     <option value="All">Alle Kategorien</option>
                     ${cats.map(c => `<option value="${c}" ${cmsCatFilter === c ? 'selected' : ''}>${c}</option>`).join('')}
                 </select>
                 <select class="input-styled" id="cms-sort" style="width:140px;">
-                    <option value="name" ${cmsSort === 'name' ? 'selected' : ''}>Sortierung: Name</option>
+                    <option value="name"  ${cmsSort === 'name'  ? 'selected' : ''}>Sortierung: Name</option>
                     <option value="price" ${cmsSort === 'price' ? 'selected' : ''}>Sortierung: Preis</option>
-                    <option value="nr" ${cmsSort === 'nr' ? 'selected' : ''}>Sortierung: Nummer</option>
+                    <option value="nr"    ${cmsSort === 'nr'    ? 'selected' : ''}>Sortierung: Nummer</option>
+                </select>
+                <select class="input-styled" id="cms-page-size" style="width:120px;" title="Einträge pro Seite">
+                    <option value="10"  ${cmsPageSize === 10  ? 'selected' : ''}>10 pro Seite</option>
+                    <option value="25"  ${cmsPageSize === 25  ? 'selected' : ''}>25 pro Seite</option>
+                    <option value="50"  ${cmsPageSize === 50  ? 'selected' : ''}>50 pro Seite</option>
+                    <option value="100" ${cmsPageSize === 100 ? 'selected' : ''}>100 pro Seite</option>
+                    <option value="0"   ${cmsPageSize === 0   ? 'selected' : ''}>Alle anzeigen</option>
                 </select>
             </div>
             <div style="display:flex;gap:10px;align-items:center;">
@@ -178,12 +242,10 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 <input type="file" id="df-img-file" style="display:none;" accept="image/*">
                 <input type="hidden" id="df-img">
             </div>
-            
             <div style="margin-top:24px;">
                 <label>Allergene &amp; Zusatzstoffe</label>
                 <div class="check-grid" style="margin-top:10px;">${allergenChecks} ${additiveChecks}</div>
             </div>
-
             <div style="display:flex;gap:10px;margin-top:24px;">
                 <button class="btn-primary" id="df-save">Speichern</button>
                 <button class="btn-primary" style="background:transparent;color:var(--text);border:1px solid rgba(0,0,0,.1);" onclick="window.closeDishForm()">Abbrechen</button>
@@ -202,7 +264,7 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 </tr>
             </thead>
             <tbody>
-                ${filtered.map(d => `
+                ${paginated.map(d => `
                     <tr>
                         <td style="font-weight:600;color:var(--primary);font-size:.85rem;">${d.number || '&mdash;'}</td>
                         <td>
@@ -224,16 +286,17 @@ function renderDishesTab(menu, categories, allergens, additives) {
                                 <button title="Bearbeiten" onclick="window.editDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(59,130,246,0.12);color:#2563eb;transition:background .15s;" onmouseover="this.style.background='rgba(59,130,246,0.22)'" onmouseout="this.style.background='rgba(59,130,246,0.12)'">
                                     <i class="fas fa-pen" style="font-size:.72rem;"></i>
                                 </button>
-                                <button title="Löschen" onclick="window.deleteDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;transition:background .15s;" onmouseover="this.style.background='rgba(239,68,68,0.22)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
+                                <button title="L&ouml;schen" onclick="window.deleteDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;transition:background .15s;" onmouseover="this.style.background='rgba(239,68,68,0.22)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
                                     <i class="fas fa-trash" style="font-size:.72rem;"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                 `).join('')}
-                ${filtered.length === 0 ? `<tr><td colspan="6" style="text-align:center;opacity:.5;padding:40px;">Keine Gerichte vorhanden.</td></tr>` : ''}
+                ${paginated.length === 0 ? `<tr><td colspan="6" style="text-align:center;opacity:.5;padding:40px;">Keine Gerichte vorhanden.</td></tr>` : ''}
             </tbody>
         </table>
+        ${renderPagination(totalItems, safePage, pageSize)}
     `;
 }
 
@@ -251,11 +314,10 @@ function renderCategoriesTab(categories) {
                     ? '<p style="opacity:.5;">Noch keine Kategorien vorhanden. Oben eine neue hinzuf&uuml;gen.</p>'
                     : safeCats.filter(c => c).map((c, i) => {
                         const label = getCatLabel(c);
-                        const catId = (typeof c === 'object' ? c.id : null) || label;
                         return `
                             <div class="glass-pill" style="padding:10px 20px; display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.8); border:1px solid rgba(0,0,0,0.05); border-radius:100px;">
                                 <span style="font-weight:700; color:var(--primary);">${label}</span>
-                                <button onclick="window.deleteCategory(${i})" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;" title="Löschen"><i class="fas fa-times" style="font-size:.65rem;"></i></button>
+                                <button onclick="window.deleteCategory(${i})" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;" title="L&ouml;schen"><i class="fas fa-times" style="font-size:.65rem;"></i></button>
                             </div>
                         `;
                     }).join('')
@@ -283,7 +345,7 @@ function renderKVTab(title, data, keyName, placeholder) {
                             <strong style="color:var(--primary); font-size:1rem; margin-right:8px;">${code}</strong>
                             <span style="font-size:.9rem;">${name}</span>
                         </div>
-                        <button onclick="window.deleteKV('${keyName}', '${code}')" title="Löschen" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;"><i class="fas fa-trash" style="font-size:.7rem;"></i></button>
+                        <button onclick="window.deleteKV('${keyName}', '${code}')" title="L&ouml;schen" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;"><i class="fas fa-trash" style="font-size:.7rem;"></i></button>
                     </div>
                 `).join('')}
             </div>
@@ -300,14 +362,19 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
     const safeAllergens  = (allergens && typeof allergens === 'object') ? allergens : {};
     const safeAdditives  = (additives && typeof additives === 'object') ? additives : {};
 
+    window.cmsGoToPage = (page) => {
+        cmsPage = page;
+        renderMenu(container, document.getElementById('view-title'), 'dishes');
+    };
+
     window.editDish = (idx) => {
         editingDishIndex = idx;
         const d = safeMenu[idx];
         if (!d) return;
-        const f = container.querySelector('#dish-form');
+        const f  = container.querySelector('#dish-form');
         const bt = container.querySelector('#toggle-dish-form');
         if (f && bt) {
-            f.style.display = 'block';
+            f.style.display  = 'block';
             bt.style.display = 'none';
             container.querySelector('#dish-form-title').textContent = 'Gericht bearbeiten';
             container.querySelector('#df-nr').value    = d.number || '';
@@ -337,9 +404,9 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
     };
 
     window.closeDishForm = () => {
-        const f = container.querySelector('#dish-form');
+        const f  = container.querySelector('#dish-form');
         const bt = container.querySelector('#toggle-dish-form');
-        if (f) f.style.display = 'none';
+        if (f)  f.style.display  = 'none';
         if (bt) bt.style.display = 'inline-flex';
     };
 
@@ -380,28 +447,31 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
 
     if (currentTab === 'dishes') {
         const searchInput = container.querySelector('#cms-dish-search');
-        if (searchInput) searchInput.oninput = (e) => { cmsSearch = e.target.value; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
-        
+        if (searchInput) searchInput.oninput = (e) => { cmsSearch = e.target.value; cmsPage = 1; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
+
         const catFilter = container.querySelector('#cms-cat-filter');
-        if (catFilter) catFilter.onchange = (e) => { cmsCatFilter = e.target.value; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
-        
+        if (catFilter) catFilter.onchange = (e) => { cmsCatFilter = e.target.value; cmsPage = 1; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
+
         const sortSel = container.querySelector('#cms-sort');
-        if (sortSel) sortSel.onchange = (e) => { cmsSort = e.target.value; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
+        if (sortSel) sortSel.onchange = (e) => { cmsSort = e.target.value; cmsPage = 1; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
+
+        const pageSizeSel = container.querySelector('#cms-page-size');
+        if (pageSizeSel) pageSizeSel.onchange = (e) => { cmsPageSize = parseInt(e.target.value, 10); cmsPage = 1; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
 
         const toggleBtn = container.querySelector('#toggle-dish-form');
         const form = container.querySelector('#dish-form');
-        if (toggleBtn) toggleBtn.onclick = () => { 
+        if (toggleBtn) toggleBtn.onclick = () => {
             editingDishIndex = -1;
-            form.style.display = 'block'; 
+            form.style.display = 'block';
             toggleBtn.style.display = 'none';
             container.querySelector('#dish-form-title').textContent = 'Neues Gericht';
             container.querySelectorAll('#dish-form .input-styled').forEach(inp => inp.value = '');
             container.querySelector('#df-img-preview').innerHTML = `<i class="fas fa-cloud-upload-alt" style="font-size:1.4rem;opacity:.4;"></i><span>Bild hochladen</span>`;
             container.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
         };
-        
+
         const imgPreview = container.querySelector('#df-img-preview');
-        const imgFile = container.querySelector('#df-img-file');
+        const imgFile    = container.querySelector('#df-img-file');
         if (imgPreview) imgPreview.onclick = () => imgFile.click();
         if (imgFile) imgFile.onchange = async (e) => {
             const file = e.target.files[0];
@@ -415,59 +485,59 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
 
         const pdfBtn = container.querySelector('#btn-export-pdf');
         if (pdfBtn) pdfBtn.onclick = () => {
-             const { jsPDF } = window.jspdf;
-             if (!jsPDF) return showToast('jsPDF nicht geladen', 'error');
-             const doc = new jsPDF();
-             const resName = document.getElementById('disp-res-name')?.textContent || 'OPA!';
-             doc.setFontSize(22); doc.setTextColor(27, 58, 92);
-             doc.text(resName, 14, 22);
-             doc.setFontSize(14); doc.setTextColor(200, 169, 110);
-             doc.text('SPEISEKARTE', 14, 30);
-             const data = [];
-             let curCat = '';
-             [...safeMenu].sort((a,b) => (getCatLabel(a.cat)).localeCompare(getCatLabel(b.cat))).forEach(d => {
-                 const dCat = getCatLabel(d.cat);
-                 if (dCat !== curCat) { curCat = dCat; data.push([{ content: curCat.toUpperCase(), colSpan: 3, styles: { fillColor: [27, 58, 92], textColor: 255, fontStyle: 'bold' } }]); }
-                 data.push([d.number || '-', d.name + (d.desc ? '\n' + d.desc : ''), parseFloat(d.price).toFixed(2) + ' \u20ac']);
-             });
-             doc.autoTable({ startY: 40, head: [['Nr.', 'Gericht', 'Preis']], body: data, theme: 'striped', headStyles: { fillColor: [200, 169, 110] }, styles: { font: 'helvetica' } });
-             doc.save('speisekarte.pdf');
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF) return showToast('jsPDF nicht geladen', 'error');
+            const doc = new jsPDF();
+            const resName = document.getElementById('disp-res-name')?.textContent || 'OPA!';
+            doc.setFontSize(22); doc.setTextColor(27, 58, 92);
+            doc.text(resName, 14, 22);
+            doc.setFontSize(14); doc.setTextColor(200, 169, 110);
+            doc.text('SPEISEKARTE', 14, 30);
+            const data = [];
+            let curCat = '';
+            [...safeMenu].sort((a,b) => (getCatLabel(a.cat)).localeCompare(getCatLabel(b.cat))).forEach(d => {
+                const dCat = getCatLabel(d.cat);
+                if (dCat !== curCat) { curCat = dCat; data.push([{ content: curCat.toUpperCase(), colSpan: 3, styles: { fillColor: [27, 58, 92], textColor: 255, fontStyle: 'bold' } }]); }
+                data.push([d.number || '-', d.name + (d.desc ? '\n' + d.desc : ''), parseFloat(d.price).toFixed(2) + ' \u20ac']);
+            });
+            doc.autoTable({ startY: 40, head: [['Nr.', 'Gericht', 'Preis']], body: data, theme: 'striped', headStyles: { fillColor: [200, 169, 110] }, styles: { font: 'helvetica' } });
+            doc.save('speisekarte.pdf');
         };
 
         const exportBtn = container.querySelector('#btn-export-menu');
         if (exportBtn) exportBtn.onclick = () => {
-             const backup = { menu: safeMenu, categories: safeCategories, allergens: safeAllergens, additives: safeAdditives };
-             const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-             const url = URL.createObjectURL(blob);
-             const a = document.createElement('a'); a.href = url; a.download = `backup_menu.json`;
-             a.click();
-             URL.revokeObjectURL(url);
+            const backup = { menu: safeMenu, categories: safeCategories, allergens: safeAllergens, additives: safeAdditives };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'backup_menu.json';
+            a.click();
+            URL.revokeObjectURL(url);
         };
 
         const importBtn = container.querySelector('#btn-import-menu');
         if (importBtn) importBtn.onclick = () => {
-             const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
-             inp.onchange = async (e) => {
-                 const file = e.target.files[0];
-                 const reader = new FileReader();
-                 reader.onload = async (ev) => {
-                     try {
-                         const data = JSON.parse(ev.target.result);
-                         if (await showConfirm('Wiederherstellen?', 'Dies \u00fcberschreibt Ihre aktuelle Speisekarte unwiderruflich.')) {
-                             const res = await apiPost('menu/import', data);
-                             if (res && res.success) {
-                                 cachedMenuData = null;
-                                 showToast('Sicherung geladen!');
-                                 renderMenu(container, document.getElementById('view-title'), 'dishes', true);
-                             } else {
-                                 showToast(res?.reason || 'Import fehlgeschlagen.', 'error');
-                             }
-                         }
-                     } catch (err) { showToast('Ung\u00fcltige Datei', 'error'); }
-                 };
-                 reader.readAsText(file);
-             };
-             inp.click();
+            const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
+            inp.onchange = async (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (await showConfirm('Wiederherstellen?', 'Dies \u00fcberschreibt Ihre aktuelle Speisekarte unwiderruflich.')) {
+                            const res = await apiPost('menu/import', data);
+                            if (res && res.success) {
+                                cachedMenuData = null;
+                                showToast('Sicherung geladen!');
+                                renderMenu(container, document.getElementById('view-title'), 'dishes', true);
+                            } else {
+                                showToast(res?.reason || 'Import fehlgeschlagen.', 'error');
+                            }
+                        }
+                    } catch (err) { showToast('Ung\u00fcltige Datei', 'error'); }
+                };
+                reader.readAsText(file);
+            };
+            inp.click();
         };
 
         const saveBtn = container.querySelector('#df-save');
@@ -488,14 +558,12 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
                 allergens: Array.from(container.querySelectorAll('.dish-allergen-cb:checked')).map(cb => cb.value),
                 additives: Array.from(container.querySelectorAll('.dish-additive-cb:checked')).map(cb => cb.value)
             };
-            
             let res;
             if (editingDishIndex !== -1) {
                 res = await (await import('./api.js')).apiPut(`menu/${dish.id}`, dish);
             } else {
                 res = await apiPost('menu', dish);
             }
-
             if (res?.success) {
                 cachedMenuData = null;
                 showToast('Gericht gespeichert!');
@@ -510,10 +578,10 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             const label = (container.querySelector('#new-cat-input').value || '').trim();
             if (!label) return showToast('Bitte einen Namen eingeben', 'error');
             const newCat = {
-                id:     label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_'),
+                id:         label.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_'),
                 label,
-                icon:   'utensils',
-                active: true,
+                icon:       'utensils',
+                active:     true,
                 sort_order: safeCategories.length
             };
             const res = await apiPost('categories', newCat);
