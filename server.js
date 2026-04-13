@@ -43,26 +43,35 @@ try {
     app.use(helmet({
         contentSecurityPolicy: {
             directives: {
-                defaultSrc:  ["'self'"],
-                scriptSrc:   ["'self'", "'unsafe-inline'", "'unsafe-eval'"],  // CMS/Frontend benötigt inline scripts
-                styleSrc:    ["'self'", "'unsafe-inline'",
-                              'https://cdnjs.cloudflare.com',          // Font Awesome CSS
-                              'https://fonts.googleapis.com'],          // Google Fonts (optional)
-                fontSrc:     ["'self'", 'data:',
-                              'https://cdnjs.cloudflare.com',          // Font Awesome Webfonts
-                              'https://fonts.gstatic.com'],             // Google Fonts
-                imgSrc:      ["'self'", 'data:', 'blob:',
-                              'https://maps.gstatic.com',
-                              'https://*.googleapis.com'],
-                connectSrc:  ["'self'", 'ws:', 'wss:'],                // Socket.IO
-                frameSrc:    ["'self'",
-                              'https://maps.google.com',
-                              'https://maps.googleapis.com',
-                              'https://www.google.com'],               // Google Maps iFrame
-                objectSrc:   ["'none'"],
+                defaultSrc:      ["'self'"],
+                // inline <script> Tags + eval (CMS-Admin benötigt beides)
+                scriptSrc:       ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+                // Inline onclick=, onchange= etc. in HTML-Attributen
+                scriptSrcAttr:   ["'unsafe-inline'"],
+                // Externe Stylesheets + inline style= Attribute
+                styleSrc:        ["'self'", "'unsafe-inline'",
+                                  'https://cdnjs.cloudflare.com',
+                                  'https://fonts.googleapis.com'],
+                styleSrcAttr:    ["'unsafe-inline'"],
+                // Webfonts
+                fontSrc:         ["'self'", 'data:',
+                                  'https://cdnjs.cloudflare.com',
+                                  'https://fonts.gstatic.com'],
+                // Bilder
+                imgSrc:          ["'self'", 'data:', 'blob:',
+                                  'https://maps.gstatic.com',
+                                  'https://*.googleapis.com'],
+                // WebSocket (Socket.IO)
+                connectSrc:      ["'self'", 'ws:', 'wss:'],
+                // Google Maps iFrame
+                frameSrc:        ["'self'",
+                                  'https://maps.google.com',
+                                  'https://maps.googleapis.com',
+                                  'https://www.google.com'],
+                objectSrc:       ["'none'"],
             }
         },
-        crossOriginEmbedderPolicy: false,  // Verhindert Probleme mit externen Ressourcen im CMS
+        crossOriginEmbedderPolicy: false,
     }));
     console.log('🛡️  Helmet Security-Header aktiv.');
 } catch (e) {
