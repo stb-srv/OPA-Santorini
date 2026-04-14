@@ -276,6 +276,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const price = parseFloat(item.price).toFixed(2);
             const allergenBadges = (item.allergens || []).length
                 ? `<span class="dish-badges">${item.allergens.map(a => `<span class="badge">${a}</span>`).join('')}</span>` : '';
+            const numberBadge = item.number
+                ? `<span class="dish-number">${item.number}</span>` : '';
             return `
             <div class="dish-card${tileClickable ? ' dish-card--clickable' : ''}"
                  data-menu-item="${id}"
@@ -290,7 +292,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="dish-card-body">
                     <span class="cat-tag">${item.cat}</span>
-                    <h3 data-item-name>${item.name}</h3>
+                    <h3 data-item-name>${numberBadge}${item.name}</h3>
                     ${item.desc ? `<p class="dish-desc">${item.desc}</p>` : ''}
                     <div class="dish-card-footer">
                         <span class="dish-price">${price} €</span>
