@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const allergenBadges = (item.allergens || []).length
                 ? `<span class="dish-badges">${item.allergens.map(a => `<span class="badge">${a}</span>`).join('')}</span>` : '';
             const numberBadge = item.number
-                ? `<span class="dish-number">${item.number}</span>` : '';
+                ? `<span class="dish-number">${item.number}. </span>` : '';
             return `
             <div class="dish-card${tileClickable ? ' dish-card--clickable' : ''}"
                  data-menu-item="${id}"
