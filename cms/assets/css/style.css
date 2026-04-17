@@ -242,6 +242,10 @@ textarea.input-styled { resize:vertical; min-height:80px; }
 .avatar { width:36px; height:36px; border-radius:50%; }
 
 .toolbar { padding:0 36px; }
+.toolbar[style*="display:none"] {
+    pointer-events: none;
+    visibility: hidden;
+}
 .content-body { flex:1; overflow-y:auto; padding:36px; }
 
 /* ═══ STATS GRID ═══ */
