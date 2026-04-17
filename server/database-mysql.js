@@ -21,8 +21,19 @@ const pool = mysql.createPool({
     queueLimit:         0,
     charset:            'utf8mb4',
     timezone:           '+00:00',
+    // Stabilitäts-Fix: ECONNRESET vermeiden
+    enableKeepAlive:    true,
+    keepAliveInitialDelay: 10000,
     // Netcup / Remote-Server: SSL optional
     ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {})
+});
+
+// Fehlerbehandlung am Pool
+pool.on('error', (err) => {
+    console.error('❌ MySQL Pool Error:', err.message);
+    if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET') {
+        console.log('🔄 Verbindung verloren, Pool wird neu verbunden...');
+    }
 });
 
 // --- Schema initialisieren ---
@@ -114,6 +125,17 @@ async function initSchema() {
                 items      LONGTEXT DEFAULT ('[]')
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
+
+        // --- MIGRATIONEN ---
+        // Migration: sort_order in menu hinzufügen falls es eine Bestands-DB ist
+        try {
+            const [cols] = await conn.query("SHOW COLUMNS FROM menu LIKE 'sort_order'");
+            if (cols.length === 0) {
+                await conn.query("ALTER TABLE menu ADD COLUMN sort_order INT DEFAULT 0");
+                console.log('✅ Migration: Spalte sort_order zu Tabelle menu hinzugefügt.');
+            }
+        } catch(e) { console.warn('⚠️  Migration sort_order fehlgeschlagen:', e.message); }
+
         // Indizes
         const idxQueries = [
             `CREATE INDEX IF NOT EXISTS idx_res_date   ON reservations(date)`,

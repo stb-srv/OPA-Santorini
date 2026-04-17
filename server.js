@@ -62,7 +62,7 @@ try {
                                   'https://maps.gstatic.com',
                                   'https://*.googleapis.com'],
                 // WebSocket (Socket.IO)
-                connectSrc:      ["'self'", 'ws:', 'wss:'],
+                connectSrc:      ["'self'", 'ws:', 'wss:', 'https://cdnjs.cloudflare.com'],
                 // Google Maps iFrame
                 frameSrc:        ["'self'",
                                   'https://maps.google.com',
