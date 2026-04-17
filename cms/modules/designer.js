@@ -14,6 +14,7 @@ export async function renderDesigner(container, titleEl, initialTab = null) {
         visuals: 'Design & Bilder',
         location: 'Standort & Karte',
         pages: 'Seiten verwalten',
+        promo: 'Promo-Aktion',
         vacation: 'Urlaub',
         holiday: 'Feiertage',
         legal: 'Impressum & Datenschutz',
@@ -154,6 +155,23 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
                         </div>
                     `).join('')}
                     ${pages.length === 0 ? '<p style="text-align:center; opacity:.5; padding:40px;">Noch keine eigenen Seiten erstellt.</p>' : ''}
+                </div>
+            `;
+        }
+
+        case 'promo': {
+            return `
+                <div class="form-grid">
+                    <div class="form-group full">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <label class="switch small"><input type="checkbox" id="ds-p-on" ${home.promotionEnabled !== false ? 'checked' : ''}><span class="slider round"></span></label>
+                            <label for="ds-p-on" style="margin:0; cursor:pointer; font-weight:normal;">Promotion-Leiste auf der Startseite anzeigen</label>
+                        </div>
+                    </div>
+                    <div class="form-group full">
+                        <label>Promotion Text (wird in der Leiste angezeigt)</label>
+                        <input id="ds-p-text" class="input-styled" value="${home.promotionText || ''}" placeholder="z.B. Heute: Frischer Oktopus vom Grill">
+                    </div>
                 </div>
             `;
         }
@@ -540,6 +558,9 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
                 u.welcomeImage = f('ds-w-img').value;
             } else if (designerTab === 'location') {
                 u.location = { address: f('ds-loc-addr').value, embedUrl: f('ds-loc-map').value };
+            } else if (designerTab === 'promo') {
+                u.promotionEnabled = f('ds-p-on').checked;
+                u.promotionText    = f('ds-p-text').value;
             } else if (designerTab === 'vacation') {
                 u.vacation = { enabled: f('ds-v-on').checked, title: f('ds-v-title').value, text: f('ds-v-text').value, start: f('ds-v-start').value, end: f('ds-v-end').value };
             } else if (designerTab === 'holiday') {

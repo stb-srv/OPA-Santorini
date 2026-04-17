@@ -73,7 +73,7 @@ const WIDGET_TEMPLATES = {
     },
 
     website: (d) => `
-        <div class="stat-widget clickable full-height" onclick="window.switchTab('home-editor')">
+        <div class="stat-widget clickable full-height" onclick="window.switchTab('home-editor', 'promo')">
             <div class="widget-header"><h3>Website</h3><i class="fas fa-magic"></i></div>
             <div class="value" style="font-size:1.4rem;margin:10px 0;">${d.home?.promotionEnabled ? 'Aktion Aktiv' : 'Kein Banner'}</div>
             <p>${d.home?.promotionText || 'Tagesempfehlung'}</p>
