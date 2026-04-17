@@ -45,7 +45,11 @@ try {
             directives: {
                 defaultSrc:      ["'self'"],
                 // inline <script> Tags + eval (CMS-Admin benötigt beides)
-                scriptSrc:       ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+                // cdnjs: jsPDF, jsPDF-autotable, font-awesome
+                // cdn.jsdelivr.net: SortableJS (Drag & Drop)
+                scriptSrc:       ["'self'", "'unsafe-inline'", "'unsafe-eval'",
+                                  'https://cdnjs.cloudflare.com',
+                                  'https://cdn.jsdelivr.net'],
                 // Inline onclick=, onchange= etc. in HTML-Attributen
                 scriptSrcAttr:   ["'unsafe-inline'"],
                 // Externe Stylesheets + inline style= Attribute
@@ -57,10 +61,11 @@ try {
                 fontSrc:         ["'self'", 'data:',
                                   'https://cdnjs.cloudflare.com',
                                   'https://fonts.gstatic.com'],
-                // Bilder
+                // Bilder: ui-avatars.com für Admin-Avatar ergänzt
                 imgSrc:          ["'self'", 'data:', 'blob:',
                                   'https://maps.gstatic.com',
-                                  'https://*.googleapis.com'],
+                                  'https://*.googleapis.com',
+                                  'https://ui-avatars.com'],
                 // WebSocket (Socket.IO)
                 connectSrc:      ["'self'", 'ws:', 'wss:'],
                 // Google Maps iFrame
