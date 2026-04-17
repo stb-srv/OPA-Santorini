@@ -24,6 +24,7 @@ export async function renderSettings(container, titleEl) {
                 <button class="tab-btn ${settingsTab === 'visibility' ? 'active' : ''}" id="tab-btn-visibility">CMS-Ansicht</button>
                 <button class="tab-btn ${settingsTab === 'reservations' ? 'active' : ''}" id="tab-btn-reservations">Reservierungen</button>
                 <button class="tab-btn ${settingsTab === 'users' ? 'active' : ''}" id="tab-btn-users">Nutzerverwaltung</button>
+                <button class="tab-btn ${settingsTab === 'smtp' ? 'active' : ''}" id="tab-btn-smtp"><i class="fas fa-envelope" style="margin-right:6px;"></i>E-Mail / SMTP</button>
             </div>
 
             <div id="settings-content">
@@ -309,6 +310,89 @@ function renderSettingsTab(settings, branding, users, licInfo) {
         `;
     }
 
+    if (settingsTab === 'smtp') {
+        const smtp = settings.smtp || {};
+        const isConfigured = !!smtp.host;
+        return `
+            <div style="background:rgba(37,99,235,.05); border:1px solid rgba(37,99,235,.15); border-radius:12px; padding:24px; margin-bottom:28px;">
+                <div style="display:flex; align-items:center; gap:14px; margin-bottom:6px;">
+                    <div style="width:42px;height:42px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin:0;">E-Mail / SMTP Konfiguration</h4>
+                        <p style="color:var(--text-muted); font-size:.82rem; margin:2px 0 0;">
+                            ${isConfigured
+                                ? `<span style="color:#10b981;"><i class="fas fa-check-circle"></i> Konfiguriert &ndash; Host: <strong>${smtp.host}</strong></span>`
+                                : `<span style="color:#f59e0b;"><i class="fas fa-exclamation-triangle"></i> Noch nicht konfiguriert &ndash; E-Mail-Versand deaktiviert</span>`
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>SMTP Host</label>
+                    <input id="smtp-host" class="input-styled" type="text"
+                        value="${smtp.host || ''}"
+                        placeholder="z.B. smtp.strato.de">
+                </div>
+                <div class="form-group">
+                    <label>Port</label>
+                    <input id="smtp-port" class="input-styled" type="number"
+                        value="${smtp.port || 465}"
+                        placeholder="465">
+                </div>
+                <div class="form-group">
+                    <label>Benutzername / E-Mail</label>
+                    <input id="smtp-user" class="input-styled" type="text"
+                        value="${smtp.user || ''}"
+                        placeholder="noreply@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Passwort</label>
+                    <input id="smtp-pass" class="input-styled" type="password"
+                        value=""
+                        placeholder="${isConfigured ? '(unverändert lassen = bestehendes Passwort)' : 'Passwort eingeben'}">
+                    ${isConfigured ? '<p class="field-hint" style="margin-top:4px;"><i class="fas fa-info-circle"></i> Leer lassen, um das gespeicherte Passwort beizubehalten.</p>' : ''}
+                </div>
+                <div class="form-group">
+                    <label>Absender-Adresse (From)</label>
+                    <input id="smtp-from" class="input-styled" type="email"
+                        value="${smtp.from || smtp.user || ''}"
+                        placeholder="noreply@example.com">
+                </div>
+                <div class="form-group" style="display:flex; align-items:center; padding-top:28px;">
+                    <label class="switch-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <label class="switch small">
+                            <input type="checkbox" id="smtp-secure" ${smtp.secure !== false ? 'checked' : ''}>
+                            <span class="slider round"></span>
+                        </label>
+                        SSL/TLS aktivieren (empfohlen für Port 465)
+                    </label>
+                </div>
+
+                <div class="form-group full" style="border-top:1px solid rgba(0,0,0,0.06); margin-top:10px; padding-top:20px;">
+                    <h4 style="margin:0 0 12px;"><i class="fas fa-paper-plane"></i> Test-E-Mail senden</h4>
+                    <p style="color:var(--text-muted); font-size:.85rem; margin-bottom:14px;">
+                        Nach dem Speichern kannst du hier eine Test-Mail senden, um die Konfiguration zu prüfen.
+                    </p>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                        <input id="smtp-test-email" class="input-styled" type="email"
+                            style="flex:1; min-width:220px;"
+                            placeholder="test@example.com"
+                            value="">
+                        <button class="btn-secondary" id="btn-smtp-test" style="white-space:nowrap;">
+                            <i class="fas fa-paper-plane"></i> Testmail senden
+                        </button>
+                    </div>
+                    <div id="smtp-test-result" style="margin-top:10px;"></div>
+                </div>
+            </div>
+        `;
+    }
+
     return '';
 }
 
@@ -319,6 +403,7 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
     container.querySelector('#tab-btn-visibility').onclick   = () => { settingsTab = 'visibility';   renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-reservations').onclick = () => { settingsTab = 'reservations'; renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-users').onclick        = () => { settingsTab = 'users';        renderSettings(container, titleEl); };
+    container.querySelector('#tab-btn-smtp').onclick         = () => { settingsTab = 'smtp';         renderSettings(container, titleEl); };
 
     // --- Plan-Module speichern ---
     const btnSaveModules = container.querySelector('#btn-save-modules');
@@ -460,6 +545,41 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
         }
     }
 
+    // --- SMTP Test-Mail ---
+    if (settingsTab === 'smtp') {
+        const btnSmtpTest = container.querySelector('#btn-smtp-test');
+        if (btnSmtpTest) {
+            btnSmtpTest.onclick = async () => {
+                const testEmail = container.querySelector('#smtp-test-email').value.trim();
+                const resultEl  = container.querySelector('#smtp-test-result');
+                if (!testEmail) { showToast('Bitte eine Ziel-E-Mail-Adresse eingeben.', 'error'); return; }
+
+                btnSmtpTest.disabled = true;
+                btnSmtpTest.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sende...';
+                resultEl.innerHTML = '';
+
+                const res = await apiPost('settings/test-smtp', { email: testEmail });
+
+                btnSmtpTest.disabled = false;
+                btnSmtpTest.innerHTML = '<i class="fas fa-paper-plane"></i> Testmail senden';
+
+                if (res && res.success) {
+                    resultEl.innerHTML = `
+                        <div style="padding:10px 14px; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); border-radius:8px; color:#10b981; font-size:.85rem;">
+                            <i class="fas fa-check-circle"></i>&nbsp; Test-E-Mail erfolgreich gesendet an <strong>${res.sentTo || testEmail}</strong>
+                        </div>`;
+                    showToast('Test-Mail gesendet! ✅');
+                } else {
+                    resultEl.innerHTML = `
+                        <div style="padding:10px 14px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.25); border-radius:8px; color:#ef4444; font-size:.85rem;">
+                            <i class="fas fa-times-circle"></i>&nbsp; ${res?.reason || 'Fehler beim Senden. Bitte Konfiguration prüfen.'}
+                        </div>`;
+                    showToast(res?.reason || 'Test-Mail fehlgeschlagen.', 'error');
+                }
+            };
+        }
+    }
+
     // --- Speichern ---
     const saveBtn = container.querySelector('#save-settings');
     if (saveBtn) {
@@ -522,6 +642,34 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                 };
                 const r = await apiPost('settings', s);
                 if (r?.success) showToast('Reservierungs-Konfiguration gespeichert!');
+            } else if (settingsTab === 'smtp') {
+                const s = { ...settings };
+                const passInput = container.querySelector('#smtp-pass').value;
+                const smtpData = {
+                    host:   container.querySelector('#smtp-host').value.trim(),
+                    port:   parseInt(container.querySelector('#smtp-port').value) || 465,
+                    user:   container.querySelector('#smtp-user').value.trim(),
+                    from:   container.querySelector('#smtp-from').value.trim(),
+                    secure: container.querySelector('#smtp-secure').checked
+                };
+                // Passwort nur übernehmen wenn neu eingegeben
+                if (passInput) {
+                    smtpData.pass = passInput;
+                } else if (s.smtp && s.smtp.pass) {
+                    smtpData.pass = s.smtp.pass;
+                }
+                if (!smtpData.host) {
+                    showToast('Bitte einen SMTP-Host eingeben.', 'error');
+                    return;
+                }
+                s.smtp = smtpData;
+                const r = await apiPost('settings', s);
+                if (r?.success) {
+                    showToast('SMTP-Einstellungen gespeichert! ✉️');
+                    renderSettings(container, titleEl);
+                } else {
+                    showToast(r?.reason || 'Fehler beim Speichern.', 'error');
+                }
             }
         };
     }
