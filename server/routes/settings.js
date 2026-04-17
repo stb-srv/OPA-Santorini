@@ -25,6 +25,29 @@ function extractDomain(req) {
     return host.split(':')[0];
 }
 
+/**
+ * Tiefes Merge zweier Objekte (nur plain objects, keine Arrays).
+ * Arrays werden direkt ersetzt (nicht konkateniert).
+ */
+function deepMerge(target, source) {
+    const result = { ...target };
+    for (const key of Object.keys(source)) {
+        if (
+            source[key] !== null &&
+            typeof source[key] === 'object' &&
+            !Array.isArray(source[key]) &&
+            typeof target[key] === 'object' &&
+            target[key] !== null &&
+            !Array.isArray(target[key])
+        ) {
+            result[key] = deepMerge(target[key], source[key]);
+        } else {
+            result[key] = source[key];
+        }
+    }
+    return result;
+}
+
 module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
     router.get('/homepage', async (req, res) => {
         try {
@@ -34,8 +57,6 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
 
-    // Homepage-Einstellungen: nur Auth erforderlich, kein Lizenz-Gate
-    // activeModules wird herausgefiltert – es gehört zu settings, nicht zu homepage
     router.post('/homepage', requireAuth, async (req, res) => {
         try {
             const { activeModules, ...homepageData } = req.body;
@@ -57,17 +78,38 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
         try { res.json(await DB.getKV('settings', {})); }
         catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
+
+    /**
+     * POST /settings
+     * Liest erst den aktuellen Stand aus der DB und merged tief,
+     * damit Teilupdates (z.B. nur smtp) nicht andere Keys (license, reservationConfig) löschen.
+     */
     router.post('/settings', requireAuth, async (req, res) => {
-        try { await DB.setKV('settings', req.body); res.json({ success: true }); }
-        catch(e) { res.status(500).json({ success: false, reason: e.message }); }
+        try {
+            const existing = await DB.getKV('settings', {});
+            const merged   = deepMerge(existing, req.body);
+            await DB.setKV('settings', merged);
+            res.json({ success: true });
+        } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
 
+    /**
+     * POST /settings/test-smtp
+     * req.body.email hat Priorität – Fallback auf User-Account-Email.
+     */
     router.post('/settings/test-smtp', requireAuth, async (req, res) => {
         try {
-            const users  = await DB.getUsers();
-            const target = (users || []).find(u => u.user === req.admin.user);
-            const toEmail = target?.email || req.body?.email;
-            if (!toEmail) return res.status(400).json({ success: false, reason: 'Keine Ziel-E-Mail-Adresse gefunden. Bitte in den Benutzereinstellungen hinterlegen.' });
+            const toEmail = req.body?.email || (await (async () => {
+                const users  = await DB.getUsers();
+                const target = (users || []).find(u => u.user === req.admin.user);
+                return target?.email || null;
+            })());
+
+            if (!toEmail) return res.status(400).json({
+                success: false,
+                reason: 'Keine Ziel-E-Mail-Adresse angegeben. Bitte im Testmail-Feld eine Adresse eingeben.'
+            });
+
             await Mailer.sendTestMail(toEmail, DB);
             res.json({ success: true, sentTo: toEmail });
         } catch (e) {
@@ -130,7 +172,6 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                         max_dishes: r.limits?.max_dishes ?? r.limits?.maxDishes ?? plan.menu_items,
                         max_tables: r.limits?.max_tables ?? r.limits?.maxTables ?? plan.max_tables
                     },
-                    // Snapshot für Offline-Fallback direkt bei Aktivierung speichern
                     lastKnownType:    r.type || 'FREE',
                     lastKnownModules: r.allowed_modules || plan.modules,
                     lastKnownLimits:  {
