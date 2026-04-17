@@ -197,8 +197,8 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
             const { modules } = req.body;
             if (!modules || typeof modules !== 'object') return res.status(400).json({ success: false, reason: 'Ungültige Module-Daten.' });
             const settings = await DB.getKV('settings', {});
-            if (!settings.license) return res.status(400).json({ success: false, reason: 'Keine Lizenz aktiv.' });
-            settings.license.modules = { ...settings.license.modules, ...modules };
+            if (!settings.license) settings.license = {};
+            settings.license.modules = { ...(settings.license.modules || {}), ...modules };
             await DB.setKV('settings', settings);
             res.json({ success: true, modules: settings.license.modules });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }

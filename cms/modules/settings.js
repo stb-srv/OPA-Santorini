@@ -713,23 +713,21 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                     }
                 }
             } else if (settingsTab === 'visibility') {
-                const s = { ...settings };
-                s.activeModules = {
+                const activeModules = {
                     orders: container.querySelector('#v-orders').checked,
                     reservations: container.querySelector('#v-res').checked
                 };
-                const r = await apiPost('settings', s);
-                if (r?.success) { showToast('Ansicht-Einstellungen gespeichert!'); updateSidebarVisibility(s); }
+                const r = await apiPost('settings', { activeModules });
+                if (r?.success) { showToast('Ansicht-Einstellungen gespeichert!'); updateSidebarVisibility({ ...settings, activeModules }); }
             } else if (settingsTab === 'reservations') {
-                const s = { ...settings };
-                s.reservationConfig = {
+                const reservationConfig = {
                     durationSmall:  parseInt(container.querySelector('#rc-small').value),
                     durationMedium: parseInt(container.querySelector('#rc-medium').value),
                     durationLarge:  parseInt(container.querySelector('#rc-large').value),
                     buffer:         parseInt(container.querySelector('#rc-buffer').value),
                     allowInquiry:   container.querySelector('#rc-inquiry').checked
                 };
-                const r = await apiPost('settings', s);
+                const r = await apiPost('settings', { reservationConfig });
                 if (r?.success) showToast('Reservierungs-Konfiguration gespeichert!');
             } else if (settingsTab === 'smtp') {
                 const s = { ...settings };
@@ -753,18 +751,17 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                 }
                 s.smtp = smtpData;
 
-                // Templates sammeln
-                s.emailTemplates = {};
+                const emailTemplates = {};
                 container.querySelectorAll('.template-box').forEach(box => {
                     const key = box.dataset.tplKey;
                     const subject = box.querySelector('.tpl-subject').value.trim();
                     const body = box.querySelector('.tpl-body').value.trim();
                     if (subject || body) {
-                        s.emailTemplates[key] = { subject, body };
+                        emailTemplates[key] = { subject, body };
                     }
                 });
 
-                const r = await apiPost('settings', s);
+                const r = await apiPost('settings', { smtp: smtpData, emailTemplates });
                 if (r?.success) {
                     showToast('Einstellungen gespeichert! ✉️');
                     renderSettings(container, titleEl);
