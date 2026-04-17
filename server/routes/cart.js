@@ -7,27 +7,33 @@
  * SECURITY:
  *  - SEC-01: Preise IMMER serverseitig aus DB laden
  *  - BUG-03: Item-Limit max. 50 gegen DoS
+ *  - BUG-D:  extractDomain() statt rohem Host-Header (Port-Strip)
  */
 
 const express = require('express');
 const DB      = require('../database.js');
 const { getCurrentLicense } = require('../license.js');
 const { sanitizeText } = require('../helpers.js');
-function extractDomain(req) {
-    const forwarded = req.headers['x-forwarded-host'];
-    if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
-    const origin = req.headers['origin'];
-    if (origin) {
-        try { return new URL(origin).hostname; } catch (_) {}
-    }
-    const host = req.headers.host || 'localhost';
-    return host.split(':')[0];
-}
 
 const MAX_ITEMS_PER_ORDER    = 50;
 const MAX_QTY_PER_ITEM       = 99;
 const DEFAULT_CUTOFF_MINUTES = 30;
 const DEFAULT_LEAD_MINUTES   = 5;
+
+/**
+ * BUG-D FIX: Konsistente Domain-Extraktion (identisch zu middleware.js / menu.js / settings.js).
+ * Entfernt Port und wertet X-Forwarded-Host, Origin und Host aus.
+ */
+function extractDomain(req) {
+    const forwarded = req.headers['x-forwarded-host'];
+    if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
+    const origin = req.headers['origin'];
+    if (origin) {
+        try { return new URL(origin).hostname; } catch (_) { /* ignore */ }
+    }
+    const host = req.headers.host || 'localhost';
+    return host.split(':')[0];
+}
 
 /** Konfigurierbare Cutoff-Minuten (Bestellstopp vor Ladenschluss). */
 function getCutoffMinutes(cfg) {
@@ -110,7 +116,6 @@ function validatePickupTime(pickupTime, openStatus) {
     const lead       = openStatus.lead   ?? DEFAULT_LEAD_MINUTES;
     const cutoff     = openStatus.cutoff ?? DEFAULT_CUTOFF_MINUTES;
 
-    // Zu früh / Vergangenheit
     if (pickupMin < nowMin + lead) {
         const earliest = new Date(now.getTime() + lead * 60000);
         const eh = String(earliest.getHours()).padStart(2, '0');
@@ -120,12 +125,10 @@ function validatePickupTime(pickupTime, openStatus) {
             : `Frühestmögliche Abholzeit: ${eh}:${em} Uhr (mind. ${lead} Min. Vorlauf).` };
     }
 
-    // Vor Öffnung
     if (openStatus.openMin !== null && pickupMin < openStatus.openMin) {
         return { valid: false, reason: `Abholzeit liegt vor der Öffnungszeit (${openStatus.openStr} Uhr).` };
     }
 
-    // Nach Ladenschluss abzüglich Cutoff
     if (openStatus.closeMin !== null) {
         const maxPickup = openStatus.closeMin - cutoff;
         if (pickupMin > maxPickup) {
@@ -150,7 +153,7 @@ module.exports = function cartRoutes(requireLicense, io) {
     // -------------------------------------------------------------------------
     router.get('/config', async (req, res) => {
         try {
-            const host     = extractDomain(req);
+            const host     = extractDomain(req); // BUG-D FIX: war req.headers['x-forwarded-host'] || req.headers.host
             const license  = await getCurrentLicense(DB, host);
             const settings = await DB.getKV('settings', {});
 
