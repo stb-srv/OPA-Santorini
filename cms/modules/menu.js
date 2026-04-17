@@ -17,7 +17,7 @@ let cmsCatFilter = 'All';
 let cmsSort = 'name';
 let cmsPage = 1;
 let cmsPageSize = 25;
-let collapsedCats = new Set(); // Eingeklappte Kategorien
+let collapsedCats = new Set();
 
 // --- Helpers ---
 const getCatLabel = (cat) => {
@@ -133,13 +133,13 @@ function renderPagination(totalItems, currentPage, pageSize) {
     const btnDisable = `${btnBase}background:transparent;color:rgba(0,0,0,0.2);cursor:default;`;
 
     const pageButtons = pages.map(p => {
-        if (p === '...') return `<span style="${btnBase}background:transparent;color:rgba(0,0,0,0.3);cursor:default;">…</span>`;
+        if (p === '...') return `<span style="${btnBase}background:transparent;color:rgba(0,0,0,0.3);cursor:default;">\u2026</span>`;
         return `<button style="${p === currentPage ? btnActive : btnNormal}" ${p === currentPage ? 'disabled' : `onclick="window.cmsGoToPage(${p})"`}>${p}</button>`;
     }).join('');
 
     return `
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;flex-wrap:wrap;gap:10px;">
-            <span style="font-size:.82rem;opacity:.55;">${start}–${end} von ${totalItems} Einträgen</span>
+            <span style="font-size:.82rem;opacity:.55;">${start}\u2013${end} von ${totalItems} Eintr\u00e4gen</span>
             <div style="display:flex;gap:4px;align-items:center;">
                 <button style="${currentPage <= 1 ? btnDisable : btnNormal}" ${currentPage <= 1 ? 'disabled' : `onclick="window.cmsGoToPage(${currentPage - 1})"`}>
                     <i class="fas fa-chevron-left" style="font-size:.7rem;"></i>
@@ -153,9 +153,33 @@ function renderPagination(totalItems, currentPage, pageSize) {
     `;
 }
 
-function renderDishRow(d, useGroupedView) {
+/**
+ * Rendert den Verf\u00fcgbarkeits-Toggle f\u00fcr ein Gericht.
+ */
+function renderAvailabilityToggle(d) {
+    const available = d.available !== false;
     return `
-        <tr data-id="${d.id}">
+        <label style="display:inline-flex;align-items:center;cursor:pointer;gap:6px;" title="${available ? 'Verf\u00fcgbar \u2013 klicken zum Deaktivieren' : 'Nicht verf\u00fcgbar \u2013 klicken zum Aktivieren'}">
+            <div style="position:relative;width:34px;height:18px;">
+                <input type="checkbox" ${available ? 'checked' : ''} onchange="window.toggleDishAvailability('${d.id}', this.checked)"
+                    style="opacity:0;width:0;height:0;position:absolute;">
+                <span style="position:absolute;inset:0;border-radius:18px;background:${available ? '#38a169' : '#cbd5e0'};transition:background .2s;"></span>
+                <span style="position:absolute;top:2px;left:${available ? '18px' : '2px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+            </div>
+        </label>
+    `;
+}
+
+/**
+ * Rendert eine einzelne Tabellenzeile f\u00fcr ein Gericht.
+ * BUG-FIX: Doppelte Deklaration entfernt \u2013 nur diese Version mit Availability-Toggle + updatedStr bleibt.
+ */
+function renderDishRow(d, useGroupedView) {
+    const available   = d.available !== false;
+    const rowOpacity  = available ? '1' : '0.45';
+    const updatedStr  = formatRelativeTime(d.updated_at || d.updatedAt || null);
+    return `
+        <tr data-id="${d.id}" style="opacity:${rowOpacity};transition:opacity .2s;">
             ${useGroupedView ? `
                 <td class="drag-handle" style="cursor:grab;padding:0 8px;opacity:.3;text-align:center;">
                     <i class="fas fa-grip-vertical"></i>
@@ -171,11 +195,13 @@ function renderDishRow(d, useGroupedView) {
             <td>
                 <span style="font-weight:600;">${d.name}</span>
                 ${d.desc ? `<br><span style="font-size:.78rem;opacity:.55;line-height:1.3;">${d.desc}</span>` : ''}
+                ${updatedStr ? `<br><span style="font-size:.7rem;opacity:.35;" title="Zuletzt bearbeitet"><i class="fas fa-clock" style="margin-right:3px;"></i>${updatedStr}</span>` : ''}
             </td>
             <td>
                 <span style="font-size:.8rem;background:rgba(0,0,0,0.05);padding:3px 10px;border-radius:20px;white-space:nowrap;">${getCatLabel(d.cat)}</span>
             </td>
             <td style="font-weight:600;font-size:.9rem;">${parseFloat(d.price).toFixed(2)}&nbsp;&euro;</td>
+            <td>${renderAvailabilityToggle(d)}</td>
             <td>
                 <div style="display:flex;gap:5px;">
                     <button title="Bearbeiten" onclick="window.editDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(59,130,246,0.12);color:#2563eb;transition:background .15s;" onmouseover="this.style.background='rgba(59,130,246,0.22)'" onmouseout="this.style.background='rgba(59,130,246,0.12)'">
@@ -223,6 +249,8 @@ function renderDishesTab(menu, categories, allergens, additives) {
     const catFromDB     = safeCategories.map(c => getCatLabel(c)).filter(Boolean);
     const cats          = [...new Set([...catFromDB, ...catFromDishes])].sort();
 
+    const unavailableCount = safeMenu.filter(d => d.available === false).length;
+
     const allergenChecks = Object.entries(safeAllergens).map(([code, name]) => `
         <label class="check-item">
             <input type="checkbox" class="dish-allergen-cb" value="${code}">
@@ -252,7 +280,7 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 currentCat = cat;
                 tableRowsHtml += `
                     <tr class="cat-header-row">
-                        <td colspan="7" style="background:rgba(0,0,0,0.03); font-weight:700; padding:12px 20px; color:var(--primary); font-size:.85rem; border-bottom:1px solid rgba(0,0,0,0.05);">
+                        <td colspan="8" style="background:rgba(0,0,0,0.03); font-weight:700; padding:12px 20px; color:var(--primary); font-size:.85rem; border-bottom:1px solid rgba(0,0,0,0.05);">
                             <i class="fas fa-folder-open" style="margin-right:8px; opacity:.5;"></i> ${currentCat.toUpperCase()}
                         </td>
                     </tr>
@@ -277,7 +305,7 @@ function renderDishesTab(menu, categories, allergens, additives) {
                     <option value="price" ${cmsSort === 'price' ? 'selected' : ''}>Sortierung: Preis</option>
                     <option value="nr"    ${cmsSort === 'nr'    ? 'selected' : ''}>Sortierung: Nummer</option>
                 </select>
-                <select class="input-styled" id="cms-page-size" style="width:120px;" title="Einträge pro Seite">
+                <select class="input-styled" id="cms-page-size" style="width:120px;" title="Eintr\u00e4ge pro Seite">
                     <option value="10"  ${cmsPageSize === 10  ? 'selected' : ''}>10 pro Seite</option>
                     <option value="25"  ${cmsPageSize === 25  ? 'selected' : ''}>25 pro Seite</option>
                     <option value="50"  ${cmsPageSize === 50  ? 'selected' : ''}>50 pro Seite</option>
@@ -286,7 +314,7 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 </select>
             </div>
             <div style="display:flex;gap:10px;align-items:center;">
-                ${unavailableCount > 0 ? `<span style="font-size:.78rem;background:rgba(239,68,68,0.1);color:#dc2626;padding:5px 12px;border-radius:20px;"><i class="fas fa-times-circle" style="margin-right:5px;"></i>${unavailableCount} nicht verfügbar</span>` : ''}
+                ${unavailableCount > 0 ? `<span style="font-size:.78rem;background:rgba(239,68,68,0.1);color:#dc2626;padding:5px 12px;border-radius:20px;"><i class="fas fa-times-circle" style="margin-right:5px;"></i>${unavailableCount} nicht verf\u00fcgbar</span>` : ''}
                 <button class="btn-primary" id="toggle-dish-form" style="background:var(--accent);"><i class="fas fa-plus"></i> Neues Gericht</button>
                 <div style="display:flex;gap:4px;align-items:center;padding:0 5px;border-left:1px solid rgba(0,0,0,0.1);margin-left:5px;">
                     <button class="btn-primary" style="background:#4b5563; opacity:.8; padding:10px 15px;" id="btn-export-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
@@ -339,53 +367,16 @@ function renderDishesTab(menu, categories, allergens, additives) {
                     <th>Name</th>
                     <th>Kategorie</th>
                     <th style="width:90px;">Preis</th>
-                    <th style="width:36px;" title="Verfügbarkeit"><i class="fas fa-check-circle" style="opacity:.5;"></i></th>
+                    <th style="width:36px;" title="Verf\u00fcgbarkeit"><i class="fas fa-check-circle" style="opacity:.5;"></i></th>
                     <th style="width:110px;">Aktionen</th>
                 </tr>
             </thead>
             <tbody>
                 ${tableRowsHtml}
-                ${paginated.length === 0 ? `<tr><td colspan="${useGroupedView ? 7 : 6}" style="text-align:center;opacity:.5;padding:40px;">Keine Gerichte vorhanden.</td></tr>` : ''}
+                ${paginated.length === 0 ? `<tr><td colspan="${useGroupedView ? 8 : 7}" style="text-align:center;opacity:.5;padding:40px;">Keine Gerichte vorhanden.</td></tr>` : ''}
             </tbody>
         </table>
         ${renderPagination(totalItems, safePage, pageSize)}
-    `;
-}
-
-function renderDishRow(d) {
-    const available   = d.available !== false;
-    const rowOpacity  = available ? '1' : '0.45';
-    const updatedStr  = formatRelativeTime(d.updated_at || d.updatedAt || null);
-    return `
-        <tr style="opacity:${rowOpacity};transition:opacity .2s;">
-            <td style="font-weight:600;color:var(--primary);font-size:.85rem;">${d.number || '&mdash;'}</td>
-            <td>
-                ${d.image
-                    ? `<img src="${d.image}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;display:block;">`
-                    : `<div style="width:36px;height:36px;border-radius:6px;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;"><i class="fas fa-utensils" style="font-size:.7rem;opacity:.35;"></i></div>`
-                }
-            </td>
-            <td>
-                <span style="font-weight:600;">${d.name}</span>
-                ${d.desc ? `<br><span style="font-size:.78rem;opacity:.55;line-height:1.3;">${d.desc}</span>` : ''}
-                ${updatedStr ? `<br><span style="font-size:.7rem;opacity:.35;" title="Zuletzt bearbeitet"><i class="fas fa-clock" style="margin-right:3px;"></i>${updatedStr}</span>` : ''}
-            </td>
-            <td>
-                <span style="font-size:.8rem;background:rgba(0,0,0,0.05);padding:3px 10px;border-radius:20px;white-space:nowrap;">${getCatLabel(d.cat)}</span>
-            </td>
-            <td style="font-weight:600;font-size:.9rem;">${parseFloat(d.price).toFixed(2)}&nbsp;&euro;</td>
-            <td>${renderAvailabilityToggle(d)}</td>
-            <td>
-                <div style="display:flex;gap:5px;">
-                    <button title="Bearbeiten" onclick="window.editDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(59,130,246,0.12);color:#2563eb;transition:background .15s;" onmouseover="this.style.background='rgba(59,130,246,0.22)'" onmouseout="this.style.background='rgba(59,130,246,0.12)'">
-                        <i class="fas fa-pen" style="font-size:.72rem;"></i>
-                    </button>
-                    <button title="L&ouml;schen" onclick="window.deleteDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;transition:background .15s;" onmouseover="this.style.background='rgba(239,68,68,0.22)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
-                        <i class="fas fa-trash" style="font-size:.72rem;"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
     `;
 }
 
@@ -423,7 +414,7 @@ function renderKVTab(title, data, keyName, placeholder) {
         <div style="margin-bottom:24px;"><h3>${title}</h3></div>
         <div class="glass-panel" style="padding:30px;">
             <div style="display:flex;gap:12px;margin-bottom:24px;">
-                <input class="input-styled" id="kv-code" placeholder="K&uuml;rzel (z.B. A1)" style="width:120px;">
+                <input class="input-styled" id="kv-code" placeholder="K\u00fcrzel (z.B. A1)" style="width:120px;">
                 <input class="input-styled" id="kv-name" placeholder="${placeholder}" style="flex:1;">
                 <button class="btn-primary" id="kv-add-btn" style="background:var(--accent);"><i class="fas fa-plus"></i> Speichern</button>
             </div>
@@ -470,7 +461,6 @@ async function initSortable(container, currentTab) {
             const ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(tr => tr.dataset.id);
             const res = await apiPost('menu/reorder', { ids });
             if (res?.success) {
-                // Lokalen Cache aktualisieren
                 const newMenu = ids.map(id => cachedMenuData.menu.find(m => String(m.id) === String(id))).filter(Boolean);
                 cachedMenuData.menu.forEach(m => { if (!ids.includes(String(m.id))) newMenu.push(m); });
                 cachedMenuData.menu = newMenu;
@@ -489,7 +479,6 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
     const safeAllergens  = (allergens && typeof allergens === 'object') ? allergens : {};
     const safeAdditives  = (additives && typeof additives === 'object') ? additives : {};
 
-    // Sortable initialisieren
     initSortable(container, currentTab);
 
     window.cmsGoToPage = (page) => {
@@ -497,7 +486,6 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
         renderMenu(container, document.getElementById('view-title'), 'dishes');
     };
 
-    // ── Kategorie einklappen/ausklappen ──────────────────────────────────────
     window.toggleCatCollapse = (catId, catLabel) => {
         if (collapsedCats.has(catLabel)) {
             collapsedCats.delete(catLabel);
@@ -507,7 +495,6 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
         renderMenu(container, document.getElementById('view-title'), 'dishes');
     };
 
-    // ── Verfügbarkeits-Toggle ────────────────────────────────────────────────
     window.toggleDishAvailability = async (dishId, newAvailable) => {
         const dish = safeMenu.find(d => d.id == dishId);
         if (!dish) return;
@@ -515,11 +502,10 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
         const { apiPut } = await import('./api.js');
         const res = await apiPut(`menu/${dishId}`, updated);
         if (res?.success) {
-            // Optimistisches Update im Cache – kein Full-Reload
             dish.available = newAvailable;
             dish.updated_at = updated.updated_at;
             renderMenu(container, document.getElementById('view-title'), 'dishes');
-            showToast(newAvailable ? '✅ Gericht ist jetzt verfügbar' : '⏸ Gericht als nicht verfügbar markiert');
+            showToast(newAvailable ? '\u2705 Gericht ist jetzt verf\u00fcgbar' : '\u23f8 Gericht als nicht verf\u00fcgbar markiert');
         } else {
             showToast('Fehler beim Aktualisieren', 'error');
         }
@@ -653,7 +639,6 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             const doc = new jsPDF({ unit: 'mm', format: 'a4' });
             const PW  = doc.internal.pageSize.getWidth();
 
-            // Header
             doc.setFillColor(27, 58, 92);
             doc.rect(0, 0, PW, 28, 'F');
             doc.setTextColor(255, 255, 255);
