@@ -8,22 +8,21 @@ const nodemailer = require('nodemailer');
 const CONFIG = require('../config.js');
 
 /**
- * Erstellt einen frischen SMTP-Transporter.
+ * Erstellt einen frischen SMTP-Transporter (async).
  * Gibt null zurück wenn keine gültige SMTP-Konfiguration vorhanden ist.
  */
-const createTransporter = (DB = null) => {
+const createTransporter = async (DB = null) => {
     let smtp = { ...CONFIG.SMTP };
 
     if (DB) {
         try {
-            const settings = DB.getKV('settings', {});
+            const settings = await DB.getKV('settings', {});
             if (settings.smtp && settings.smtp.host) {
                 smtp = { ...smtp, ...settings.smtp };
             }
         } catch (e) { /* Ignorieren wenn DB noch nicht verfügbar */ }
     }
 
-    // fix: guard against missing SMTP host
     if (!smtp.host) {
         console.warn('[Mailer] Kein SMTP-Host konfiguriert. E-Mail wird nicht gesendet.');
         return null;
@@ -42,14 +41,13 @@ const createTransporter = (DB = null) => {
 };
 
 /**
- * Gibt den Absender-String zurück.
- * fix: fällt auf smtp.user zurück wenn kein from gesetzt, wirft klaren Fehler wenn beides leer.
+ * Gibt den Absender-String zurück (async).
  */
-const getSenderName = (DB = null) => {
+const getSenderName = async (DB = null) => {
     let smtpConfig = { ...CONFIG.SMTP };
     if (DB) {
         try {
-            const settings = DB.getKV('settings', {});
+            const settings = await DB.getKV('settings', {});
             if (settings.smtp && settings.smtp.host) smtpConfig = { ...smtpConfig, ...settings.smtp };
         } catch (e) {}
     }
@@ -61,7 +59,7 @@ const getSenderName = (DB = null) => {
 
     if (DB) {
         try {
-            const branding = DB.getKV('branding', {});
+            const branding = await DB.getKV('branding', {});
             if (branding.name) {
                 const emailMatch = fromEmail.match(/<(.+)>/);
                 const email = emailMatch ? emailMatch[1] : fromEmail;
@@ -73,16 +71,28 @@ const getSenderName = (DB = null) => {
 };
 
 /**
- * Gibt den Restaurant-Namen aus Branding oder einen Fallback zurück.
+ * Gibt den Restaurant-Namen aus Branding oder einen Fallback zurück (async).
  */
-const getRestaurantName = (DB = null) => {
+const getRestaurantName = async (DB = null) => {
     if (DB) {
         try {
-            const branding = DB.getKV('branding', {});
+            const branding = await DB.getKV('branding', {});
             if (branding.name) return branding.name;
         } catch (e) {}
     }
     return 'Das Team';
+};
+
+/**
+ * Ersetzt Platzhalter in einem String.
+ */
+const replacePlaceholders = (text, data) => {
+    if (!text) return '';
+    let result = text;
+    for (const key in data) {
+        result = result.replaceAll(`{{${key}}}`, data[key] || '');
+    }
+    return result;
 };
 
 const Mailer = {
@@ -92,31 +102,49 @@ const Mailer = {
     sendConfirmation: async (reservation, DB = null) => {
         const { name, email, date, start_time, guests, status } = reservation;
         if (!email) return;
-        const transporter = createTransporter(DB);
-        if (!transporter) return; // kein SMTP konfiguriert
-        const from = getSenderName(DB);
-        const restaurantName = getRestaurantName(DB);
+
+        const transporter = await createTransporter(DB);
+        if (!transporter) return;
+
+        const from = await getSenderName(DB);
+        const restaurantName = await getRestaurantName(DB);
         const isInquiry = status === 'Inquiry';
 
-        const subject = isInquiry
-            ? `Warteliste / Anfrage bestätigt: ${date}`
-            : `Reservierungsbestätigung`;
+        const settings = DB ? await DB.getKV('settings', {}) : {};
+        const templates = settings.emailTemplates || {};
+        const tplKey = isInquiry ? 'tpl_inquiry' : 'tpl_confirmation';
+        const tpl = templates[tplKey] || {};
 
+        const data = { name, date, start_time, guests, restaurantName };
+
+        const subject = replacePlaceholders(tpl.subject || (isInquiry
+            ? `Warteliste / Anfrage bestätigt: {{date}}`
+            : `Reservierungsbestätigung – {{date}}`), data);
+
+        const defaultBody = isInquiry
+            ? `<h2 style="color: #2b6cb0;">Hallo {{name}}!</h2>
+               <p>Vielen Dank für Ihre Anfrage. Leider sind wir zum gewählten Zeitpunkt bereits ausgebucht, aber wir haben Sie auf unsere <strong>Warteliste</strong> gesetzt.</p>
+               <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                   <p><strong>Datum:</strong> {{date}}</p>
+                   <p><strong>Uhrzeit:</strong> {{start_time}}</p>
+                   <p><strong>Personen:</strong> {{guests}}</p>
+                   <p><strong>Status:</strong> Warteliste (Anfrage)</p>
+               </div>
+               <p>Wir freuen uns auf Ihren Besuch!</p>`
+            : `<h2 style="color: #2b6cb0;">Hallo {{name}}!</h2>
+               <p>Ihre Reservierung wurde erfolgreich empfangen.</p>
+               <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                   <p><strong>Datum:</strong> {{date}}</p>
+                   <p><strong>Uhrzeit:</strong> {{start_time}}</p>
+                   <p><strong>Personen:</strong> {{guests}}</p>
+                   <p><strong>Status:</strong> Eingegangen (Wartet auf Bestätigung)</p>
+               </div>
+               <p>Wir freuen uns auf Ihren Besuch!</p>`;
+
+        const bodyContent = replacePlaceholders(tpl.body || defaultBody, data);
         const html = `
             <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                <h2 style="color: #2b6cb0;">Hallo ${name}!</h2>
-                <p>${isInquiry
-                    ? 'Vielen Dank für Ihre Anfrage. Leider sind wir zum gewählten Zeitpunkt bereits ausgebucht, aber wir haben Sie auf unsere <strong>Warteliste</strong> gesetzt.'
-                    : 'Ihre Reservierung wurde erfolgreich empfangen.'}</p>
-
-                <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <p><strong>Datum:</strong> ${date}</p>
-                    <p><strong>Uhrzeit:</strong> ${start_time}</p>
-                    <p><strong>Personen:</strong> ${guests}</p>
-                    <p><strong>Status:</strong> ${isInquiry ? 'Warteliste (Anfrage)' : 'Eingegangen (Wartet auf Bestätigung)'}</p>
-                </div>
-
-                <p>Wir freuen uns auf Ihren Besuch!</p>
+                ${bodyContent}
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
                 <p style="font-size: 12px; color: #718096;">Herzliche Grüße, ${restaurantName}</p>
             </div>
@@ -131,34 +159,50 @@ const Mailer = {
     sendStatusChange: async (reservation, DB = null) => {
         const { name, email, status, date, start_time } = reservation;
         if (!email) return;
-        const transporter = createTransporter(DB);
+
+        const transporter = await createTransporter(DB);
         if (!transporter) return;
-        const from = getSenderName(DB);
-        const restaurantName = getRestaurantName(DB);
 
-        let subject = '', statusText = '', color = '#2b6cb0';
+        const from = await getSenderName(DB);
+        const restaurantName = await getRestaurantName(DB);
 
-        if (status === 'Confirmed') {
-            subject = 'BESTÄTIGT: Ihr Tisch';
-            statusText = 'Ihre Reservierung wurde soeben von unserem Team bestätigt. Wir freuen uns auf Sie!';
+        const settings = DB ? await DB.getKV('settings', {}) : {};
+        const templates = settings.emailTemplates || {};
+        const isConfirmed = status === 'Confirmed';
+        const tplKey = isConfirmed ? 'tpl_confirmed' : 'tpl_cancelled';
+        const tpl = templates[tplKey] || {};
+
+        const data = { name, date, start_time, restaurantName };
+
+        let defaultSubject = '', defaultBody = '', color = '#2b6cb0';
+
+        if (isConfirmed) {
+            defaultSubject = 'BESTÄTIGT: Ihr Tisch am {{date}}';
+            defaultBody = `<h2 style="color: #38a169;">BESTÄTIGT: Ihr Tisch</h2>
+                           <p>Hallo {{name}},</p>
+                           <p>Ihre Reservierung wurde soeben von unserem Team bestätigt. Wir freuen uns auf Sie!</p>
+                           <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                               <p><strong>Termin:</strong> {{date}} um {{start_time}}</p>
+                               <p><strong>Status:</strong> Bestätigt</p>
+                           </div>`;
             color = '#38a169';
         } else if (status === 'Cancelled') {
-            subject = 'ABSAGE: Ihre Reservierung';
-            statusText = 'Leider müssen wir Ihre Reservierung für den gewählten Termin absagen. Wir hoffen, Sie ein anderes Mal begrüßen zu dürfen.';
+            defaultSubject = 'ABSAGE: Ihre Reservierung am {{date}}';
+            defaultBody = `<h2 style="color: #e53e3e;">ABSAGE: Ihre Reservierung</h2>
+                           <p>Hallo {{name}},</p>
+                           <p>Leider müssen wir Ihre Reservierung für den gewählten Termin absagen. Wir hoffen, Sie ein anderes Mal begrüßen zu dürfen.</p>
+                           <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                               <p><strong>Termin:</strong> {{date}} um {{start_time}}</p>
+                               <p><strong>Status:</strong> Storniert</p>
+                           </div>`;
             color = '#e53e3e';
         } else { return; }
 
+        const subject = replacePlaceholders(tpl.subject || defaultSubject, data);
+        const bodyContent = replacePlaceholders(tpl.body || defaultBody, data);
         const html = `
             <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                <h2 style="color: ${color};">${subject}</h2>
-                <p>Hallo ${name},</p>
-                <p>${statusText}</p>
-
-                <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <p><strong>Termin:</strong> ${date} um ${start_time}</p>
-                    <p><strong>Status:</strong> ${status}</p>
-                </div>
-
+                ${bodyContent}
                 <p>Herzliche Grüße,<br>${restaurantName}</p>
             </div>
         `;
@@ -171,25 +215,33 @@ const Mailer = {
      */
     sendUserCredentials: async (email, name, username, plainPassword, DB = null) => {
         if (!email) return;
-        const transporter = createTransporter(DB);
-        if (!transporter) return;
-        const from = getSenderName(DB);
-        const restaurantName = getRestaurantName(DB);
 
-        const subject = 'Ihre Zugangsdaten für das CMS';
+        const transporter = await createTransporter(DB);
+        if (!transporter) return;
+
+        const from = await getSenderName(DB);
+        const restaurantName = await getRestaurantName(DB);
+
+        const settings = DB ? await DB.getKV('settings', {}) : {};
+        const templates = settings.emailTemplates || {};
+        const tpl = templates['tpl_credentials'] || {};
+
+        const data = { name, username, password: plainPassword, restaurantName };
+        const defaultSubject = 'Ihre Zugangsdaten für das CMS';
+        const defaultBody = `<h2 style="color: #2b6cb0;">Willkommen beim CMS</h2>
+                            <p>Hallo {{name}},</p>
+                            <p>Ein Admin hat soeben einen neuen Account für Sie erstellt oder Ihr Passwort wurde zurückgesetzt.</p>
+                            <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                                <p><strong>Benutzername:</strong> {{username}}</p>
+                                <p><strong>Passwort:</strong> <code>{{password}}</code></p>
+                            </div>
+                            <p><em>Zu Ihrer Sicherheit werden Sie gebeten, dieses Passwort bei Ihrem ersten Login zu ändern.</em></p>`;
+
+        const subject = replacePlaceholders(tpl.subject || defaultSubject, data);
+        const bodyContent = replacePlaceholders(tpl.body || defaultBody, data);
         const html = `
             <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                <h2 style="color: #2b6cb0;">Willkommen beim CMS</h2>
-                <p>Hallo ${name || username},</p>
-                <p>Ein Admin hat soeben einen neuen Account für Sie erstellt oder Ihr Passwort wurde zurückgesetzt.</p>
-
-                <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <p><strong>Benutzername:</strong> ${username}</p>
-                    <p><strong>Passwort:</strong> <code>${plainPassword}</code></p>
-                </div>
-
-                <p><em>Zu Ihrer Sicherheit werden Sie gebeten, dieses Passwort bei Ihrem ersten Login zu ändern.</em></p>
-
+                ${bodyContent}
                 <p>Herzliche Grüße,<br>${restaurantName}</p>
             </div>
         `;
@@ -201,9 +253,9 @@ const Mailer = {
      * Test-E-Mail für SMTP-Konfigurationsprüfung im CMS
      */
     sendTestMail: async (toEmail, DB = null) => {
-        const transporter = createTransporter(DB);
+        const transporter = await createTransporter(DB);
         if (!transporter) throw new Error('Kein SMTP-Host konfiguriert.');
-        const from = getSenderName(DB);
+        const from = await getSenderName(DB);
 
         await sendWithRetry(transporter, {
             from,
