@@ -8,7 +8,7 @@ const nodemailer = require('nodemailer');
 const CONFIG = require('../config.js');
 
 /**
- * Erstellt einen frischen SMTP-Transporter.
+ * Erstellt einen frischen SMTP-Transporter (async).
  * Gibt null zurück wenn keine gültige SMTP-Konfiguration vorhanden ist.
  */
 const createTransporter = async (DB = null) => {
@@ -23,7 +23,6 @@ const createTransporter = async (DB = null) => {
         } catch (e) { /* Ignorieren wenn DB noch nicht verfügbar */ }
     }
 
-    // fix: guard against missing SMTP host
     if (!smtp.host) {
         console.warn('[Mailer] Kein SMTP-Host konfiguriert. E-Mail wird nicht gesendet.');
         return null;
@@ -42,8 +41,7 @@ const createTransporter = async (DB = null) => {
 };
 
 /**
- * Gibt den Absender-String zurück.
- * fix: fällt auf smtp.user zurück wenn kein from gesetzt, wirft klaren Fehler wenn beides leer.
+ * Gibt den Absender-String zurück (async).
  */
 const getSenderName = async (DB = null) => {
     let smtpConfig = { ...CONFIG.SMTP };
@@ -73,7 +71,7 @@ const getSenderName = async (DB = null) => {
 };
 
 /**
- * Gibt den Restaurant-Namen aus Branding oder einen Fallback zurück.
+ * Gibt den Restaurant-Namen aus Branding oder einen Fallback zurück (async).
  */
 const getRestaurantName = async (DB = null) => {
     if (DB) {
@@ -146,6 +144,38 @@ const Mailer = {
 
         const bodyContent = replacePlaceholders(tpl.body || defaultBody, data);
 
+        const settings = DB ? await DB.getKV('settings', {}) : {};
+        const templates = settings.emailTemplates || {};
+        const tplKey = isInquiry ? 'tpl_inquiry' : 'tpl_confirmation';
+        const tpl = templates[tplKey] || {};
+
+        const data = { name, date, start_time, guests, restaurantName };
+
+        const subject = replacePlaceholders(tpl.subject || (isInquiry
+            ? `Warteliste / Anfrage bestätigt: {{date}}`
+            : `Reservierungsbestätigung – {{date}}`), data);
+
+        const defaultBody = isInquiry
+            ? `<h2 style="color: #2b6cb0;">Hallo {{name}}!</h2>
+               <p>Vielen Dank für Ihre Anfrage. Leider sind wir zum gewählten Zeitpunkt bereits ausgebucht, aber wir haben Sie auf unsere <strong>Warteliste</strong> gesetzt.</p>
+               <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                   <p><strong>Datum:</strong> {{date}}</p>
+                   <p><strong>Uhrzeit:</strong> {{start_time}}</p>
+                   <p><strong>Personen:</strong> {{guests}}</p>
+                   <p><strong>Status:</strong> Warteliste (Anfrage)</p>
+               </div>
+               <p>Wir freuen uns auf Ihren Besuch!</p>`
+            : `<h2 style="color: #2b6cb0;">Hallo {{name}}!</h2>
+               <p>Ihre Reservierung wurde erfolgreich empfangen.</p>
+               <div style="background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                   <p><strong>Datum:</strong> {{date}}</p>
+                   <p><strong>Uhrzeit:</strong> {{start_time}}</p>
+                   <p><strong>Personen:</strong> {{guests}}</p>
+                   <p><strong>Status:</strong> Eingegangen (Wartet auf Bestätigung)</p>
+               </div>
+               <p>Wir freuen uns auf Ihren Besuch!</p>`;
+
+        const bodyContent = replacePlaceholders(tpl.body || defaultBody, data);
         const html = `
             <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
                 ${bodyContent}

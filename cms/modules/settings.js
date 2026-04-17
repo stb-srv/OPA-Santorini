@@ -51,10 +51,9 @@ export async function renderSettings(container, titleEl) {
     container.innerHTML = `
         <div class="glass-panel" style="padding:40px;">
             <div class="designer-tabs" style="margin-bottom:30px;">
-                <button class="tab-btn ${settingsTab === 'license' ? 'active' : ''}" id="tab-btn-license">Lizenz & Hub</button>
+                <button class="tab-btn ${settingsTab === 'license' ? 'active' : ''}" id="tab-btn-license">Lizenz &amp; Hub</button>
                 <button class="tab-btn ${settingsTab === 'plan_modules' ? 'active' : ''}" id="tab-btn-plan_modules">Plan-Module</button>
                 <button class="tab-btn ${settingsTab === 'branding' ? 'active' : ''}" id="tab-btn-branding">Restaurant-Info</button>
-                <button class="tab-btn ${settingsTab === 'visibility' ? 'active' : ''}" id="tab-btn-visibility">CMS-Ansicht</button>
                 <button class="tab-btn ${settingsTab === 'reservations' ? 'active' : ''}" id="tab-btn-reservations">Reservierungen</button>
                 <button class="tab-btn ${settingsTab === 'users' ? 'active' : ''}" id="tab-btn-users">Nutzerverwaltung</button>
                 <button class="tab-btn ${settingsTab === 'smtp' ? 'active' : ''}" id="tab-btn-smtp"><i class="fas fa-envelope" style="margin-right:6px;"></i>E-Mail / SMTP</button>
@@ -74,21 +73,19 @@ export async function renderSettings(container, titleEl) {
 }
 
 const MODULE_LABELS = {
-    menu_edit:      { label: 'Speisekarte bearbeiten', icon: 'utensils', desc: 'Gerichte hinzufügen, bearbeiten & löschen' },
+    menu_edit:      { label: 'Speisekarte bearbeiten', icon: 'utensils',       desc: 'Gerichte hinzufügen, bearbeiten & löschen' },
     orders_kitchen: { label: 'Küchen-Monitor',         icon: 'concierge-bell', desc: 'Bestellungen in Echtzeit anzeigen' },
     reservations:   { label: 'Online-Reservierung',    icon: 'calendar-check', desc: 'Gäste können online reservieren' },
-    custom_design:  { label: 'Design anpassen',        icon: 'paint-brush', desc: 'Farben, Logo & Homepage bearbeiten' },
-    analytics:      { label: 'Statistiken',             icon: 'chart-bar', desc: 'Umsatz- und Bestellstatistiken' },
-    qr_pay:         { label: 'QR-Pay',                  icon: 'qrcode', desc: 'Bezahlung per QR-Code am Tisch' },
+    custom_design:  { label: 'Design anpassen',        icon: 'paint-brush',    desc: 'Farben, Logo & Homepage bearbeiten' },
+    analytics:      { label: 'Statistiken',             icon: 'chart-bar',      desc: 'Umsatz- und Bestellstatistiken' },
+    qr_pay:         { label: 'QR-Pay',                  icon: 'qrcode',         desc: 'Bezahlung per QR-Code am Tisch' },
 };
 
-/** Hilfsfunktion: Gibt true zurück wenn der Wert eine echte Bild-URL/DataURL ist */
 function isValidImageSrc(val) {
     if (!val || typeof val !== 'string') return false;
     return val.startsWith('data:image') || val.startsWith('http') || val.startsWith('/');
 }
 
-/** Rendert eine Vorschau-Box für Logo/Favicon/Bild */
 function renderImagePreview(id, src, width, height, label) {
     const hasImg = isValidImageSrc(src);
     const placeholderStyle = `
@@ -140,11 +137,11 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                 </div>
                 ${isTrial && !expired ? `
                 <div style="margin-top:16px; padding:12px 16px; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.2); border-radius:8px; font-size:.85rem; color:#f59e0b;">
-                    <i class="fas fa-clock"></i>&nbsp; Ihre Trial-Lizenz läuft in <strong>${daysLeft} Tagen</strong> ab. Aktivieren Sie jetzt einen vollwertigen Plan.
+                    <i class="fas fa-clock"></i>&nbsp; Ihre Trial-Lizenz läuft in <strong>${daysLeft} Tagen</strong> ab.
                 </div>` : ''}
                 ${expired ? `
                 <div style="margin-top:16px; padding:12px 16px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.2); border-radius:8px; font-size:.85rem; color:#ef4444;">
-                    <i class="fas fa-exclamation-triangle"></i>&nbsp; Ihre Lizenz ist abgelaufen. Bitte aktivieren Sie einen neuen Lizenz-Key.
+                    <i class="fas fa-exclamation-triangle"></i>&nbsp; Ihre Lizenz ist abgelaufen.
                 </div>` : ''}
             </div>
 
@@ -152,9 +149,7 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                 <h4 style="margin:0 0 16px; display:flex; align-items:center; gap:8px;">
                     <i class="fas fa-key" style="color:#10b981;"></i> Lizenz aktivieren / wechseln
                 </h4>
-                <p style="color:var(--text-muted); font-size:.85rem; margin-bottom:16px;">
-                    Geben Sie Ihren Lizenz-Key ein um auf einen höheren Plan zu wechseln oder eine abgelaufene Lizenz zu erneuern.
-                </p>
+                <p style="color:var(--text-muted); font-size:.85rem; margin-bottom:16px;">Geben Sie Ihren Lizenz-Key ein um auf einen höheren Plan zu wechseln oder eine abgelaufene Lizenz zu erneuern.</p>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <input id="license-key-input" class="input-styled" style="flex:1; min-width:260px; font-family:monospace; letter-spacing:.05em;"
                         placeholder="z.B. OPA-XXXX-XXXX-XXXX-XXXX"
@@ -198,6 +193,7 @@ function renderSettingsTab(settings, branding, users, licInfo) {
     if (settingsTab === 'plan_modules') {
         const l = settings.license || {};
         const activeModules = l.modules || {};
+        const mod = settings.activeModules || { orders: true, reservations: true };
         const allModuleKeys = Object.keys(MODULE_LABELS);
         return `
             <div style="margin-bottom:20px;">
@@ -207,7 +203,7 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                     Änderungen gelten sofort – unabhängig vom zugewiesenen Plan.
                 </p>
             </div>
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:14px; margin-bottom:30px;">
                 ${allModuleKeys.map(key => {
                     const m = MODULE_LABELS[key];
                     const isOn = activeModules[key] === true;
@@ -227,9 +223,43 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                     </div>`;
                 }).join('')}
             </div>
+
+            <div style="border-top:1px solid rgba(0,0,0,0.07); padding-top:24px; margin-bottom:8px;">
+                <h4 style="margin:0 0 6px;"><i class="fas fa-eye"></i> CMS-Sichtbarkeit</h4>
+                <p style="color:var(--text-muted); font-size:.85rem; margin:0 0 18px;">Steuert welche Module im CMS-Menü angezeigt werden – unabhängig von der Lizenz.</p>
+                <div style="display:flex; flex-direction:column; gap:14px;">
+                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(0,0,0,0.06); border-radius:14px; padding:18px; display:flex; align-items:center; gap:16px;">
+                        <div style="width:40px;height:40px;border-radius:10px;background:${mod.orders ? 'rgba(16,185,129,.15)' : 'rgba(107,114,128,.1)'}; display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-concierge-bell" style="color:${mod.orders ? '#10b981' : '#9ca3af'};"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700; font-size:.9rem;">Küchen-Monitor</div>
+                            <div style="color:var(--text-muted); font-size:.78rem; margin-top:2px;">Bestellungs-Modul im CMS-Menü anzeigen</div>
+                        </div>
+                        <label class="switch small" style="flex-shrink:0;">
+                            <input type="checkbox" id="v-orders" ${mod.orders ? 'checked' : ''}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(0,0,0,0.06); border-radius:14px; padding:18px; display:flex; align-items:center; gap:16px;">
+                        <div style="width:40px;height:40px;border-radius:10px;background:${mod.reservations ? 'rgba(16,185,129,.15)' : 'rgba(107,114,128,.1)'}; display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="fas fa-calendar-check" style="color:${mod.reservations ? '#10b981' : '#9ca3af'};"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700; font-size:.9rem;">Online-Reservierung</div>
+                            <div style="color:var(--text-muted); font-size:.78rem; margin-top:2px;">Reservierungs-Modul im CMS-Menü anzeigen</div>
+                        </div>
+                        <label class="switch small" style="flex-shrink:0;">
+                            <input type="checkbox" id="v-res" ${mod.reservations ? 'checked' : ''}>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
             <div style="display:flex; justify-content:flex-end; margin-top:24px;">
-                <button class="btn-primary" id="btn-save-modules" style="background:var(--accent);">
-                    <i class="fas fa-save"></i> Module speichern
+                <button class="btn-primary" id="btn-save-modules">
+                    <i class="fas fa-save"></i> Speichern
                 </button>
             </div>
         `;
@@ -241,33 +271,29 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                 <div class="form-group full"><label>Restaurant Name</label><input id="br-name" class="input-styled" value="${branding.name || ''}" placeholder="z.B. OPA! Santorini"></div>
                 <div class="form-group"><label>Slogan</label><input id="br-slogan" class="input-styled" value="${branding.slogan || ''}" placeholder="z.B. Griechische Meeresfrüchte"></div>
                 <div class="form-group"><label>Telefon (Gästeansicht)</label><input id="br-phone" class="input-styled" value="${branding.phone || ''}" placeholder="0123 / 456789"></div>
-
                 <div class="form-group full" style="border-top:1px solid rgba(0,0,0,0.05); padding-top:15px; margin-top:10px;">
-                    <label>Logo & Favicon</label>
+                    <label>Logo &amp; Favicon</label>
                 </div>
-
                 <div class="form-group">
                     <label>Haupt-Logo</label>
                     <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                         ${renderImagePreview('br-logo-preview', branding.logo, 'auto', '60px', 'Kein Logo')}
                         <input type="file" id="br-logo-upload" accept="image/*" style="display:none;">
                         <button class="btn-secondary" id="btn-upload-logo"><i class="fas fa-upload"></i> Hochladen</button>
-                        ${isValidImageSrc(branding.logo) ? '<button class="btn-edit" id="btn-remove-logo" style="color:#ef4444;" title="Logo entfernen"><i class="fas fa-times"></i></button>' : ''}
+                        ${isValidImageSrc(branding.logo) ? '<button class="btn-edit" id="btn-remove-logo" style="color:#ef4444;"><i class="fas fa-times"></i></button>' : ''}
                     </div>
                     <input type="hidden" id="br-logo-value" value="${isValidImageSrc(branding.logo) ? branding.logo : ''}">
                 </div>
-
                 <div class="form-group">
                     <label>Favicon (Browser-Tab Symbol)</label>
                     <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                         ${renderImagePreview('br-favicon-preview', branding.favicon, '32px', '32px', 'Kein Favicon')}
                         <input type="file" id="br-favicon-upload" accept="image/*" style="display:none;">
                         <button class="btn-secondary" id="btn-upload-favicon"><i class="fas fa-upload"></i> Hochladen</button>
-                        ${isValidImageSrc(branding.favicon) ? '<button class="btn-edit" id="btn-remove-favicon" style="color:#ef4444;" title="Favicon entfernen"><i class="fas fa-times"></i></button>' : ''}
+                        ${isValidImageSrc(branding.favicon) ? '<button class="btn-edit" id="btn-remove-favicon" style="color:#ef4444;"><i class="fas fa-times"></i></button>' : ''}
                     </div>
                     <input type="hidden" id="br-favicon-value" value="${isValidImageSrc(branding.favicon) ? branding.favicon : ''}">
                 </div>
-
                 <p class="field-hint" style="grid-column:1/-1;">Logos werden im Gäste-Web und im CMS-Header angezeigt.</p>
             </div>
         `;
@@ -364,39 +390,16 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                     </div>
                 </div>
             </div>
-
             <div class="form-grid">
-                <div class="form-group">
-                    <label>SMTP Host</label>
-                    <input id="smtp-host" class="input-styled" type="text"
-                        value="${smtp.host || ''}"
-                        placeholder="z.B. smtp.strato.de">
-                </div>
-                <div class="form-group">
-                    <label>Port</label>
-                    <input id="smtp-port" class="input-styled" type="number"
-                        value="${smtp.port || 465}"
-                        placeholder="465">
-                </div>
-                <div class="form-group">
-                    <label>Benutzername / E-Mail</label>
-                    <input id="smtp-user" class="input-styled" type="text"
-                        value="${smtp.user || ''}"
-                        placeholder="noreply@example.com">
-                </div>
+                <div class="form-group"><label>SMTP Host</label><input id="smtp-host" class="input-styled" type="text" value="${smtp.host || ''}" placeholder="z.B. smtp.strato.de"></div>
+                <div class="form-group"><label>Port</label><input id="smtp-port" class="input-styled" type="number" value="${smtp.port || 465}" placeholder="465"></div>
+                <div class="form-group"><label>Benutzername / E-Mail</label><input id="smtp-user" class="input-styled" type="text" value="${smtp.user || ''}" placeholder="noreply@example.com"></div>
                 <div class="form-group">
                     <label>Passwort</label>
-                    <input id="smtp-pass" class="input-styled" type="password"
-                        value=""
-                        placeholder="${isConfigured ? '(unverändert lassen = bestehendes Passwort)' : 'Passwort eingeben'}">
+                    <input id="smtp-pass" class="input-styled" type="password" value="" placeholder="${isConfigured ? '(unverändert lassen = bestehendes Passwort)' : 'Passwort eingeben'}">
                     ${isConfigured ? '<p class="field-hint" style="margin-top:4px;"><i class="fas fa-info-circle"></i> Leer lassen, um das gespeicherte Passwort beizubehalten.</p>' : ''}
                 </div>
-                <div class="form-group">
-                    <label>Absender-Adresse (From)</label>
-                    <input id="smtp-from" class="input-styled" type="email"
-                        value="${smtp.from || smtp.user || ''}"
-                        placeholder="noreply@example.com">
-                </div>
+                <div class="form-group"><label>Absender-Adresse (From)</label><input id="smtp-from" class="input-styled" type="email" value="${smtp.from || smtp.user || ''}" placeholder="noreply@example.com"></div>
                 <div class="form-group" style="display:flex; align-items:center; padding-top:28px;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <label class="switch small">
@@ -406,20 +409,12 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                         <label for="smtp-secure" style="margin:0; cursor:pointer; font-weight:normal;">SSL/TLS aktivieren (empfohlen für Port 465)</label>
                     </div>
                 </div>
-
                 <div class="form-group full" style="border-top:1px solid rgba(0,0,0,0.06); margin-top:10px; padding-top:20px;">
                     <h4 style="margin:0 0 12px;"><i class="fas fa-paper-plane"></i> Test-E-Mail senden</h4>
-                    <p style="color:var(--text-muted); font-size:.85rem; margin-bottom:14px;">
-                        Nach dem Speichern kannst du hier eine Test-Mail senden, um die Konfiguration zu prüfen.
-                    </p>
+                    <p style="color:var(--text-muted); font-size:.85rem; margin-bottom:14px;">Nach dem Speichern kannst du hier eine Test-Mail senden, um die Konfiguration zu prüfen.</p>
                     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-                        <input id="smtp-test-email" class="input-styled" type="email"
-                            style="flex:1; min-width:220px;"
-                            placeholder="test@example.com"
-                            value="">
-                        <button class="btn-secondary" id="btn-smtp-test" style="white-space:nowrap;">
-                            <i class="fas fa-paper-plane"></i> Testmail senden
-                        </button>
+                        <input id="smtp-test-email" class="input-styled" type="email" style="flex:1; min-width:220px;" placeholder="test@example.com" value="">
+                        <button class="btn-secondary" id="btn-smtp-test" style="white-space:nowrap;"><i class="fas fa-paper-plane"></i> Testmail senden</button>
                     </div>
                     <div id="smtp-test-result" style="margin-top:10px;"></div>
                 </div>
@@ -467,12 +462,11 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
     container.querySelector('#tab-btn-license').onclick      = () => { settingsTab = 'license';      renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-plan_modules').onclick = () => { settingsTab = 'plan_modules'; renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-branding').onclick     = () => { settingsTab = 'branding';     renderSettings(container, titleEl); };
-    container.querySelector('#tab-btn-visibility').onclick   = () => { settingsTab = 'visibility';   renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-reservations').onclick = () => { settingsTab = 'reservations'; renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-users').onclick        = () => { settingsTab = 'users';        renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-smtp').onclick         = () => { settingsTab = 'smtp';         renderSettings(container, titleEl); };
 
-    // --- Plan-Module speichern ---
+    // --- Plan-Module + CMS-Sichtbarkeit speichern ---
     const btnSaveModules = container.querySelector('#btn-save-modules');
     if (btnSaveModules) {
         btnSaveModules.onclick = async () => {
@@ -480,12 +474,22 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
             container.querySelectorAll('.module-toggle').forEach(cb => {
                 modules[cb.dataset.module] = cb.checked;
             });
-            const res = await apiPost('license/modules', { modules });
-            if (res && res.success) {
-                showToast('Module gespeichert!');
+            const [modRes, visRes] = await Promise.all([
+                apiPost('license/modules', { modules }),
+                apiPost('settings', {
+                    ...settings,
+                    activeModules: {
+                        orders:       container.querySelector('#v-orders')?.checked ?? (settings.activeModules?.orders ?? true),
+                        reservations: container.querySelector('#v-res')?.checked    ?? (settings.activeModules?.reservations ?? true)
+                    }
+                })
+            ]);
+            if (modRes?.success && visRes?.success) {
+                showToast('Einstellungen gespeichert!');
+                updateSidebarVisibility({ ...settings, activeModules: { orders: container.querySelector('#v-orders')?.checked, reservations: container.querySelector('#v-res')?.checked } });
                 renderSettings(container, titleEl);
             } else {
-                showToast(res?.reason || 'Fehler beim Speichern.', 'error');
+                showToast((modRes?.reason || visRes?.reason) || 'Fehler beim Speichern.', 'error');
             }
         };
     }
@@ -497,74 +501,51 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
             const key = container.querySelector('#license-key-input').value.trim();
             const resultEl = container.querySelector('#license-activate-result');
             if (!key) { showToast('Bitte Lizenz-Key eingeben.', 'error'); return; }
-
             btnActivate.disabled = true;
             btnActivate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wird geprüft...';
             resultEl.innerHTML = '';
-
             const res = await apiPost('license/validate', { key });
-
             btnActivate.disabled = false;
             btnActivate.innerHTML = '<i class="fas fa-check-circle"></i> Lizenz aktivieren';
-
             if (res && res.success) {
                 const lic = res.license;
-                resultEl.innerHTML = `
-                    <div style="padding:12px 16px; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); border-radius:8px; color:#10b981; font-size:.88rem;">
-                        <i class="fas fa-check-circle"></i>&nbsp;
-                        <strong>Lizenz aktiviert!</strong> Plan: ${lic.label || lic.type}
-                        &nbsp;&bull;&nbsp; Gültig bis: ${lic.expiresAt ? new Date(lic.expiresAt).toLocaleDateString('de-DE') : 'Unbegrenzt'}
-                    </div>`;
+                resultEl.innerHTML = `<div style="padding:12px 16px; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); border-radius:8px; color:#10b981; font-size:.88rem;">
+                    <i class="fas fa-check-circle"></i>&nbsp; <strong>Lizenz aktiviert!</strong> Plan: ${lic.label || lic.type}
+                    &nbsp;&bull;&nbsp; Gültig bis: ${lic.expiresAt ? new Date(lic.expiresAt).toLocaleDateString('de-DE') : 'Unbegrenzt'}
+                </div>`;
                 showToast('Lizenz erfolgreich aktiviert! 🎉', 'success');
                 setTimeout(() => renderSettings(container, titleEl), 1500);
             } else {
-                resultEl.innerHTML = `
-                    <div style="padding:12px 16px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.25); border-radius:8px; color:#ef4444; font-size:.88rem;">
-                        <i class="fas fa-times-circle"></i>&nbsp;
-                        ${res?.reason || 'Lizenz-Key ungültig oder Lizenzserver nicht erreichbar.'}
-                    </div>`;
+                resultEl.innerHTML = `<div style="padding:12px 16px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.25); border-radius:8px; color:#ef4444; font-size:.88rem;">
+                    <i class="fas fa-times-circle"></i>&nbsp; ${res?.reason || 'Lizenz-Key ungültig oder Lizenzserver nicht erreichbar.'}
+                </div>`;
                 showToast(res?.reason || 'Aktivierung fehlgeschlagen.', 'error');
             }
         };
-
-        container.querySelector('#license-key-input').onkeydown = (e) => {
-            if (e.key === 'Enter') btnActivate.click();
-        };
+        container.querySelector('#license-key-input').onkeydown = (e) => { if (e.key === 'Enter') btnActivate.click(); };
     }
 
-    // --- Branding: Upload-Handler mit Datei-Reader (kein externer Upload nötig für Vorschau) ---
+    // --- Branding Upload-Handler ---
     if (settingsTab === 'branding') {
-        /**
-         * Richtet einen Upload-Button + FileReader-Vorschau ein.
-         * Schreibt das Ergebnis in das hidden Input, damit der Speichern-Handler es liest.
-         */
         const setupImageUpload = (btnId, fileInputId, previewId, hiddenId, previewWidth, previewHeight) => {
-            const btn       = container.querySelector(`#${btnId}`);
+            const btn = container.querySelector(`#${btnId}`);
             const fileInput = container.querySelector(`#${fileInputId}`);
-            const hidden    = container.querySelector(`#${hiddenId}`);
+            const hidden = container.querySelector(`#${hiddenId}`);
             if (!btn || !fileInput || !hidden) return;
-
             btn.onclick = () => fileInput.click();
-
             fileInput.onchange = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     const dataUrl = ev.target.result;
-                    hidden.value  = dataUrl;
-
-                    // Vorschau-Element austauschen (div → img oder img.src aktualisieren)
+                    hidden.value = dataUrl;
                     const existing = container.querySelector(`#${previewId}`);
                     if (existing) {
-                        if (existing.tagName === 'IMG') {
-                            existing.src = dataUrl;
-                        } else {
-                            // Placeholder-div durch <img> ersetzen
+                        if (existing.tagName === 'IMG') { existing.src = dataUrl; }
+                        else {
                             const img = document.createElement('img');
-                            img.id    = previewId;
-                            img.src   = dataUrl;
-                            img.alt   = 'Vorschau';
+                            img.id = previewId; img.src = dataUrl; img.alt = 'Vorschau';
                             img.style.cssText = `width:${previewWidth}; height:${previewHeight}; object-fit:contain; border-radius:8px; background:rgba(0,0,0,0.05); display:block;`;
                             existing.replaceWith(img);
                         }
@@ -574,38 +555,35 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                 reader.readAsDataURL(file);
             };
         };
-
         setupImageUpload('btn-upload-logo',    'br-logo-upload',    'br-logo-preview',    'br-logo-value',    'auto', '60px');
         setupImageUpload('btn-upload-favicon', 'br-favicon-upload', 'br-favicon-preview', 'br-favicon-value', '32px', '32px');
 
-        // Entfernen-Buttons
         const btnRemoveLogo = container.querySelector('#btn-remove-logo');
         if (btnRemoveLogo) {
             btnRemoveLogo.onclick = () => {
                 container.querySelector('#br-logo-value').value = '';
                 const el = container.querySelector('#br-logo-preview');
                 if (el) {
-                    const placeholder = document.createElement('div');
-                    placeholder.id = 'br-logo-preview';
-                    placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;width:auto;height:60px;background:rgba(0,0,0,0.06);border-radius:8px;border:2px dashed rgba(0,0,0,0.15);color:rgba(0,0,0,0.3);font-size:.8rem;padding:8px;min-width:80px;';
-                    placeholder.innerHTML = '<span><i class="fas fa-image" style="display:block;font-size:1.2rem;margin-bottom:4px;"></i>Kein Logo</span>';
-                    el.replaceWith(placeholder);
+                    const ph = document.createElement('div');
+                    ph.id = 'br-logo-preview';
+                    ph.style.cssText = 'display:flex;align-items:center;justify-content:center;width:auto;height:60px;background:rgba(0,0,0,0.06);border-radius:8px;border:2px dashed rgba(0,0,0,0.15);color:rgba(0,0,0,0.3);font-size:.8rem;padding:8px;min-width:80px;';
+                    ph.innerHTML = '<span><i class="fas fa-image" style="display:block;font-size:1.2rem;margin-bottom:4px;"></i>Kein Logo</span>';
+                    el.replaceWith(ph);
                 }
                 btnRemoveLogo.remove();
             };
         }
-
         const btnRemoveFav = container.querySelector('#btn-remove-favicon');
         if (btnRemoveFav) {
             btnRemoveFav.onclick = () => {
                 container.querySelector('#br-favicon-value').value = '';
                 const el = container.querySelector('#br-favicon-preview');
                 if (el) {
-                    const placeholder = document.createElement('div');
-                    placeholder.id = 'br-favicon-preview';
-                    placeholder.style.cssText = 'display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:rgba(0,0,0,0.06);border-radius:8px;border:2px dashed rgba(0,0,0,0.15);color:rgba(0,0,0,0.3);font-size:.7rem;';
-                    placeholder.innerHTML = '<i class="fas fa-image"></i>';
-                    el.replaceWith(placeholder);
+                    const ph = document.createElement('div');
+                    ph.id = 'br-favicon-preview';
+                    ph.style.cssText = 'display:flex;align-items:center;justify-content:center;width:32px;height:32px;background:rgba(0,0,0,0.06);border-radius:8px;border:2px dashed rgba(0,0,0,0.15);color:rgba(0,0,0,0.3);font-size:.7rem;';
+                    ph.innerHTML = '<i class="fas fa-image"></i>';
+                    el.replaceWith(ph);
                 }
                 btnRemoveFav.remove();
             };
@@ -620,27 +598,21 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                 const testEmail = container.querySelector('#smtp-test-email').value.trim();
                 const resultEl  = container.querySelector('#smtp-test-result');
                 if (!testEmail) { showToast('Bitte eine Ziel-E-Mail-Adresse eingeben.', 'error'); return; }
-
                 btnSmtpTest.disabled = true;
                 btnSmtpTest.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sende...';
                 resultEl.innerHTML = '';
-
                 const res = await apiPost('settings/test-smtp', { email: testEmail });
-
                 btnSmtpTest.disabled = false;
                 btnSmtpTest.innerHTML = '<i class="fas fa-paper-plane"></i> Testmail senden';
-
                 if (res && res.success) {
-                    resultEl.innerHTML = `
-                        <div style="padding:10px 14px; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); border-radius:8px; color:#10b981; font-size:.85rem;">
-                            <i class="fas fa-check-circle"></i>&nbsp; Test-E-Mail erfolgreich gesendet an <strong>${res.sentTo || testEmail}</strong>
-                        </div>`;
+                    resultEl.innerHTML = `<div style="padding:10px 14px; background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); border-radius:8px; color:#10b981; font-size:.85rem;">
+                        <i class="fas fa-check-circle"></i>&nbsp; Test-E-Mail erfolgreich gesendet an <strong>${res.sentTo || testEmail}</strong>
+                    </div>`;
                     showToast('Test-Mail gesendet! ✅');
                 } else {
-                    resultEl.innerHTML = `
-                        <div style="padding:10px 14px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.25); border-radius:8px; color:#ef4444; font-size:.85rem;">
-                            <i class="fas fa-times-circle"></i>&nbsp; ${res?.reason || 'Fehler beim Senden. Bitte Konfiguration prüfen.'}
-                        </div>`;
+                    resultEl.innerHTML = `<div style="padding:10px 14px; background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.25); border-radius:8px; color:#ef4444; font-size:.85rem;">
+                        <i class="fas fa-times-circle"></i>&nbsp; ${res?.reason || 'Fehler beim Senden.'}
+                    </div>`;
                     showToast(res?.reason || 'Test-Mail fehlgeschlagen.', 'error');
                 }
             };
@@ -670,7 +642,7 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
         };
     }
 
-    // --- Speichern ---
+    // --- Allgemeiner Speichern-Button ---
     const saveBtn = container.querySelector('#save-settings');
     if (saveBtn) {
         saveBtn.onclick = async () => {
@@ -679,34 +651,20 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                 b.name   = container.querySelector('#br-name').value;
                 b.slogan = container.querySelector('#br-slogan').value;
                 b.phone  = container.querySelector('#br-phone').value;
-
-                // Werte aus den hidden inputs lesen (sicher, kein window.location Bug)
                 const logoVal    = container.querySelector('#br-logo-value').value;
                 const faviconVal = container.querySelector('#br-favicon-value').value;
-
-                if (isValidImageSrc(logoVal))    b.logo    = logoVal;
-                else                              b.logo    = '';
-                if (isValidImageSrc(faviconVal)) b.favicon = faviconVal;
-                else                              b.favicon = '';
-
+                b.logo    = isValidImageSrc(logoVal)    ? logoVal    : '';
+                b.favicon = isValidImageSrc(faviconVal) ? faviconVal : '';
                 const r = await apiPost('branding', b);
                 if (r?.success) {
                     showToast('Branding aktualisiert!');
-                    // Sofort im CMS-Header anwenden
                     const nameEl   = document.getElementById('disp-res-name');
                     const sloganEl = document.getElementById('disp-res-slogan');
                     if (nameEl)   nameEl.textContent   = b.name;
                     if (sloganEl) sloganEl.textContent = b.slogan;
                     if (b.name)   document.title = b.name + ' CMS';
-
-                    // Logo im CMS-Header aktualisieren
                     const cmsLogoEl = document.getElementById('cms-header-logo');
-                    if (cmsLogoEl) {
-                        if (b.logo) { cmsLogoEl.src = b.logo; cmsLogoEl.style.display = 'block'; }
-                        else          cmsLogoEl.style.display = 'none';
-                    }
-
-                    // Favicon aktualisieren
+                    if (cmsLogoEl) { if (b.logo) { cmsLogoEl.src = b.logo; cmsLogoEl.style.display = 'block'; } else cmsLogoEl.style.display = 'none'; }
                     if (b.favicon) {
                         let link = document.querySelector("link[rel~='icon']");
                         if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
@@ -740,16 +698,9 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                     from:   container.querySelector('#smtp-from').value.trim(),
                     secure: container.querySelector('#smtp-secure').checked
                 };
-                // Passwort nur übernehmen wenn neu eingegeben
-                if (passInput) {
-                    smtpData.pass = passInput;
-                } else if (s.smtp && s.smtp.pass) {
-                    smtpData.pass = s.smtp.pass;
-                }
-                if (!smtpData.host) {
-                    showToast('Bitte einen SMTP-Host eingeben.', 'error');
-                    return;
-                }
+                if (passInput) { smtpData.pass = passInput; }
+                else if (s.smtp?.pass) { smtpData.pass = s.smtp.pass; }
+                if (!smtpData.host) { showToast('Bitte einen SMTP-Host eingeben.', 'error'); return; }
                 s.smtp = smtpData;
 
                 const emailTemplates = {};
@@ -824,15 +775,10 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                 email: modal.querySelector('#mu-email').value,
                 role: modal.querySelector('#mu-role').value
             };
-
             let res, data;
             const headers = { 'Content-Type': 'application/json', 'x-admin-token': sessionStorage.getItem('opa_admin_token') };
-            if (isNew) {
-                res = await fetch('/api/users', { method: 'POST', headers, body: JSON.stringify(payload) });
-            } else {
-                res = await fetch(`/api/users/${u.user}`, { method: 'PUT', headers, body: JSON.stringify(payload) });
-            }
-
+            if (isNew) { res = await fetch('/api/users', { method: 'POST', headers, body: JSON.stringify(payload) }); }
+            else { res = await fetch(`/api/users/${u.user}`, { method: 'PUT', headers, body: JSON.stringify(payload) }); }
             data = await res.json();
             if (data.success) {
                 modal.remove();

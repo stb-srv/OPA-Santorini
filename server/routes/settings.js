@@ -6,21 +6,13 @@ const DB = require('../database.js');
 const Mailer = require('../mailer.js');
 const { getCurrentLicense, PLAN_DEFINITIONS, getPlan } = require('../license.js');
 
-/**
- * Extrahiert die saubere Domain aus dem Request.
- * Wertet X-Forwarded-Host, Origin und Host-Header aus – entfernt Port.
- */
 function extractDomain(req) {
     const forwarded = req.headers['x-forwarded-host'];
     if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
-
     const origin = req.headers['origin'];
     if (origin) {
-        try {
-            return new URL(origin).hostname;
-        } catch (_) { /* ignore */ }
+        try { return new URL(origin).hostname; } catch (_) {}
     }
-
     const host = req.headers.host || 'localhost';
     return host.split(':')[0];
 }

@@ -1,5 +1,9 @@
 /**
  * OPA-CMS – License Plan Definitions, Token Verification & Helpers
+ *
+ * Der RSA Public Key wird beim Start automatisch vom Lizenzserver geladen
+ * (GET /api/v1/public-key). Nur wenn das fehlschlägt, wird der eingebettete
+ * Fallback-Key verwendet. LICENSE_PUBLIC_KEY in .env überschreibt beides.
  */
 
 const jwt = require('jsonwebtoken');
@@ -14,27 +18,49 @@ N+xMcoOA3fRdAICdI6kI9LccR4hzr7Btf/8Wbk0erF48Xw5NjFj0CZcRIjegiq2m
 HQIDAQAB
 -----END PUBLIC KEY-----`;
 
-const OPA_PUBLIC_KEY = (process.env.LICENSE_PUBLIC_KEY || '').trim() || OPA_PUBLIC_KEY_FALLBACK;
+// Aktiver Public Key – wird durch initPublicKey() überschrieben
+let OPA_PUBLIC_KEY = (process.env.LICENSE_PUBLIC_KEY || '').trim() || null;
 
-if (process.env.LICENSE_PUBLIC_KEY) {
-    console.log('\u2705  RSA Public Key aus LICENSE_PUBLIC_KEY Env-Variable geladen.');
+if (OPA_PUBLIC_KEY) {
+    console.log('✅  RSA Public Key aus LICENSE_PUBLIC_KEY Env-Variable geladen.');
 } else {
-    console.warn('\u26a0\ufe0f   RSA Public Key: Fallback-Key aktiv. F\u00fcr Produktion LICENSE_PUBLIC_KEY in .env setzen.');
+    console.log('ℹ️   LICENSE_PUBLIC_KEY nicht gesetzt – Public Key wird beim Start vom Lizenzserver abgerufen.');
+    OPA_PUBLIC_KEY = OPA_PUBLIC_KEY_FALLBACK; // temporärer Fallback bis initPublicKey() läuft
 }
 
 /**
+ * Ruft den RSA Public Key vom Lizenzserver ab und cached ihn.
+ * Wird einmalig beim Start durch den LicenseChecker aufgerufen.
+ * Gibt true zurück wenn erfolgreich, false bei Fehler (Fallback bleibt aktiv).
+ */
+const initPublicKey = async (licenseServerUrl) => {
+    // Wenn manuell via Env gesetzt → nicht überschreiben
+    if ((process.env.LICENSE_PUBLIC_KEY || '').trim()) {
+        console.log('✅  Public Key aus Env – kein automatischer Abruf nötig.');
+        return true;
+    }
+
+    const url = `${(licenseServerUrl || 'https://licens-prod.stb-srv.de').replace(/\/+$/, '')}/api/v1/public-key`;
+    try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const key = (data.public_key || data.publicKey || '').trim();
+        if (!key || !key.includes('BEGIN PUBLIC KEY')) {
+            throw new Error('Antwort enthält keinen gültigen PEM-Key.');
+        }
+        OPA_PUBLIC_KEY = key;
+        console.log('✅  RSA Public Key erfolgreich vom Lizenzserver geladen:', url);
+        return true;
+    } catch (e) {
+        console.warn(`⚠️   Public Key-Abruf fehlgeschlagen (${e.message}) – Fallback-Key aktiv.`);
+        OPA_PUBLIC_KEY = OPA_PUBLIC_KEY_FALLBACK;
+        return false;
+    }
+};
+
+/**
  * PLAN_DEFINITIONS
- *
- * Modul-Übersicht:
- *  menu_edit      – Speisekarte bearbeiten (alle Pläne)
- *  orders_kitchen – Küchen-Monitor: eingehende Bestellungen im CMS sehen
- *  reservations   – Online-Reservierung durch Gäste
- *  custom_design  – Design/Homepage anpassen
- *  analytics      – Statistiken & Umsatzauswertungen
- *  qr_pay         – Bezahlung per QR-Code am Tisch
- *  online_orders  – Gäste können Bestellungen ÜBERMITTELN (Tisch/Abholung/Lieferung)
- *                   Warenkorb (Planungshelfer ohne Übermittlung) ist IMMER frei –
- *                   dieses Modul steuert nur den echten Checkout.
  */
 const PLAN_DEFINITIONS = {
     FREE: {
@@ -53,7 +79,7 @@ const PLAN_DEFINITIONS = {
             custom_design: false, analytics: false, qr_pay: false,
             online_orders: false
         },
-        note: 'F\u00fcr kleine Caf\u00e9s & Imbi\u00dfe'
+        note: 'Für kleine Cafés & Imbisse'
     },
     PRO: {
         label: 'Pro', menu_items: 150, max_tables: 25,
@@ -62,7 +88,7 @@ const PLAN_DEFINITIONS = {
             custom_design: true, analytics: false, qr_pay: false,
             online_orders: false
         },
-        note: 'F\u00fcr Restaurants'
+        note: 'Für Restaurants'
     },
     PRO_PLUS: {
         label: 'Pro+', menu_items: 300, max_tables: 50,
@@ -71,7 +97,7 @@ const PLAN_DEFINITIONS = {
             custom_design: true, analytics: true, qr_pay: false,
             online_orders: true
         },
-        note: 'F\u00fcr gro\u00dfe Restaurants'
+        note: 'Für große Restaurants'
     },
     ENTERPRISE: {
         label: 'Enterprise', menu_items: 999, max_tables: 999,
@@ -80,7 +106,7 @@ const PLAN_DEFINITIONS = {
             custom_design: true, analytics: true, qr_pay: true,
             online_orders: true
         },
-        note: 'F\u00fcr Ketten & Hotels'
+        note: 'Für Ketten & Hotels'
     }
 };
 
@@ -112,22 +138,19 @@ const verifyLicenseToken = (token, host = null) => {
             const currentHost  = normalizeHost(host);
             const isLocal = ['localhost', '127.0.0.1', '::1'].includes(currentHost);
             if (!isLocal && tokenDomain !== currentHost) {
-                console.warn(`\u26a0\ufe0f  License domain mismatch: token='${tokenDomain}' current='${currentHost}'`);
+                console.warn(`⚠️  License domain mismatch: token='${tokenDomain}' current='${currentHost}'`);
                 return null;
             }
         }
         return payload;
     } catch (e) {
         if (e.name !== 'JsonWebTokenError' && e.name !== 'TokenExpiredError') {
-            console.error('\u274c License token verification error:', e.message);
+            console.error('❌ License token verification error:', e.message);
         }
         return null;
     }
 };
 
-/**
- * Offline-Fallback: Liest den letzten bekannten Plan aus der DB.
- */
 const getLastKnownLicense = (lic) => {
     if (!lic || !lic.key) return null;
     const type = lic.lastKnownType || lic.type || null;
@@ -137,32 +160,25 @@ const getLastKnownLicense = (lic) => {
     const modules = lic.lastKnownModules || plan.modules;
     const limits  = lic.lastKnownLimits  || { max_dishes: plan.menu_items, max_tables: plan.max_tables };
 
-    console.warn(`\u26a0\ufe0f  [Offline-Fallback] Lizenzserver nicht erreichbar – nutze letzten bekannten Plan: ${type} (seit ${lic.lastKnownAt || 'unbekannt'})`);
+    console.warn(`⚠️  [Offline-Fallback] Lizenzserver nicht erreichbar – nutze letzten bekannten Plan: ${type} (seit ${lic.lastKnownAt || 'unbekannt'})`);
 
     return {
         key:      lic.key,
         status:   'active_offline',
         customer: lic.customer || 'Unbekannt',
-        type,
-        label:    plan.label + ' (Offline)',
+        type, label: plan.label + ' (Offline)',
         expiresAt: lic.expiresAt || null,
-        modules,
-        limits,
+        modules, limits,
         isTrial: false, isExpired: false, trialDaysLeft: 0, plan,
         domain:  lic.domain || null,
         offline: true
     };
 };
 
-/**
- * Gibt die aktuelle, verifizierte Lizenz zurück.
- * Fallback-Kette: JWT → Offline-Snapshot → Decode ohne Sig → FREE
- */
 const getCurrentLicense = async (DB, host = null) => {
     const settings = await DB.getKV('settings', {});
     const lic      = settings.license || {};
 
-    // --- Trial-Lizenz ---
     if (lic.isTrial) {
         const plan      = getPlan(lic.type);
         const now       = new Date();
@@ -184,7 +200,6 @@ const getCurrentLicense = async (DB, host = null) => {
         };
     }
 
-    // --- Vollizenz: signiertes JWT prüfen ---
     const token   = lic.licenseToken || null;
     const payload = verifyLicenseToken(token, host);
 
@@ -195,7 +210,7 @@ const getCurrentLicense = async (DB, host = null) => {
         const isExpired = expiresAt ? expiresAt < now : false;
 
         if (isExpired) {
-            console.warn(`\u26a0\ufe0f  License token expired at ${expiresAt?.toISOString()}`);
+            console.warn(`⚠️  License token expired at ${expiresAt?.toISOString()}`);
             const offline = getLastKnownLicense(lic);
             if (offline) return offline;
             return FREE_RESULT({ isExpired: true, status: 'expired', key: payload.license_key || lic.key });
@@ -218,7 +233,6 @@ const getCurrentLicense = async (DB, host = null) => {
         };
     }
 
-    // --- Fallback-Kette ---
     if (lic.key) {
         const offline = getLastKnownLicense(lic);
         if (offline) return offline;
@@ -232,7 +246,7 @@ const getCurrentLicense = async (DB, host = null) => {
                     const expiresAt = decoded.exp ? new Date(decoded.exp * 1000) : null;
                     const tooOld = expiresAt ? (now - expiresAt) > (7 * 24 * 60 * 60 * 1000) : false;
                     if (!tooOld) {
-                        console.warn(`\u26a0\ufe0f  [Decode-Fallback] Token nicht verifizierbar – nutze dekodiertes Token (Plan: ${decoded.type})`);
+                        console.warn(`⚠️  [Decode-Fallback] Token nicht verifizierbar – nutze dekodiertes Token (Plan: ${decoded.type})`);
                         return {
                             key:      decoded.license_key || lic.key,
                             status:   'active_unverified',
@@ -254,10 +268,10 @@ const getCurrentLicense = async (DB, host = null) => {
             } catch (_) { /* ignore */ }
         }
 
-        console.warn('\u26a0\ufe0f  License key present but no valid fallback available – falling back to FREE.');
+        console.warn('⚠️  License key present but no valid fallback available – falling back to FREE.');
     }
 
     return FREE_RESULT();
 };
 
-module.exports = { PLAN_DEFINITIONS, getPlan, getCurrentLicense, verifyLicenseToken, OPA_PUBLIC_KEY };
+module.exports = { PLAN_DEFINITIONS, getPlan, getCurrentLicense, verifyLicenseToken, initPublicKey, OPA_PUBLIC_KEY };
