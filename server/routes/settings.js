@@ -5,6 +5,7 @@ const router = require('express').Router();
 const DB = require('../database.js');
 const Mailer = require('../mailer.js');
 const { getCurrentLicense, PLAN_DEFINITIONS, getPlan } = require('../license.js');
+const { sanitizeText } = require('../helpers.js');
 
 function extractDomain(req) {
     const forwarded = req.headers['x-forwarded-host'];
@@ -16,6 +17,7 @@ function extractDomain(req) {
     const host = req.headers.host || 'localhost';
     return host.split(':')[0];
 }
+
 
 /**
  * Tiefes Merge zweier Objekte (nur plain objects, keine Arrays).

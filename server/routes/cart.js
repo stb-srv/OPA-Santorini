@@ -13,6 +13,16 @@ const express = require('express');
 const DB      = require('../database.js');
 const { getCurrentLicense } = require('../license.js');
 const { sanitizeText } = require('../helpers.js');
+function extractDomain(req) {
+    const forwarded = req.headers['x-forwarded-host'];
+    if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
+    const origin = req.headers['origin'];
+    if (origin) {
+        try { return new URL(origin).hostname; } catch (_) {}
+    }
+    const host = req.headers.host || 'localhost';
+    return host.split(':')[0];
+}
 
 const MAX_ITEMS_PER_ORDER    = 50;
 const MAX_QTY_PER_ITEM       = 99;
@@ -140,16 +150,6 @@ module.exports = function cartRoutes(requireLicense, io) {
     // -------------------------------------------------------------------------
     router.get('/config', async (req, res) => {
         try {
-            const extractDomain = (req) => {
-                const forwarded = req.headers['x-forwarded-host'];
-                if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
-                const origin = req.headers['origin'];
-                if (origin) {
-                    try { return new URL(origin).hostname; } catch (_) {}
-                }
-                const host = req.headers.host || 'localhost';
-                return host.split(':')[0];
-            };
             const host     = extractDomain(req);
             const license  = await getCurrentLicense(DB, host);
             const settings = await DB.getKV('settings', {});
