@@ -136,6 +136,43 @@ function renderPagination(totalItems, currentPage, pageSize) {
     `;
 }
 
+function renderDishRow(d, useGroupedView) {
+    return `
+        <tr data-id="${d.id}">
+            ${useGroupedView ? `
+                <td class="drag-handle" style="cursor:grab;padding:0 8px;opacity:.3;text-align:center;">
+                    <i class="fas fa-grip-vertical"></i>
+                </td>
+            ` : ''}
+            <td style="font-weight:600;color:var(--primary);font-size:.85rem;">${d.number || '&mdash;'}</td>
+            <td>
+                ${d.image
+                    ? `<img src="${d.image}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;display:block;">`
+                    : `<div style="width:36px;height:36px;border-radius:6px;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;"><i class="fas fa-utensils" style="font-size:.7rem;opacity:.35;"></i></div>`
+                }
+            </td>
+            <td>
+                <span style="font-weight:600;">${d.name}</span>
+                ${d.desc ? `<br><span style="font-size:.78rem;opacity:.55;line-height:1.3;">${d.desc}</span>` : ''}
+            </td>
+            <td>
+                <span style="font-size:.8rem;background:rgba(0,0,0,0.05);padding:3px 10px;border-radius:20px;white-space:nowrap;">${getCatLabel(d.cat)}</span>
+            </td>
+            <td style="font-weight:600;font-size:.9rem;">${parseFloat(d.price).toFixed(2)}&nbsp;&euro;</td>
+            <td>
+                <div style="display:flex;gap:5px;">
+                    <button title="Bearbeiten" onclick="window.editDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(59,130,246,0.12);color:#2563eb;transition:background .15s;" onmouseover="this.style.background='rgba(59,130,246,0.22)'" onmouseout="this.style.background='rgba(59,130,246,0.12)'">
+                        <i class="fas fa-pen" style="font-size:.72rem;"></i>
+                    </button>
+                    <button title="L&ouml;schen" onclick="window.deleteDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;transition:background .15s;" onmouseover="this.style.background='rgba(239,68,68,0.22)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
+                        <i class="fas fa-trash" style="font-size:.72rem;"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
 function renderDishesTab(menu, categories, allergens, additives) {
     const safeMenu       = Array.isArray(menu)       ? menu       : [];
     const safeCategories = Array.isArray(categories) ? categories : [];
@@ -189,6 +226,29 @@ function renderDishesTab(menu, categories, allergens, additives) {
         ? safeCategories.map(c => `<option value="${getCatLabel(c)}">${getCatLabel(c)}</option>`).join('')
         : cats.map(c => `<option value="${c}">${c}</option>`).join('');
 
+    const useGroupedView = (cmsSort === 'name' && cmsSearch === '' && cmsCatFilter === 'All');
+
+    let tableRowsHtml = '';
+    if (useGroupedView) {
+        let currentCat = '';
+        paginated.forEach(d => {
+            const cat = getCatLabel(d.cat);
+            if (cat !== currentCat) {
+                currentCat = cat;
+                tableRowsHtml += `
+                    <tr class="cat-header-row">
+                        <td colspan="7" style="background:rgba(0,0,0,0.03); font-weight:700; padding:12px 20px; color:var(--primary); font-size:.85rem; border-bottom:1px solid rgba(0,0,0,0.05);">
+                            <i class="fas fa-folder-open" style="margin-right:8px; opacity:.5;"></i> ${currentCat.toUpperCase()}
+                        </td>
+                    </tr>
+                `;
+            }
+            tableRowsHtml += renderDishRow(d, true);
+        });
+    } else {
+        tableRowsHtml = paginated.map(d => renderDishRow(d, false)).join('');
+    }
+
     return `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:15px;flex-wrap:wrap;">
             <div style="display:flex;gap:10px;flex:1;min-width:300px;flex-wrap:wrap;">
@@ -220,6 +280,8 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 </div>
             </div>
         </div>
+
+        ${useGroupedView ? `<div style="margin-bottom:12px; font-size:.72rem; opacity:.4; display:flex; align-items:center; gap:6px; padding-left:4px;"><i class="fas fa-grip-vertical"></i> Zeilen ziehen zum manuellen Sortieren</div>` : ''}
 
         <div id="dish-form" style="display:none; margin-bottom:40px; padding:30px; background:rgba(255,255,255,0.4); backdrop-filter:blur(20px); border-radius:24px; border:1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 32px rgba(0,0,0,0.05);">
             <h3 id="dish-form-title" style="margin-bottom:20px;">Neues Gericht</h3>
@@ -255,6 +317,7 @@ function renderDishesTab(menu, categories, allergens, additives) {
         <table class="premium-table">
             <thead>
                 <tr>
+                    ${useGroupedView ? '<th style="width:30px;"></th>' : ''}
                     <th style="width:52px;">NR</th>
                     <th style="width:52px;">Bild</th>
                     <th>Name</th>
@@ -264,36 +327,8 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 </tr>
             </thead>
             <tbody>
-                ${paginated.map(d => `
-                    <tr>
-                        <td style="font-weight:600;color:var(--primary);font-size:.85rem;">${d.number || '&mdash;'}</td>
-                        <td>
-                            ${d.image
-                                ? `<img src="${d.image}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;display:block;">`
-                                : `<div style="width:36px;height:36px;border-radius:6px;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;"><i class="fas fa-utensils" style="font-size:.7rem;opacity:.35;"></i></div>`
-                            }
-                        </td>
-                        <td>
-                            <span style="font-weight:600;">${d.name}</span>
-                            ${d.desc ? `<br><span style="font-size:.78rem;opacity:.55;line-height:1.3;">${d.desc}</span>` : ''}
-                        </td>
-                        <td>
-                            <span style="font-size:.8rem;background:rgba(0,0,0,0.05);padding:3px 10px;border-radius:20px;white-space:nowrap;">${getCatLabel(d.cat)}</span>
-                        </td>
-                        <td style="font-weight:600;font-size:.9rem;">${parseFloat(d.price).toFixed(2)}&nbsp;&euro;</td>
-                        <td>
-                            <div style="display:flex;gap:5px;">
-                                <button title="Bearbeiten" onclick="window.editDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(59,130,246,0.12);color:#2563eb;transition:background .15s;" onmouseover="this.style.background='rgba(59,130,246,0.22)'" onmouseout="this.style.background='rgba(59,130,246,0.12)'">
-                                    <i class="fas fa-pen" style="font-size:.72rem;"></i>
-                                </button>
-                                <button title="L&ouml;schen" onclick="window.deleteDish(${d._idx})" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;background:rgba(239,68,68,0.12);color:#dc2626;transition:background .15s;" onmouseover="this.style.background='rgba(239,68,68,0.22)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
-                                    <i class="fas fa-trash" style="font-size:.72rem;"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `).join('')}
-                ${paginated.length === 0 ? `<tr><td colspan="6" style="text-align:center;opacity:.5;padding:40px;">Keine Gerichte vorhanden.</td></tr>` : ''}
+                ${tableRowsHtml}
+                ${paginated.length === 0 ? `<tr><td colspan="${useGroupedView ? 7 : 6}" style="text-align:center;opacity:.5;padding:40px;">Keine Gerichte vorhanden.</td></tr>` : ''}
             </tbody>
         </table>
         ${renderPagination(totalItems, safePage, pageSize)}
@@ -356,11 +391,52 @@ function renderKVTab(title, data, keyName, placeholder) {
 function renderAllergensTab(allergens) { return renderKVTab('Allergene', allergens, 'allergens', 'Name des Allergens...'); }
 function renderAdditivesTab(additives) { return renderKVTab('Zusatzstoffe', additives, 'additives', 'Name des Zusatzstoffes...'); }
 
+async function initSortable(container, currentTab) {
+    if (currentTab !== 'dishes') return;
+    const useGroupedView = (cmsSort === 'name' && cmsSearch === '' && cmsCatFilter === 'All');
+    if (!useGroupedView) return;
+
+    const tbody = container.querySelector('.premium-table tbody');
+    if (!tbody) return;
+
+    if (!window.Sortable) {
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js';
+            s.onload = resolve; s.onerror = reject;
+            document.head.appendChild(s);
+        });
+    }
+
+    new window.Sortable(tbody, {
+        animation: 150,
+        handle: '.drag-handle',
+        filter: '.cat-header-row',
+        onEnd: async () => {
+            const ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(tr => tr.dataset.id);
+            const res = await apiPost('menu/reorder', { ids });
+            if (res?.success) {
+                // Lokalen Cache aktualisieren
+                const newMenu = ids.map(id => cachedMenuData.menu.find(m => String(m.id) === String(id))).filter(Boolean);
+                cachedMenuData.menu.forEach(m => { if (!ids.includes(String(m.id))) newMenu.push(m); });
+                cachedMenuData.menu = newMenu;
+                renderMenu(container, document.getElementById('view-title'), 'dishes');
+                showToast('Sortierung gespeichert! \u2705');
+            } else {
+                showToast(res?.reason || 'Fehler beim Sortieren', 'error');
+            }
+        }
+    });
+}
+
 function attachMenuHandlers(container, menu, categories, allergens, additives, currentTab) {
     const safeMenu       = Array.isArray(menu)       ? menu       : [];
     const safeCategories = Array.isArray(categories) ? categories : [];
     const safeAllergens  = (allergens && typeof allergens === 'object') ? allergens : {};
     const safeAdditives  = (additives && typeof additives === 'object') ? additives : {};
+
+    // Sortable initialisieren
+    initSortable(container, currentTab);
 
     window.cmsGoToPage = (page) => {
         cmsPage = page;
@@ -484,24 +560,74 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
         };
 
         const pdfBtn = container.querySelector('#btn-export-pdf');
-        if (pdfBtn) pdfBtn.onclick = () => {
+        if (pdfBtn) pdfBtn.onclick = async () => {
             const { jsPDF } = window.jspdf;
             if (!jsPDF) return showToast('jsPDF nicht geladen', 'error');
-            const doc = new jsPDF();
-            const resName = document.getElementById('disp-res-name')?.textContent || 'OPA!';
-            doc.setFontSize(22); doc.setTextColor(27, 58, 92);
-            doc.text(resName, 14, 22);
-            doc.setFontSize(14); doc.setTextColor(200, 169, 110);
-            doc.text('SPEISEKARTE', 14, 30);
-            const data = [];
+
+            const branding = await apiGet('branding').catch(() => ({}));
+            const resName  = branding?.name || document.getElementById('disp-res-name')?.textContent || 'Speisekarte';
+            const today    = new Date().toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+            const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+            const PW  = doc.internal.pageSize.getWidth();
+
+            // Header
+            doc.setFillColor(27, 58, 92);
+            doc.rect(0, 0, PW, 28, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20); doc.setFont('helvetica', 'bold');
+            doc.text(resName.toUpperCase(), 14, 13);
+            doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+            doc.setTextColor(200, 169, 110);
+            doc.text('SPEISEKARTE', 14, 21);
+            doc.setTextColor(255,255,255);
+            doc.text(`Stand: ${today}`, PW - 14, 21, { align: 'right' });
+
+            const availableMenu = [...safeMenu]
+                .filter(d => d.available !== false)
+                .sort((a, b) => getCatLabel(a.cat).localeCompare(getCatLabel(b.cat)));
+
+            const body = [];
             let curCat = '';
-            [...safeMenu].sort((a,b) => (getCatLabel(a.cat)).localeCompare(getCatLabel(b.cat))).forEach(d => {
-                const dCat = getCatLabel(d.cat);
-                if (dCat !== curCat) { curCat = dCat; data.push([{ content: curCat.toUpperCase(), colSpan: 3, styles: { fillColor: [27, 58, 92], textColor: 255, fontStyle: 'bold' } }]); }
-                data.push([d.number || '-', d.name + (d.desc ? '\n' + d.desc : ''), parseFloat(d.price).toFixed(2) + ' \u20ac']);
+            availableMenu.forEach(d => {
+                const cat = getCatLabel(d.cat);
+                if (cat !== curCat) {
+                    curCat = cat;
+                    body.push([{
+                        content: cat.toUpperCase(),
+                        colSpan: 3,
+                        styles: { fillColor: [200,169,110], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8 }
+                    }]);
+                }
+                const codes = [
+                    ...(d.allergens || []),
+                    ...(d.additives || [])
+                ].join(', ');
+                body.push([
+                    { content: d.number || '\u2013', styles: { halign: 'center', fontSize: 8 } },
+                    { content: d.name + (d.desc ? `\n${d.desc}` : '') + (codes ? `\n(${codes})` : ''), styles: { fontSize: 8 } },
+                    { content: `${parseFloat(d.price).toFixed(2)} \u20ac`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 9 } }
+                ]);
             });
-            doc.autoTable({ startY: 40, head: [['Nr.', 'Gericht', 'Preis']], body: data, theme: 'striped', headStyles: { fillColor: [200, 169, 110] }, styles: { font: 'helvetica' } });
-            doc.save('speisekarte.pdf');
+
+            doc.autoTable({
+                startY: 34,
+                head: [['Nr.', 'Gericht', 'Preis']],
+                body,
+                theme: 'striped',
+                headStyles: { fillColor: [27, 58, 92], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+                columnStyles: { 0: { cellWidth: 14 }, 2: { cellWidth: 22 } },
+                styles: { font: 'helvetica', cellPadding: 3, overflow: 'linebreak' },
+                margin: { left: 14, right: 14 },
+                didDrawPage: (data) => {
+                    const pageH = doc.internal.pageSize.getHeight();
+                    doc.setFontSize(7); doc.setTextColor(150);
+                    doc.text(`Seite ${data.pageNumber}`, 14, pageH - 8);
+                    doc.text('Powered by OPA! Restaurant System', PW - 14, pageH - 8, { align: 'right' });
+                }
+            });
+
+            doc.save(`speisekarte_${today.replace(/\./g,'-')}.pdf`);
         };
 
         const exportBtn = container.querySelector('#btn-export-menu');

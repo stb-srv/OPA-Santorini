@@ -124,6 +124,19 @@ module.exports = (requireAuth, requireLicense) => {
         catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
 
+    router.post('/menu/reorder', requireAuth, async (req, res) => {
+        try {
+            const { ids } = req.body; // Array von Dish-IDs in neuer Reihenfolge
+            if (!Array.isArray(ids)) return res.status(400).json({ success: false });
+            const menu = await DB.getMenu();
+            const reordered = ids.map(id => menu.find(d => String(d.id) === String(id))).filter(Boolean);
+            // Nicht enthaltene Gerichte ans Ende hängen
+            menu.forEach(d => { if (!ids.includes(String(d.id))) reordered.push(d); });
+            await DB.saveMenu(reordered);
+            res.json({ success: true });
+        } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
+    });
+
     // --- Categories ---
     router.get('/categories', async (req, res) => {
         try {
