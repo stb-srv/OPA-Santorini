@@ -278,17 +278,18 @@ function renderSettingsTab(settings, branding, users, licInfo) {
         return `
             <div class="form-grid">
                 <div class="form-group">
-                    <label class="switch-label">
+                    <div style="display:flex; align-items:center; gap:10px;">
                         <label class="switch small"><input type="checkbox" id="v-orders" ${mod.orders ? 'checked' : ''}><span class="slider round"></span></label>
-                        Küchen-Monitor aktiv
-                    </label>
+                        <label for="v-orders" style="margin:0; cursor:pointer; font-weight:normal;">Küchen-Monitor aktiv</label>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label class="switch-label">
+                    <div style="display:flex; align-items:center; gap:10px;">
                         <label class="switch small"><input type="checkbox" id="v-res" ${mod.reservations ? 'checked' : ''}><span class="slider round"></span></label>
-                        Online-Reservierung erlaubt
-                    </label>
+                        <label for="v-res" style="margin:0; cursor:pointer; font-weight:normal;">Online-Reservierung erlaubt</label>
+                    </div>
                 </div>
+
             </div>
         `;
     }
@@ -304,10 +305,10 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                 <div class="form-group full" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:20px; padding-top:20px;"><h4 style="margin-bottom:10px;">Sicherheits-Puffer</h4></div>
                 <div class="form-group"><label>Puffer zw. Belegung (Min)</label><input id="rc-buffer" type="number" class="input-styled" value="${rc.buffer}"></div>
                 <div class="form-group">
-                    <label class="switch-label">
+                    <div style="display:flex; align-items:center; gap:10px;">
                         <label class="switch small"><input type="checkbox" id="rc-inquiry" ${rc.allowInquiry ? 'checked' : ''}><span class="slider round"></span></label>
-                        Warteliste/Anfrage erlauben (wenn voll)
-                    </label>
+                        <label for="rc-inquiry" style="margin:0; cursor:pointer; font-weight:normal;">Warteliste/Anfrage erlauben (wenn voll)</label>
+                    </div>
                 </div>
             </div>
         `;
@@ -397,13 +398,13 @@ function renderSettingsTab(settings, branding, users, licInfo) {
                         placeholder="noreply@example.com">
                 </div>
                 <div class="form-group" style="display:flex; align-items:center; padding-top:28px;">
-                    <label class="switch-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                    <div style="display:flex; align-items:center; gap:10px;">
                         <label class="switch small">
                             <input type="checkbox" id="smtp-secure" ${smtp.secure !== false ? 'checked' : ''}>
                             <span class="slider round"></span>
                         </label>
-                        SSL/TLS aktivieren (empfohlen für Port 465)
-                    </label>
+                        <label for="smtp-secure" style="margin:0; cursor:pointer; font-weight:normal;">SSL/TLS aktivieren (empfohlen für Port 465)</label>
+                    </div>
                 </div>
 
                 <div class="form-group full" style="border-top:1px solid rgba(0,0,0,0.06); margin-top:10px; padding-top:20px;">

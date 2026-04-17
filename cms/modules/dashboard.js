@@ -486,9 +486,7 @@ async function toggleSortMode() {
         localDashboardConfig = JSON.parse(JSON.stringify(settings.dashboardConfig || DEFAULT_WIDGETS));
         isSortMode = true;
     } else {
-        const settings = await apiGet('settings') || {};
-        settings.dashboardConfig = localDashboardConfig;
-        const res = await apiPost('settings', settings);
+        const res = await apiPost('settings', { dashboardConfig: localDashboardConfig });
         if (res.success) {
             isSortMode = false;
             localDashboardConfig = null;
@@ -555,9 +553,7 @@ async function customizeDashboard() {
             const entry = config.find(w => w.id === cb.dataset.widgetId);
             if (entry) entry.active = cb.checked;
         });
-        const freshSettings = await apiGet('settings') || {};
-        freshSettings.dashboardConfig = config;
-        const res = await apiPost('settings', freshSettings);
+        const res = await apiPost('settings', { dashboardConfig: config });
         overlay.remove();
         if (res.success) {
             showToast('Sichtbarkeit gespeichert!');

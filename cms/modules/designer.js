@@ -163,11 +163,12 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
             return `
                 <div class="form-grid">
                     <div class="form-group full">
-                        <label class="switch-label">
+                        <div style="display:flex; align-items:center; gap:10px;">
                             <label class="switch small"><input type="checkbox" id="ds-v-on" ${vac.enabled ? 'checked' : ''}><span class="slider round"></span></label>
-                            Urlaubs-Sperre aktiv (Reservierung deaktiviert)
-                        </label>
+                            <label for="ds-v-on" style="margin:0; cursor:pointer; font-weight:normal;">Urlaubs-Sperre aktiv (Reservierung deaktiviert)</label>
+                        </div>
                     </div>
+
                     <div class="form-group"><label>Popup Titel</label><input id="ds-v-title" class="input-styled" value="${vac.title || ''}"></div>
                     <div class="form-group"><label>Popup Text</label><input id="ds-v-text" class="input-styled" value="${vac.text || ''}"></div>
                     <div class="form-group"><label>Start (Datum)</label><input id="ds-v-start" type="date" class="input-styled" value="${vac.start || ''}"></div>
@@ -181,10 +182,10 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
             return `
                 <div class="form-grid">
                     <div class="form-group full">
-                        <label class="switch-label">
+                        <div style="display:flex; align-items:center; gap:10px;">
                             <label class="switch small"><input type="checkbox" id="ds-h-on" ${hol.enabled ? 'checked' : ''}><span class="slider round"></span></label>
-                            Feiertags-Ank\u00fcndigung aktiv
-                        </label>
+                            <label for="ds-h-on" style="margin:0; cursor:pointer; font-weight:normal;">Feiertags-Ank\u00fcndigung aktiv</label>
+                        </div>
                     </div>
                     <div class="form-group"><label>Event Titel</label><input id="ds-h-title" class="input-styled" value="${hol.title || ''}"></div>
                     <div class="form-group"><label>Ank\u00fcndigungs-Text</label><textarea id="ds-h-text" class="input-styled" style="height:80px;">${hol.text || ''}</textarea></div>

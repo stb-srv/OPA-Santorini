@@ -211,8 +211,7 @@ export async function initOrderSettings(container, api, license) {
             pickupLeadMinutes:   isNaN(leadRaw)   ?  5 : Math.max(0, Math.min(60,  leadRaw)),
         };
         try {
-            const current = await api.get('settings') || {};
-            await api.post('settings', { ...current, orderConfig: newConfig });
+            await api.post('settings', { orderConfig: newConfig });
             feedback.textContent = '✅ Gespeichert';
             feedback.style.color = '#22c55e';
         } catch (e) {
