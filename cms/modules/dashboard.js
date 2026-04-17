@@ -363,7 +363,7 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
                          onmouseenter="this.classList.add('widget-hover')"
                          onmouseleave="this.classList.remove('widget-hover')"
                          onpointerdown="window.dispatchDragStart(event, '${w.id}')">
-                        ${isSortMode ? `<div class="resize-handle" onmousedown="window.dispatchResizeStart(event, '${w.id}')"></div>` : ''}
+                        ${isSortMode ? `<div class="resize-handle" onmousedown="window.dispatchResizeStart(event, '${w.id}')" onpointerdown="event.stopPropagation()"></div>` : ''}
                         ${widgetHtml}
                     </div>
                 `;
@@ -438,12 +438,16 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
 
     function handlePointerUp() {
         if (dragProxyEl) dragProxyEl.remove();
+        dragProxyEl = null;
         const sourceEl = document.querySelector(`[data-id="${draggedWidgetId}"]`);
         if (sourceEl) sourceEl.classList.remove('drag-source-hidden');
         isPointerDragging = false;
+        draggedWidgetId = null;
+        draggedGroupIds = [];
         document.removeEventListener('pointermove', handlePointerMove);
         document.removeEventListener('pointerup', handlePointerUp);
-        renderDashboard(container, titleEl, toolbarEl);
+        // Nur re-rendern wenn wirklich etwas bewegt wurde (nicht bei einfachem Klick)
+        if (localDashboardConfig) renderDashboard(container, titleEl, toolbarEl);
     }
 
     // --- Resize ---
@@ -467,10 +471,19 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
         const rows     = Math.round(currentHeight / 150);
         const newVSize = rows >= 3 ? 'span-h-3' : rows >= 2 ? 'span-h-2' : 'span-h-1';
         const widget = localDashboardConfig.find(w => w.id === resizingWidgetId);
-        if (widget && (widget.size !== newSize || widget.vSize !== newVSize)) {
-            widget.size = newSize; widget.vSize = newVSize;
-            renderDashboard(container, titleEl, toolbarEl);
+        if (!widget) return;
+        // Nur DOM-Klassen live ändern, KEIN re-render während des Ziehens
+        const el = document.querySelector(`[data-id="${resizingWidgetId}"]`);
+        if (el) {
+            el.className = el.className
+                .replace(/span-\d+(?!-h)/g, newSize)
+                .replace(/span-h-\d+/g, newVSize);
+            if (!el.className.includes(newSize))  el.classList.add(newSize);
+            if (!el.className.includes(newVSize)) el.classList.add(newVSize);
         }
+        // Config nur merken, re-render erst bei mouseup
+        widget.size  = newSize;
+        widget.vSize = newVSize;
     }
 
     function handleResizeEnd() {
