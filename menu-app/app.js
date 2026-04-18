@@ -584,6 +584,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderResCalendar();
     };
 
+    // Zeitslots vor/zurück blättern
+    let timeOffset = 0; // Anzahl der übersprungenen Slots
+    const TIME_PAGE_SIZE = 6; // Wie viele Slots pro "Seite"
+
+    window.navTime = (delta) => {
+        const allSlots = document.querySelectorAll('#res-time-grid .time-slot');
+        if (allSlots.length === 0) return;
+
+        timeOffset = Math.max(0, Math.min(
+            timeOffset + delta * TIME_PAGE_SIZE,
+            allSlots.length - 1
+        ));
+
+        allSlots.forEach((slot, i) => {
+            slot.style.display = (i >= timeOffset && i < timeOffset + TIME_PAGE_SIZE * 3)
+                ? '' : 'none';
+        });
+
+        // Scroll zu den sichtbaren Slots
+        const firstVisible = document.querySelector('#res-time-grid .time-slot:not([style*="none"])');
+        if (firstVisible) firstVisible.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
     function renderResCalendar() {
         const grid  = document.getElementById('res-calendar-grid');
         const label = document.getElementById('calendar-month-year');
@@ -627,6 +650,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     function renderTimeGrid(grid) {
+        timeOffset = 0;
         const container = document.getElementById('res-time-grid');
         if (!container) return;
         const sortedTimes = Object.keys(grid).sort();
