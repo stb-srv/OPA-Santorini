@@ -1,4 +1,4 @@
-import { apiGet } from './api.js';
+import { apiGet, getAuthToken } from './api.js';
 import { showToast, showConfirm } from './utils.js';
 
 export async function renderBackup(container, titleEl) {
@@ -121,10 +121,10 @@ export async function renderBackup(container, titleEl) {
 
     // Export
     container.querySelector('#btn-export').onclick = () => {
-        const token = localStorage.getItem('cms_token');
+        const token = getAuthToken();
         const a = document.createElement('a');
         // Auth via Header geht nicht bei <a href>, daher fetch + blob
-        fetch('/api/backup/export', { headers: { 'X-Admin-Token': token } })
+        fetch('/api/backup/export', { headers: { 'x-admin-token': token } })
             .then(r => r.blob())
             .then(blob => {
                 const url = URL.createObjectURL(blob);
@@ -176,12 +176,12 @@ export async function renderBackup(container, titleEl) {
             const data = JSON.parse(text);
             log(`📋 Backup vom ${data._meta?.createdAt?.slice(0,10) || '?'} (Version ${data._meta?.version || '?'})`);
 
-            const token = localStorage.getItem('cms_token');
+            const token = getAuthToken();
             const res = await fetch('/api/backup/import', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Admin-Token': token
+                    'x-admin-token': token
                 },
                 body: JSON.stringify(data)
             });
