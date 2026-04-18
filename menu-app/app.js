@@ -461,6 +461,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- VIEW SWITCHING ---
     window.switchTab = (id) => {
+        // Warenkorb-Drawer schließen falls offen
+        if (window.OpaCart) window.OpaCart.close();
+
         ['view-home', 'view-menu', 'view-reservations', 'view-legal', 'view-location', 'view-custom'].forEach(v => {
             const el = document.getElementById(v);
             if (el) el.style.display = 'none';
