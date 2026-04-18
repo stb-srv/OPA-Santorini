@@ -3,7 +3,7 @@
  * Handles real-time digital orders.
  */
 
-import { apiGet, apiPost } from './api.js';
+import { apiGet, apiPost, apiPut } from './api.js';
 import { showToast } from './utils.js';
 
 let orders = [];
@@ -100,11 +100,14 @@ function playOrderSound() {
 
 function attachOrderHandlers(container) {
     window.completeOrder = async (id) => {
-        // Logic to mark as done...
         const idx = orders.findIndex(o => o.id === id);
-        if (idx >= 0) {
+        if (idx < 0) return;
+        try {
+            await apiPut(`orders/${id}/status`, { status: 'ready' });
             orders[idx].status = 'ready';
             container.querySelector('#kitchen-grid').innerHTML = renderOrderCards();
+        } catch (e) {
+            showToast('Fehler beim Speichern des Status.', 'error');
         }
     };
 }

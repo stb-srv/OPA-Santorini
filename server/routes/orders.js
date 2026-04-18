@@ -30,6 +30,17 @@ module.exports = (requireAuth, io) => {
             res.json({ success: true, order: updated });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
+    
+    router.put('/:id/status', requireAuth, async (req, res) => {
+        try {
+            const { status } = req.body;
+            if (!['new', 'preparing', 'ready', 'cancelled'].includes(status))
+                return res.status(400).json({ success: false, reason: 'Ungültiger Status.' });
+            const updated = await DB.updateOrderStatus(req.params.id, status);
+            if (!updated) return res.status(404).json({ success: false, reason: 'Bestellung nicht gefunden.' });
+            res.json({ success: true, order: updated });
+        } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
+    });
 
     router.delete('/:id', requireAuth, async (req, res) => {
         try { await DB.deleteOrder(req.params.id); res.json({ success: true }); }
