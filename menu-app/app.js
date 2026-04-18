@@ -363,7 +363,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                  ${tileClickable ? 'data-cart-tile="1"' : ''}>
                 <div class="dish-card-img">
                     ${item.image
-                        ? `<img src="${item.image}" alt="${item.name}" loading="lazy">`
+                        ? `<img src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                           <span style="display:none"><i class="fas fa-utensils"></i> ${item.cat}</span>`
                         : `<span><i class="fas fa-utensils"></i> ${item.cat}</span>`
                     }
                 </div>
