@@ -238,7 +238,7 @@ module.exports = function cartRoutes(requireLicense, io) {
             for (const item of items) {
                 const dbItem = menuItems.find(m => m.id === item.id);
                 if (!dbItem)        return res.status(400).json({ success: false, reason: `Unbekanntes Gericht: ${item.id}` });
-                if (!dbItem.active) return res.status(400).json({ success: false, reason: `Gericht nicht verfügbar: ${dbItem.name}` });
+                if (dbItem.available === false) return res.status(400).json({ success: false, reason: `Gericht nicht verfügbar: ${dbItem.name}` });
                 const qty = Math.max(1, Math.min(MAX_QTY_PER_ITEM, parseInt(item.quantity, 10) || 1));
                 validatedItems.push({ id: dbItem.id, name: dbItem.name, price: parseFloat(dbItem.price) || 0, quantity: qty, extras: item.extras || null });
             }
