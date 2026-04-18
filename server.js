@@ -13,8 +13,6 @@ const path    = require('path');
 const crypto  = require('crypto');
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
-const multer  = require('multer');
-const upload  = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 const CONFIG  = require('./config.js');
 const DB      = require('./server/database.js');
@@ -133,10 +131,7 @@ app.use('/api',              require('./server/routes/cookie.js')(requireAuth));
 app.use('/api/cart',         require('./server/routes/cart.js')(requireLicense, io));
 
 // Global Backup & Restore
-const backupRouter = require('./server/routes/backup.js')(requireAuth);
-app.get('/api/backup/export', backupRouter);
-app.get('/api/backup/info', backupRouter);
-app.post('/api/backup/import', upload.single('backup'), backupRouter);
+app.use('/api/backup', requireAuth, require('./server/routes/backup.js'));
 
 // --- Plugins ---
 const getInstalledPlugins = () => {

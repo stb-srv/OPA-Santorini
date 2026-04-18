@@ -2,6 +2,12 @@ const router  = require('express').Router();
 const DB      = require('../database.js');
 const bcrypt  = require('bcryptjs');
 const { sanitizeText } = require('../helpers.js');
+const multer = require('multer');
+
+const uploadMiddleware = multer({ 
+    storage: multer.memoryStorage(), 
+    limits: { fileSize: 50 * 1024 * 1024 } 
+});
 
 const BACKUP_VERSION = 2;
 
@@ -82,7 +88,7 @@ router.get('/export', async (req, res) => {
 // Body: multipart/form-data mit field "backup" (JSON-Datei)
 //       ODER application/json direkt
 // -------------------------------------------------------
-router.post('/import', async (req, res) => {
+router.post('/import', uploadMiddleware.single('backup'), async (req, res) => {
     try {
         let data = req.body;
 
@@ -208,8 +214,4 @@ router.get('/info', async (req, res) => {
     }
 });
 
-module.exports = (requireAuth) => {
-    // Alle Backup-Routen erfordern Auth
-    router.use(requireAuth);
-    return router;
-};
+module.exports = router;
