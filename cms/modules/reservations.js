@@ -10,6 +10,8 @@ let resFilterStatus = 'All';
 let resFilterDate = '';
 let resSortField = 'date';
 let resSortOrder = 'desc';
+let resPage = 1;
+const RES_PAGE_SIZE = 20;
 
 export async function renderReservations(container, titleEl) {
     titleEl.innerHTML = '<i class="fas fa-calendar-check"></i> Reservierungen';
@@ -113,6 +115,12 @@ export async function renderReservations(container, titleEl) {
                 } catch(e) { return 0; }
             });
 
+            const totalRes = res.length;
+            const totalPages = Math.ceil(totalRes / RES_PAGE_SIZE);
+            const safePage = Math.max(1, Math.min(resPage, totalPages || 1));
+            resPage = safePage;
+            const paginated = res.slice((safePage - 1) * RES_PAGE_SIZE, safePage * RES_PAGE_SIZE);
+
             listContainer.innerHTML = `
                 <table class="premium-table">
                     <thead>
@@ -126,7 +134,7 @@ export async function renderReservations(container, titleEl) {
                         </tr>
                     </thead>
                     <tbody>
-                        ${res.map(r => `
+                        ${paginated.map(r => `
                             <tr>
                                 <td><strong>${r.name || 'Unbekannt'}</strong><br><small>${r.email || ''}</small></td>
                                 <td><strong>${r.date || '---'}</strong><br><small>${r.start_time || ''} - ${r.end_time || ''}</small></td>
@@ -159,6 +167,16 @@ export async function renderReservations(container, titleEl) {
                     </tbody>
                 </table>
                 ${res.length === 0 ? '<div style="padding:60px;text-align:center;opacity:.5;"><h3>Keine passenden Reservierungen</h3></div>' : ''}
+                
+                ${totalPages > 1 ? `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; font-size:.82rem; opacity:.7;">
+                    <span>${(safePage-1)*RES_PAGE_SIZE+1}–${Math.min(safePage*RES_PAGE_SIZE, totalRes)} von ${totalRes} Einträgen</span>
+                    <div style="display:flex; gap:6px;">
+                        <button onclick="window.resGoToPage(${safePage-1})" ${safePage <= 1 ? 'disabled' : ''} style="padding:4px 12px; border-radius:8px; border:none; cursor:pointer;">‹</button>
+                        <span style="padding:4px 12px;">Seite ${safePage} / ${totalPages}</span>
+                        <button onclick="window.resGoToPage(${safePage+1})" ${safePage >= totalPages ? 'disabled' : ''} style="padding:4px 12px; border-radius:8px; border:none; cursor:pointer;">›</button>
+                    </div>
+                </div>` : ''}
             `;
         } catch (err) {
             console.error('Error in refreshList:', err);
@@ -167,11 +185,11 @@ export async function renderReservations(container, titleEl) {
     };
 
     // Attach Event Handlers (BEFORE first refreshList to ensure responsiveness)
-    container.querySelector('#res-search').oninput = (e) => { resFilterText = e.target.value; refreshList(); };
-    container.querySelector('#res-status-filter').onchange = (e) => { resFilterStatus = e.target.value; refreshList(); };
-    container.querySelector('#res-date-filter').onchange = (e) => { resFilterDate = e.target.value; refreshList(); };
+    container.querySelector('#res-search').oninput = (e) => { resFilterText = e.target.value; resPage = 1; refreshList(); };
+    container.querySelector('#res-status-filter').onchange = (e) => { resFilterStatus = e.target.value; resPage = 1; refreshList(); };
+    container.querySelector('#res-date-filter').onchange = (e) => { resFilterDate = e.target.value; resPage = 1; refreshList(); };
     container.querySelector('#res-reset-filters').onclick = () => { 
-        resFilterText = ''; resFilterStatus = 'All'; resFilterDate = ''; 
+        resFilterText = ''; resFilterStatus = 'All'; resFilterDate = ''; resPage = 1;
         renderReservations(container, titleEl); 
     };
     container.querySelector('#btn-manual-res').onclick = () => showManualResModal(container, titleEl);
@@ -185,6 +203,8 @@ export async function renderReservations(container, titleEl) {
         else { resSortField = field; resSortOrder = 'asc'; }
         refreshList();
     };
+
+    window.resGoToPage = (p) => { resPage = p; refreshList(); };
 }
 
 let archiveSearch = '';
