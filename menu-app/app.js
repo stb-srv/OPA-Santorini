@@ -121,6 +121,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (footerNameEl) footerNameEl.textContent = restaurantName;
                 const navLogoEl = document.getElementById('nav-logo');
                 if (navLogoEl) navLogoEl.textContent = restaurantName;
+
+                const footerSlogan = document.getElementById('footer-slogan');
+                if (footerSlogan && br?.slogan) footerSlogan.textContent = br.slogan;
+
                 if (br.favicon) {
                     let link = document.querySelector("link[rel~='icon']");
                     if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
@@ -207,6 +211,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (d.heroSlogan) document.getElementById('hero-slogan').textContent = d.heroSlogan;
         if (d.bgImage) {
             document.getElementById('hero-bg').style.backgroundImage = `url('${d.bgImage}')`;
+
+            // Hero-Bild Preload für LCP-Performance
+            let preload = document.querySelector('link[rel="preload"][as="image"]');
+            if (!preload) {
+                preload = document.createElement('link');
+                preload.rel = 'preload';
+                preload.as  = 'image';
+                document.head.appendChild(preload);
+            }
+            preload.href = d.bgImage;
         } else {
             document.getElementById('hero-bg').style.backgroundImage = `url('/admin/assets/santorini_bg.png')`;
         }

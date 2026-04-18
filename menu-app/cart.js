@@ -188,7 +188,25 @@
             ${configLoaded && !isClosed && !cartConfig.ordersEnabled ? '<p class="opa-cart-hint">ℹ️ Zeige dem Personal diesen Warenkorb oder bestelle direkt.</p>' : ''}`;
 
         document.getElementById('opa-clear-btn')?.addEventListener('click', () => {
-            if (confirm('Warenkorb leeren?')) clearCart();
+            // Custom inline Confirm direkt im Footer
+            const footer = document.getElementById('opa-cart-footer');
+            const existingConfirm = footer.querySelector('.opa-clear-confirm');
+            if (existingConfirm) return;
+
+            const confirmEl = document.createElement('div');
+            confirmEl.className = 'opa-clear-confirm';
+            confirmEl.innerHTML = `
+                <span style="font-size:.85rem; opacity:.7;">Warenkorb wirklich leeren?</span>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button class="opa-cart-btn-checkout" id="opa-confirm-yes" 
+                            style="flex:1; background:#ef4444;">Ja, leeren</button>
+                    <button class="opa-cart-btn-clear" id="opa-confirm-no" 
+                            style="flex:1;">Abbrechen</button>
+                </div>`;
+            footer.appendChild(confirmEl);
+
+            document.getElementById('opa-confirm-yes').onclick = () => { clearCart(); };
+            document.getElementById('opa-confirm-no').onclick  = () => { confirmEl.remove(); };
         });
         document.getElementById('opa-checkout-btn')?.addEventListener('click', openCheckout);
     }
