@@ -181,7 +181,7 @@ function renderDishRow(d, useGroupedView) {
     return `
         <tr data-id="${d.id}" style="opacity:${rowOpacity};transition:opacity .2s;">
             ${useGroupedView ? `
-                <td class="drag-handle" style="cursor:grab;padding:0 8px;opacity:.3;text-align:center;">
+                <td class="menu-drag-handle" style="cursor:grab;padding:0 8px;opacity:.3;text-align:center;">
                     <i class="fas fa-grip-vertical"></i>
                 </td>
             ` : ''}
@@ -455,7 +455,7 @@ async function initSortable(container, currentTab) {
 
     new window.Sortable(tbody, {
         animation: 150,
-        handle: '.drag-handle',
+        handle: '.menu-drag-handle',
         filter: '.cat-header-row',
         onEnd: async () => {
             const ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(tr => tr.dataset.id);
