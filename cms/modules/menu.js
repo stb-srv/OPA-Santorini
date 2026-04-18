@@ -18,6 +18,13 @@ let cmsSort = 'name';
 let cmsPage = 1;
 let cmsPageSize = 25;
 let collapsedCats = new Set();
+let _renderDebounceTimer = null;
+function debouncedRenderMenu(container, titleEl, tab) {
+    clearTimeout(_renderDebounceTimer);
+    _renderDebounceTimer = setTimeout(() => {
+        renderMenu(container, titleEl, tab);
+    }, 80);
+}
 
 // --- Helpers ---
 const getCatLabel = (cat) => {
@@ -591,16 +598,16 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
 
     if (currentTab === 'dishes') {
         const searchInput = container.querySelector('#cms-dish-search');
-        if (searchInput) searchInput.oninput = (e) => { cmsSearch = e.target.value; cmsPage = 1; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
+        if (searchInput) searchInput.oninput = (e) => { cmsSearch = e.target.value; cmsPage = 1; debouncedRenderMenu(container, document.getElementById('view-title'), 'dishes'); };
 
         const catFilter = container.querySelector('#cms-cat-filter');
-        if (catFilter) catFilter.onchange = (e) => { cmsCatFilter = e.target.value; cmsPage = 1; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
+        if (catFilter) catFilter.onchange = (e) => { cmsCatFilter = e.target.value; cmsPage = 1; debouncedRenderMenu(container, document.getElementById('view-title'), 'dishes'); };
 
         const sortSel = container.querySelector('#cms-sort');
-        if (sortSel) sortSel.onchange = (e) => { cmsSort = e.target.value; cmsPage = 1; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
+        if (sortSel) sortSel.onchange = (e) => { cmsSort = e.target.value; cmsPage = 1; debouncedRenderMenu(container, document.getElementById('view-title'), 'dishes'); };
 
         const pageSizeSel = container.querySelector('#cms-page-size');
-        if (pageSizeSel) pageSizeSel.onchange = (e) => { cmsPageSize = parseInt(e.target.value, 10); cmsPage = 1; renderMenu(container, document.getElementById('view-title'), 'dishes'); };
+        if (pageSizeSel) pageSizeSel.onchange = (e) => { cmsPageSize = parseInt(e.target.value, 10); cmsPage = 1; debouncedRenderMenu(container, document.getElementById('view-title'), 'dishes'); };
 
         const toggleBtn = container.querySelector('#toggle-dish-form');
         const form = container.querySelector('#dish-form');
