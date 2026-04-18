@@ -47,7 +47,7 @@ function renderOrderCards() {
         <div class="order-card ${o.status === 'ready' ? 'completed' : ''}" data-id="${o.id}">
             <div class="order-header">
                 <div><strong>Tisch ${o.table || 'N/A'}</strong></div>
-                <div class="order-time">${new Date(o.timestamp).toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'})}</div>
+                <div class="order-time">${new Date(o.createdAt || o.timestamp).toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'})}</div>
             </div>
             <div class="order-items">
                 ${o.items.map(i => `
