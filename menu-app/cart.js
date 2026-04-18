@@ -257,41 +257,41 @@
         if (mode === 'dine_in') {
             form.innerHTML = `
                 <label class="opa-form-label">Tischnummer *
-                    <input class="opa-form-input" type="text" id="co-table" placeholder="z.B. 5" required>
+                    <input class="opa-form-input" type="text" id="co-table" placeholder="z.B. 5" autocomplete="off" required>
                 </label>
                 <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
-                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" required>
+                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" autocomplete="tel" required>
                 </label>
                 <label class="opa-form-label">Anmerkung (optional)
-                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie…"></textarea>
+                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie…" autocomplete="off"></textarea>
                 </label>`;
         } else if (mode === 'pickup') {
             form.innerHTML = `
                 <label class="opa-form-label">Name *
-                    <input class="opa-form-input" type="text" id="co-name" placeholder="Dein Name" required>
+                    <input class="opa-form-input" type="text" id="co-name" placeholder="Dein Name" autocomplete="name" required>
                 </label>
                 <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
-                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" required>
+                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" autocomplete="tel" required>
                 </label>
                 <label class="opa-form-label">Gewünschte Abholzeit *
-                    <input class="opa-form-input" type="time" id="co-time" min="${escHtml(minTime)}" required>
+                    <input class="opa-form-input" type="time" id="co-time" min="${escHtml(minTime)}" autocomplete="off" required>
                 </label>
                 <label class="opa-form-label">Anmerkung (optional)
-                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie…"></textarea>
+                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie…" autocomplete="off"></textarea>
                 </label>`;
         } else if (mode === 'delivery') {
             form.innerHTML = `
                 <label class="opa-form-label">Name *
-                    <input class="opa-form-input" type="text" id="co-name" placeholder="Dein Name" required>
+                    <input class="opa-form-input" type="text" id="co-name" placeholder="Dein Name" autocomplete="name" required>
                 </label>
                 <label class="opa-form-label">Lieferadresse *
-                    <input class="opa-form-input" type="text" id="co-address" placeholder="Straße, Hausnummer, PLZ" required>
+                    <input class="opa-form-input" type="text" id="co-address" placeholder="Straße, Hausnummer, PLZ" autocomplete="street-address" required>
                 </label>
                 <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
-                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" required>
+                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" autocomplete="tel" required>
                 </label>
                 <label class="opa-form-label">Anmerkung (optional)
-                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Klingelname, Etage…"></textarea>
+                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Klingelname, Etage…" autocomplete="off"></textarea>
                 </label>`;
         }
     }
