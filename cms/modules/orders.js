@@ -116,6 +116,29 @@ function initSocket() {
                 playOrderSound();
             }
         });
+
+        socket.on('disconnect', () => {
+            const badge = document.getElementById('socket-status');
+            if (badge) {
+                badge.querySelector('.status-dot').className = 'status-dot gray';
+                badge.querySelector('span').textContent = 'Verbindung unterbrochen...';
+            }
+        });
+
+        socket.on('reconnect', async () => {
+            const badge = document.getElementById('socket-status');
+            if (badge) {
+                badge.querySelector('.status-dot').className = 'status-dot green';
+                badge.querySelector('span').textContent = 'Live verbunden';
+            }
+            // Verpasste Bestellungen nachladen
+            const fresh = await apiGet('orders');
+            if (fresh) {
+                orders = fresh;
+                const grid = document.getElementById('kitchen-grid');
+                if (grid) grid.innerHTML = renderOrderCards();
+            }
+        });
     }
 }
 
