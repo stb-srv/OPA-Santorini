@@ -217,6 +217,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (btn) btn.style.display = 'flex';
             }
         });
+
+        // Beim Laden: Hash aus URL auslesen und Tab wiederherstellen
+        const hashOnLoad = window.location.hash?.replace('#', '').trim();
+        if (hashOnLoad && hashOnLoad !== 'home') {
+            // Kurze Verzögerung damit alle Views korrekt initialisiert sind
+            setTimeout(() => window.switchTab(hashOnLoad), 100);
+        }
+
+        // Browser Back/Forward (popstate) unterstützen
+        window.addEventListener('popstate', () => {
+            const hash = window.location.hash?.replace('#', '').trim();
+            window.switchTab(hash || 'home');
+        });
     }
 
     // --- BRANDING ---
@@ -517,6 +530,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelectorAll('#nav-links a').forEach(a => {
             a.classList.toggle('active', a.dataset.tab === id);
         });
+
+        // URL-Hash aktualisieren (für F5-Reload)
+        const newHash = id === 'home' ? '' : '#' + id;
+        if (window.location.hash !== newHash) {
+            history.replaceState(null, '', newHash || window.location.pathname);
+        }
 
         window.scrollTo({ top: id === 'home' ? 0 : document.getElementById('main-nav').offsetHeight, behavior: 'smooth' });
     };
