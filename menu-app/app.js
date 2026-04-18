@@ -203,6 +203,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 el.addEventListener('input', checkLiveAvailability);
             }
         });
+
+        // Opening Hours Widget: außerhalb klicken → schließen
+        document.addEventListener('click', (e) => {
+            const widget = document.getElementById('oh-widget');
+            const panel  = document.getElementById('oh-panel');
+            const btn    = document.getElementById('oh-toggle-btn');
+            if (!widget || !panel) return;
+            if (panel.style.display === 'none') return;
+            // Wenn Klick außerhalb des Widgets
+            if (!widget.contains(e.target)) {
+                panel.style.display = 'none';
+                if (btn) btn.style.display = 'flex';
+            }
+        });
     }
 
     // --- BRANDING ---
