@@ -13,6 +13,25 @@ export const handleAuthFailure = () => {
     return null; 
 };
 
+function checkTokenExpiry() {
+    const token = getAuthToken();
+    if (!token) return;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const expiresIn = payload.exp * 1000 - Date.now();
+        // Wenn Token in weniger als 30 Minuten abläuft → refresh
+        if (expiresIn < 30 * 60 * 1000 && expiresIn > 0) {
+            fetch(`${API_URL}/admin/refresh`, {
+                method: 'POST',
+                headers: { 'x-admin-token': token }
+            })
+            .then(r => r.json())
+            .then(data => { if (data.token) sessionStorage.setItem('opa_admin_token', data.token); })
+            .catch(() => {});
+        }
+    } catch (_) {}
+}
+
 export async function apiGet(route) {
     try {
         const r = await fetch(`${API_URL}/${route}`, { 
@@ -24,7 +43,9 @@ export async function apiGet(route) {
             console.error(`API GET error (${route}) [${r.status}]:`, err.reason || r.statusText);
             return null;
         }
-        return await r.json();
+        const res = await r.json();
+        if (res) checkTokenExpiry();
+        return res;
     } catch (e) { 
         console.error(`API GET error (${route}):`, e);
         return null; 
@@ -49,6 +70,7 @@ export async function apiPost(route, data) {
         }
         // fix: forward reason for 400/500 responses so callers get proper error messages
         if (!r.ok && !res.reason) res.reason = `Serverfehler (${r.status})`;
+        if (r.ok) checkTokenExpiry();
         return res;
     } catch (e) { 
         console.error(`API POST error (${route}):`, e);
@@ -66,7 +88,9 @@ export async function apiUpload(file) {
             body: fd
         });
         if (r.status === 401) return handleAuthFailure();
-        return await r.json();
+        const res = await r.json();
+        if (res) checkTokenExpiry();
+        return res;
     } catch (e) { 
         console.error('API Upload error:', e);
         return { success: false }; 
@@ -91,6 +115,7 @@ export async function apiPut(route, data) {
         }
         // fix: forward reason for 400/500 responses
         if (!r.ok && !res.reason) res.reason = `Serverfehler (${r.status})`;
+        if (r.ok) checkTokenExpiry();
         return res;
     } catch (e) { 
         console.error(`API PUT error (${route}):`, e);
@@ -109,7 +134,9 @@ export async function apiDelete(route) {
             const err = await r.json().catch(() => ({}));
             return { success: false, reason: err.reason || `Serverfehler (${r.status})` };
         }
-        return await r.json();
+        const res = await r.json();
+        if (res) checkTokenExpiry();
+        return res;
     } catch (e) { 
         console.error(`API DELETE error (${route}):`, e);
         return { success: false, reason: 'Verbindungsfehler.' }; 

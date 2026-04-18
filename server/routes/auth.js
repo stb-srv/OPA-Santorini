@@ -78,5 +78,14 @@ module.exports = (ADMIN_SECRET) => {
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
 
+    router.post('/refresh', requireAuth, (req, res) => {
+        const token = jwt.sign(
+            { user: req.admin.user, role: req.admin.role, requirePasswordChange: false },
+            ADMIN_SECRET,
+            { expiresIn: '12h' }
+        );
+        res.json({ success: true, token });
+    });
+
     return router;
 };
