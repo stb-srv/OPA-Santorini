@@ -153,7 +153,11 @@ export async function renderReservations(container, titleEl) {
                                         <!-- Actions -->
                                         ${r.status !== 'Confirmed' ? `
                                             <button class="btn-edit action-btn-green" onclick="window.updateResStatus(${r.id}, 'Confirmed')" title="Akzeptieren"><i class="fas fa-check"></i></button>
-                                        ` : ''}
+                                        ` : `
+                                            <button class="btn-edit action-btn-gray" onclick="window.markNoShow(${r.id})" title="No-Show markieren" style="background:rgba(107,114,128,0.15); color:#6b7280;">
+                                                <i class="fas fa-user-slash"></i>
+                                            </button>
+                                        `}
                                         
                                         ${r.status !== 'Cancelled' ? `
                                             <button class="btn-edit action-btn-yellow" onclick="window.cancelRes(${r.id})" title="Stornieren mit Grund"><i class="fas fa-undo"></i></button>
@@ -205,6 +209,17 @@ export async function renderReservations(container, titleEl) {
     };
 
     window.resGoToPage = (p) => { resPage = p; refreshList(); };
+
+    window.markNoShow = async (id) => {
+        const ok = await showConfirm('No-Show markieren', 'Gast ist nicht erschienen. Als No-Show markieren?');
+        if (!ok) return;
+        const result = await apiPut(`reservations/${id}`, { status: 'No-Show' });
+        if (result.success) {
+            showToast('Als No-Show markiert.', 'warning');
+            const activeItem = document.querySelector('.nav-item.active') || document.querySelector('.nav-subitem.active');
+            if (activeItem) activeItem.click();
+        }
+    };
 }
 
 let archiveSearch = '';
