@@ -87,6 +87,36 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (br) {
                 const restaurantName = br.name || 'OPA! Santorini';
                 document.title = restaurantName;
+
+                // Meta Description
+                let metaDesc = document.querySelector('meta[name="description"]');
+                if (!metaDesc) {
+                    metaDesc = document.createElement('meta');
+                    metaDesc.name = 'description';
+                    document.head.appendChild(metaDesc);
+                }
+                const descText = hp.welcomeText
+                    ? hp.welcomeText.slice(0, 155) + (hp.welcomeText.length > 155 ? '…' : '')
+                    : `Willkommen im ${restaurantName}. Speisekarte, Reservierungen und mehr.`;
+                metaDesc.content = descText;
+
+                // Open Graph Tags (für Social Sharing / WhatsApp / Facebook)
+                const ogTags = {
+                    'og:title':       restaurantName,
+                    'og:description': descText,
+                    'og:type':        'restaurant.restaurant',
+                    'og:image':       hp.bgImage || '',
+                };
+                Object.entries(ogTags).forEach(([prop, content]) => {
+                    if (!content) return;
+                    let tag = document.querySelector(`meta[property="${prop}"]`);
+                    if (!tag) {
+                        tag = document.createElement('meta');
+                        tag.setAttribute('property', prop);
+                        document.head.appendChild(tag);
+                    }
+                    tag.content = content;
+                });
                 const footerNameEl = document.getElementById('footer-name');
                 if (footerNameEl) footerNameEl.textContent = restaurantName;
                 const navLogoEl = document.getElementById('nav-logo');
@@ -529,13 +559,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('legal-content').textContent = type === 'impressum' ? homeData.legal.impressum : homeData.legal.privacy;
     };
 
-    function toast(msg) {
-        const d = document.createElement('div');
-        d.textContent = msg;
-        d.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1B3A5C;color:#fff;padding:14px 36px;border-radius:8px;z-index:9999;font-weight:700;font-size:.9rem;box-shadow:0 8px 30px rgba(0,0,0,.15);';
-        document.body.appendChild(d);
-        setTimeout(() => d.remove(), 3000);
-    }
 
     // --- RESERVATION STEPPER ---
     window.resGuests = 2;
