@@ -33,7 +33,8 @@ module.exports = (requireAuth) => {
 
     router.put('/:user', requireAuth, async (req, res) => {
         try {
-            await DB.updateUser(req.params.user, req.body);
+            const { pass, recovery_codes, ...safeUpdate } = req.body;
+            await DB.updateUser(req.params.user, safeUpdate);
             res.json({ success: true });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
