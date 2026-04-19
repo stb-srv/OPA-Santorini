@@ -20,16 +20,30 @@ window.OpaI18n = (function () {
     let currentLang = 'de';
     let translations = {};
 
+    // Basis-URL automatisch ermitteln (relativ zur i18n.js Datei)
+    function getBase() {
+        const scripts = document.querySelectorAll('script[src*="i18n.js"]');
+        if (scripts.length > 0) {
+            const src = scripts[scripts.length - 1].src;
+            return src.substring(0, src.lastIndexOf('/') + 1);
+        }
+        // Fallback: relativ zum aktuellen Dokument + i18n/
+        return 'i18n/';
+    }
+
     async function load(code) {
         if (!LANGUAGES[code]) code = 'de';
+        const base = getBase();
         try {
-            const r = await fetch(`/menu-app/i18n/${code}.json`);
+            const r = await fetch(`${base}${code}.json`);
             if (!r.ok) throw new Error('not found');
             translations = await r.json();
         } catch {
             if (code !== 'de') {
-                const r = await fetch('/menu-app/i18n/de.json');
-                translations = await r.json();
+                try {
+                    const r = await fetch(`${base}de.json`);
+                    if (r.ok) translations = await r.json();
+                } catch { /* silent */ }
                 code = 'de';
             }
         }
@@ -71,16 +85,14 @@ window.OpaI18n = (function () {
         const btn  = document.getElementById('lang-switcher-btn');
         const lang = LANGUAGES[code];
         if (btn && lang) {
-            btn.innerHTML = `${lang.flag} <span>${code.toUpperCase()}</span>
-                <i class="fas fa-chevron-down" style="font-size:.6rem;opacity:.6;"></i>`;
+            btn.innerHTML = `${lang.flag} <span>${code.toUpperCase()}</span> <i class="fas fa-chevron-down" style="font-size:.6rem;opacity:.6;"></i>`;
         }
     }
 
     function renderDropdown() {
         return Object.values(LANGUAGES).map(l => `
             <button class="lang-option ${l.code === currentLang ? 'active' : ''}"
-                    onclick="OpaI18n.setLanguage('${l.code}');
-                             document.getElementById('lang-dropdown').classList.remove('open');">
+                    onclick="OpaI18n.setLanguage('${l.code}'); document.getElementById('lang-dropdown').classList.remove('open');">
                 <span class="lang-flag">${l.flag}</span>
                 <span class="lang-label">${l.label}</span>
                 ${l.code === currentLang ? '<i class="fas fa-check" style="margin-left:auto;color:var(--gold,#C8A96E);"></i>' : ''}
@@ -90,10 +102,20 @@ window.OpaI18n = (function () {
     async function init() {
         const browserLang = navigator.language?.slice(0, 2) || 'de';
         const startLang   = LANGUAGES[browserLang] ? browserLang : 'de';
-        await load(startLang);
+        try {
+            await load(startLang);
+        } catch(e) {
+            console.warn('[OpaI18n] Ladefehler:', e);
+        }
         applyDOM();
         updateLangBtn(startLang);
         window._opaCurrentLang = startLang;
+
+        // Dropdown sofort befüllen
+        const langMenu = document.getElementById('lang-dropdown-menu');
+        if (langMenu) langMenu.innerHTML = renderDropdown();
+
+        // Klick außerhalb → Dropdown schließen
         document.addEventListener('click', (e) => {
             const dd  = document.getElementById('lang-dropdown');
             const btn = document.getElementById('lang-switcher-btn');
