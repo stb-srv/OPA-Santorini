@@ -551,10 +551,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function getCategoryTranslation(cat) {
         const lang = window._opaCurrentLang || 'de';
-        if (lang === 'de') return { label: cat.label };
-        const tr = cat.translations?.[lang];
+        if (lang === 'de' || !cat.translations) return { label: cat.label };
+        const tr = cat.translations[lang];
+        if (!tr) return { label: cat.label };
+        // Unterstützt sowohl einfaches String-Format als auch Objekt-Format
         return {
-            label: tr?.label || cat.label
+            label: typeof tr === 'string' ? tr : (tr.label || cat.label)
         };
     }
 

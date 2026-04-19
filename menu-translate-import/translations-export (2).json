@@ -1,0 +1,2757 @@
+{
+  "categories": [
+    {
+      "label": "Aus dem Topf",
+      "translations": {
+        "en": "From the pot",
+        "el": "Από την κατσαρόλα",
+        "fr": "À la casserole",
+        "es": "De la olla",
+        "it": "Dalla pentola",
+        "nl": "Uit de pot",
+        "pl": "Z garnka",
+        "tr": "Tencereden"
+      }
+    },
+    {
+      "label": "Aus der Pfanne",
+      "translations": {
+        "en": "From the pan",
+        "el": "Από το τηγάνι",
+        "fr": "À la poêle",
+        "es": "De la sartén",
+        "it": "Dalla padella",
+        "nl": "Uit de pan",
+        "pl": "Z patelni",
+        "tr": "Tavadan"
+      }
+    },
+    {
+      "label": "Extra Beilagen",
+      "translations": {
+        "en": "Extra side dishes",
+        "el": "Επιπλέον συνοδευτικά",
+        "fr": "Accompagnements supplémentaires",
+        "es": "Guarniciones extra",
+        "it": "Contorni extra",
+        "nl": "Extra bijgerechten",
+        "pl": "Dodatki",
+        "tr": "Ekstra garnitürler"
+      }
+    },
+    {
+      "label": "Fischgerichte",
+      "translations": {
+        "en": "Fish dishes",
+        "el": "Πιάτα με ψάρι",
+        "fr": "Plats de poisson",
+        "es": "Platos de pescado",
+        "it": "Piatti di pesce",
+        "nl": "Visgerechten",
+        "pl": "Dania rybne",
+        "tr": "Balık yemekleri"
+      }
+    },
+    {
+      "label": "Für den kleinen Hunger",
+      "translations": {
+        "en": "For a small appetite",
+        "el": "Για μικρή όρεξη",
+        "fr": "Pour les petites faims",
+        "es": "Para un pequeño apetito",
+        "it": "Per un piccolo appetito",
+        "nl": "Voor de kleine trek",
+        "pl": "Na mały głód",
+        "tr": "Küçük iştahlar için"
+      }
+    },
+    {
+      "label": "Für den kleinen Hunger (Pfanne)",
+      "translations": {
+        "en": "For a small appetite (pan)",
+        "el": "Για μικρή όρεξη (τηγάνι)",
+        "fr": "Pour les petites faims (poêle)",
+        "es": "Para un pequeño apetito (sartén)",
+        "it": "Per un piccolo appetito (padella)",
+        "nl": "Voor de kleine trek (pan)",
+        "pl": "Na mały głód (patelnia)",
+        "tr": "Küçük iştahlar için (tava)"
+      }
+    },
+    {
+      "label": "Grill-Platten Zeus",
+      "translations": {
+        "en": "Zeus grill platters",
+        "el": "Πιατέλες σχάρας Zeus",
+        "fr": "Plateaux grill Zeus",
+        "es": "Parrilladas Zeus",
+        "it": "Piatti alla griglia Zeus",
+        "nl": "Grillschotels Zeus",
+        "pl": "Zestawy grillowe Zeus",
+        "tr": "Zeus ızgara tabakları"
+      }
+    },
+    {
+      "label": "Grill-Spezialitäten",
+      "translations": {
+        "en": "Grill specialties",
+        "el": "Σπεσιαλιτέ σχάρας",
+        "fr": "Spécialités grillées",
+        "es": "Especialidades a la parrilla",
+        "it": "Specialità alla griglia",
+        "nl": "Grillspecialiteiten",
+        "pl": "Specjały z grilla",
+        "tr": "Izgara spesiyaliteleri"
+      }
+    },
+    {
+      "label": "Grill-Spezialitäten vom Lamm",
+      "translations": {
+        "en": "Lamb grill specialties",
+        "el": "Σπεσιαλιτέ σχάρας από αρνί",
+        "fr": "Spécialités d'agneau grillé",
+        "es": "Especialidades de cordero a la parrilla",
+        "it": "Specialità di agnello alla griglia",
+        "nl": "Lamsspecialiteiten van de grill",
+        "pl": "Specjały z jagnięciny z grilla",
+        "tr": "Kuzu ızgara spesiyaliteleri"
+      }
+    },
+    {
+      "label": "Kalte Vorspeisen",
+      "translations": {
+        "en": "Cold appetizers",
+        "el": "Κρύα ορεκτικά",
+        "fr": "Entrées froides",
+        "es": "Entrantes fríos",
+        "it": "Antipasti freddi",
+        "nl": "Koude voorgerechten",
+        "pl": "Zimne przystawki",
+        "tr": "Soğuk mezeler"
+      }
+    },
+    {
+      "label": "Kinderteller",
+      "translations": {
+        "en": "Children's meals",
+        "el": "Παιδικά πιάτα",
+        "fr": "Menu enfant",
+        "es": "Platos infantiles",
+        "it": "Piatti per bambini",
+        "nl": "Kindergerechten",
+        "pl": "Dania dla dzieci",
+        "tr": "Çocuk menüsü"
+      }
+    },
+    {
+      "label": "Steak und Filet",
+      "translations": {
+        "en": "Steak and fillet",
+        "el": "Μπριζόλα και φιλέτο",
+        "fr": "Steak et filet",
+        "es": "Filete y solomillo",
+        "it": "Bistecca e filetto",
+        "nl": "Steak en filet",
+        "pl": "Stek i filet",
+        "tr": "Biftek ve fileto"
+      }
+    },
+    {
+      "label": "Suppen",
+      "translations": {
+        "en": "Soups",
+        "el": "Σούπες",
+        "fr": "Soupes",
+        "es": "Sopas",
+        "it": "Zuppe",
+        "nl": "Soepen",
+        "pl": "Zupy",
+        "tr": "Çorbalar"
+      }
+    },
+    {
+      "label": "Warme Vorspeisen",
+      "translations": {
+        "en": "Hot appetizers",
+        "el": "Ζεστά ορεκτικά",
+        "fr": "Entrées chaudes",
+        "es": "Entrantes calientes",
+        "it": "Antipasti caldi",
+        "nl": "Warme voorgerechten",
+        "pl": "Ciepłe przystawki",
+        "tr": "Sıcak mezeler"
+      }
+    }
+  ],
+  "dishes": [
+    {
+      "name": "Kokinisto",
+      "desc": "Rindfleisch mit grünen Bohnen dazu Pommes frites und Salat",
+      "translations": {
+        "en": {
+          "name": "Kokinisto",
+          "desc": "Beef with green beans, served with French fries and salad"
+        },
+        "el": {
+          "name": "Κοκκινιστό",
+          "desc": "Μοσχάρι με φασολάκια, πατάτες τηγανητές και σαλάτα"
+        },
+        "fr": {
+          "name": "Kokinisto",
+          "desc": "Bœuf aux haricots verts, accompagné de frites et de salade"
+        },
+        "es": {
+          "name": "Kokinisto",
+          "desc": "Ternera con judías verdes, acompañada de patatas fritas y ensalada"
+        },
+        "it": {
+          "name": "Kokinisto",
+          "desc": "Manzo con fagiolini, accompagnato da patatine fritte e insalata"
+        },
+        "nl": {
+          "name": "Kokinisto",
+          "desc": "Rundvlees met sperziebonen, geserveerd met friet en salade"
+        },
+        "pl": {
+          "name": "Kokinisto",
+          "desc": "Wołowina z zieloną fasolką, podawana z frytkami i sałatką"
+        },
+        "tr": {
+          "name": "Kokinisto",
+          "desc": "Yeşil fasulye ile dana eti, patates kızartması ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Makkaroni mit Rindfleisch",
+      "desc": "in Tomatensauce und Käse überbacken dazu Brot und Salat",
+      "translations": {
+        "en": {
+          "name": "Macaroni with Beef",
+          "desc": "Baked in tomato sauce and cheese, served with bread and salad"
+        },
+        "el": {
+          "name": "Μακαρόνια με μοσχάρι",
+          "desc": "Ψητά με σάλτσα ντομάτας και τυρί, με ψωμί και σαλάτα"
+        },
+        "fr": {
+          "name": "Macaronis au bœuf",
+          "desc": "Gratinés en sauce tomate et fromage, accompagnés de pain et de salade"
+        },
+        "es": {
+          "name": "Macarrones con ternera",
+          "desc": "Gratinados en salsa de tomate y queso, acompañados de pan y ensalada"
+        },
+        "it": {
+          "name": "Maccheroni con manzo",
+          "desc": "Gratinati in salsa di pomodoro e formaggio, con pane e insalata"
+        },
+        "nl": {
+          "name": "Macaroni met rundvlees",
+          "desc": "Gegratineerd in tomatensaus en kaas, geserveerd met brood en salade"
+        },
+        "pl": {
+          "name": "Makaron z wołowiną",
+          "desc": "Zapiekany w sosie pomidorowym z serem, podawany z chlebem i sałatką"
+        },
+        "tr": {
+          "name": "Makarna ve Dana Eti",
+          "desc": "Domates sosu ve peynirle fırında pişirilmiş, ekmek ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Penne",
+      "desc": "in Broccoli-Sahnesauce mit Käse überbacken",
+      "translations": {
+        "en": {
+          "name": "Penne",
+          "desc": "Baked in broccoli cream sauce with cheese"
+        },
+        "el": {
+          "name": "Πέννες",
+          "desc": "Ψητές με κρεμώδη σάλτσα μπρόκολου και τυρί"
+        },
+        "fr": {
+          "name": "Penne",
+          "desc": "Gratinées en sauce crème de brocoli et fromage"
+        },
+        "es": {
+          "name": "Penne",
+          "desc": "Gratinados en salsa de crema de brócoli y queso"
+        },
+        "it": {
+          "name": "Penne",
+          "desc": "Gratinate in salsa di crema di broccoli e formaggio"
+        },
+        "nl": {
+          "name": "Penne",
+          "desc": "Gegratineerd in broccoliroomsaus met kaas"
+        },
+        "pl": {
+          "name": "Penne",
+          "desc": "Zapiekane w sosie śmietanowym z brokułami i serem"
+        },
+        "tr": {
+          "name": "Penne",
+          "desc": "Brokoli kremalı sos ve peynirle fırında pişirilmiş"
+        }
+      }
+    },
+    {
+      "name": "Plaki",
+      "desc": "Rindfleisch mit dicken Bohnen in pikanter Tomatensauce mit Brot und Salat",
+      "translations": {
+        "en": {
+          "name": "Plaki",
+          "desc": "Beef with large beans in spicy tomato sauce, with bread and salad"
+        },
+        "el": {
+          "name": "Πλακί",
+          "desc": "Μοσχάρι με χοντρά φασόλια σε πικάντικη σάλτσα ντομάτας, με ψωμί και σαλάτα"
+        },
+        "fr": {
+          "name": "Plaki",
+          "desc": "Bœuf aux gros haricots en sauce tomate épicée, avec pain et salade"
+        },
+        "es": {
+          "name": "Plaki",
+          "desc": "Ternera con alubias grandes en salsa de tomate picante, con pan y ensalada"
+        },
+        "it": {
+          "name": "Plaki",
+          "desc": "Manzo con fagioli grandi in salsa di pomodoro piccante, con pane e insalata"
+        },
+        "nl": {
+          "name": "Plaki",
+          "desc": "Rundvlees met grote bonen in pittige tomatensaus, met brood en salade"
+        },
+        "pl": {
+          "name": "Plaki",
+          "desc": "Wołowina z dużą fasolą w pikantnym sosie pomidorowym, z chlebem i sałatką"
+        },
+        "tr": {
+          "name": "Plaki",
+          "desc": "Büyük fasulye ile dana eti, baharatlı domates sosu, ekmek ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Spaghetti",
+      "desc": "mit Scampis in Tomatensauce",
+      "translations": {
+        "en": {
+          "name": "Spaghetti",
+          "desc": "With scampi in tomato sauce"
+        },
+        "el": {
+          "name": "Σπαγγέτι",
+          "desc": "Με γαρίδες σε σάλτσα ντομάτας"
+        },
+        "fr": {
+          "name": "Spaghetti",
+          "desc": "Aux scampis en sauce tomate"
+        },
+        "es": {
+          "name": "Espagueti",
+          "desc": "Con gambas en salsa de tomate"
+        },
+        "it": {
+          "name": "Spaghetti",
+          "desc": "Con scampi in salsa di pomodoro"
+        },
+        "nl": {
+          "name": "Spaghetti",
+          "desc": "Met scampi's in tomatensaus"
+        },
+        "pl": {
+          "name": "Spaghetti",
+          "desc": "Z krewetkami w sosie pomidorowym"
+        },
+        "tr": {
+          "name": "Spagetti",
+          "desc": "Domates soslu karides ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Spaghetti Bolognese",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "Spaghetti Bolognese",
+          "desc": ""
+        },
+        "el": {
+          "name": "Σπαγγέτι Μπολονέζ",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Spaghetti Bolognaise",
+          "desc": ""
+        },
+        "es": {
+          "name": "Espagueti a la Boloñesa",
+          "desc": ""
+        },
+        "it": {
+          "name": "Spaghetti alla Bolognese",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Spaghetti Bolognese",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Spaghetti Bolognese",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Spagetti Bolonez",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Spaghetti Carbonara",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "Spaghetti Carbonara",
+          "desc": ""
+        },
+        "el": {
+          "name": "Σπαγγέτι Καρμπονάρα",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Spaghetti Carbonara",
+          "desc": ""
+        },
+        "es": {
+          "name": "Espagueti Carbonara",
+          "desc": ""
+        },
+        "it": {
+          "name": "Spaghetti Carbonara",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Spaghetti Carbonara",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Spaghetti Carbonara",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Spagetti Carbonara",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Stifado",
+      "desc": "Geschmortes Rindfleisch mit Zwiebeln in pikanter Sauce mit Brot und Salat",
+      "translations": {
+        "en": {
+          "name": "Stifado",
+          "desc": "Braised beef with onions in spicy sauce, with bread and salad"
+        },
+        "el": {
+          "name": "Στιφάδο",
+          "desc": "Βραστό μοσχάρι με κρεμμύδια σε πικάντικη σάλτσα, με ψωμί και σαλάτα"
+        },
+        "fr": {
+          "name": "Stifado",
+          "desc": "Bœuf braisé aux oignons en sauce épicée, avec pain et salade"
+        },
+        "es": {
+          "name": "Stifado",
+          "desc": "Ternera estofada con cebolla en salsa picante, con pan y ensalada"
+        },
+        "it": {
+          "name": "Stifado",
+          "desc": "Manzo brasato con cipolle in salsa piccante, con pane e insalata"
+        },
+        "nl": {
+          "name": "Stifado",
+          "desc": "Gestoofde rundvlees met uien in pittige saus, met brood en salade"
+        },
+        "pl": {
+          "name": "Stifado",
+          "desc": "Duszona wołowina z cebulą w pikantnym sosie, z chlebem i sałatką"
+        },
+        "tr": {
+          "name": "Stifado",
+          "desc": "Soğanlı ve baharatlı soslu dana yahnisi, ekmek ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Filetteller Lamm und Schweinefilet",
+      "desc": "in Pfeffersauce dazu Pommes und Salat",
+      "translations": {
+        "en": {
+          "name": "Fillet Plate Lamb and Pork Fillet",
+          "desc": "In pepper sauce, served with fries and salad"
+        },
+        "el": {
+          "name": "Πιάτο φιλέτο αρνί και χοιρινό",
+          "desc": "Σε σάλτσα πιπεριού, με τηγανητές πατάτες και σαλάτα"
+        },
+        "fr": {
+          "name": "Assiette filet d'agneau et de porc",
+          "desc": "En sauce poivre, accompagnée de frites et de salade"
+        },
+        "es": {
+          "name": "Plato de filete de cordero y cerdo",
+          "desc": "En salsa de pimienta, acompañado de patatas fritas y ensalada"
+        },
+        "it": {
+          "name": "Piatto filetto di agnello e maiale",
+          "desc": "In salsa al pepe, con patatine fritte e insalata"
+        },
+        "nl": {
+          "name": "Filetbord lam en varkensfilet",
+          "desc": "In pepersaus, geserveerd met friet en salade"
+        },
+        "pl": {
+          "name": "Talerz filet z jagnięciny i wieprzowiny",
+          "desc": "W sosie pieprzowym, podawany z frytkami i sałatką"
+        },
+        "tr": {
+          "name": "Kuzu ve Domuz Filetosu Tabağı",
+          "desc": "Biber sosunda, patates kızartması ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros 'Pikant' in pikanter Sauce",
+      "desc": "mit Champignons, Paprika und Zwiebeln, dazu Reis und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros 'Spicy' in Spicy Sauce",
+          "desc": "With mushrooms, peppers and onions, served with rice and salad"
+        },
+        "el": {
+          "name": "Γύρος 'Πικάντικος' σε πικάντικη σάλτσα",
+          "desc": "Με μανιτάρια, πιπεριές και κρεμμύδια, με ρύζι και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros 'Épicé' en sauce piquante",
+          "desc": "Avec champignons, poivrons et oignons, accompagné de riz et de salade"
+        },
+        "es": {
+          "name": "Gyros 'Picante' en salsa picante",
+          "desc": "Con champiñones, pimientos y cebolla, acompañado de arroz y ensalada"
+        },
+        "it": {
+          "name": "Gyros 'Piccante' in salsa piccante",
+          "desc": "Con funghi, peperoni e cipolle, con riso e insalata"
+        },
+        "nl": {
+          "name": "Gyros 'Pikant' in pittige saus",
+          "desc": "Met champignons, paprika en uien, geserveerd met rijst en salade"
+        },
+        "pl": {
+          "name": "Gyros 'Pikantny' w pikantnym sosie",
+          "desc": "Z pieczarkami, papryką i cebulą, podawany z ryżem i sałatką"
+        },
+        "tr": {
+          "name": "Acılı Gyros Baharatlı Sos ile",
+          "desc": "Mantar, biber ve soğan ile, pilav ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros in Metaxa-Champignonsauce",
+      "desc": "mit Käse überbacken dazu Reis und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros in Metaxa Mushroom Sauce",
+          "desc": "Baked with cheese, served with rice and salad"
+        },
+        "el": {
+          "name": "Γύρος σε σάλτσα Μεταξά με μανιτάρια",
+          "desc": "Με λιωμένο τυρί, με ρύζι και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros en sauce Metaxa aux champignons",
+          "desc": "Gratiné au fromage, accompagné de riz et de salade"
+        },
+        "es": {
+          "name": "Gyros en salsa Metaxa con champiñones",
+          "desc": "Gratinado con queso, acompañado de arroz y ensalada"
+        },
+        "it": {
+          "name": "Gyros in salsa Metaxa ai funghi",
+          "desc": "Gratinato con formaggio, con riso e insalata"
+        },
+        "nl": {
+          "name": "Gyros in Metaxa-champignonsaus",
+          "desc": "Gegratineerd met kaas, geserveerd met rijst en salade"
+        },
+        "pl": {
+          "name": "Gyros w sosie Metaxa z pieczarkami",
+          "desc": "Zapiekany z serem, podawany z ryżem i sałatką"
+        },
+        "tr": {
+          "name": "Metaxa Mantarlı Soslu Gyros",
+          "desc": "Peynirle fırınlanmış, pilav ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Lammfilet 'Pikant'",
+      "desc": "in pikanter Sauce mit Champignons, Paprika, Zwiebeln, dazu Reis und Salat",
+      "translations": {
+        "en": {
+          "name": "Lamb Fillet 'Spicy'",
+          "desc": "In spicy sauce with mushrooms, peppers and onions, served with rice and salad"
+        },
+        "el": {
+          "name": "Φιλέτο αρνιού 'Πικάντικο'",
+          "desc": "Σε πικάντικη σάλτσα με μανιτάρια, πιπεριές και κρεμμύδια, με ρύζι και σαλάτα"
+        },
+        "fr": {
+          "name": "Filet d'agneau 'Épicé'",
+          "desc": "En sauce piquante avec champignons, poivrons et oignons, accompagné de riz et de salade"
+        },
+        "es": {
+          "name": "Filete de cordero 'Picante'",
+          "desc": "En salsa picante con champiñones, pimientos y cebolla, acompañado de arroz y ensalada"
+        },
+        "it": {
+          "name": "Filetto di agnello 'Piccante'",
+          "desc": "In salsa piccante con funghi, peperoni e cipolle, con riso e insalata"
+        },
+        "nl": {
+          "name": "Lamsfilet 'Pikant'",
+          "desc": "In pittige saus met champignons, paprika en uien, geserveerd met rijst en salade"
+        },
+        "pl": {
+          "name": "Filet z jagnięciny 'Pikantny'",
+          "desc": "W pikantnym sosie z pieczarkami, papryką i cebulą, podawany z ryżem i sałatką"
+        },
+        "tr": {
+          "name": "Kuzu Filetosu 'Acılı'",
+          "desc": "Mantar, biber ve soğanlı baharatlı sos ile, pilav ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Leber in Rotweinsauce",
+      "desc": "mit Champignons, Paprika und Zwiebeln",
+      "translations": {
+        "en": {
+          "name": "Liver in Red Wine Sauce",
+          "desc": "With mushrooms and onions, served with rice and salad"
+        },
+        "el": {
+          "name": "Συκώτι σε σάλτσα κόκκινου κρασιού",
+          "desc": "Με μανιτάρια και κρεμμύδια, με ρύζι και σαλάτα"
+        },
+        "fr": {
+          "name": "Foie en sauce au vin rouge",
+          "desc": "Avec champignons et oignons, accompagné de riz et de salade"
+        },
+        "es": {
+          "name": "Hígado en salsa de vino tinto",
+          "desc": "Con champiñones y cebolla, acompañado de arroz y ensalada"
+        },
+        "it": {
+          "name": "Fegato in salsa di vino rosso",
+          "desc": "Con funghi e cipolle, con riso e insalata"
+        },
+        "nl": {
+          "name": "Lever in rode wijnsaus",
+          "desc": "Met champignons en uien, geserveerd met rijst en salade"
+        },
+        "pl": {
+          "name": "Wątroba w sosie z czerwonego wina",
+          "desc": "Z pieczarkami i cebulą, podawana z ryżem i sałatką"
+        },
+        "tr": {
+          "name": "Kırmızı Şarap Soslu Ciğer",
+          "desc": "Mantar ve soğan ile, pilav ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Putengeschnetzeltes aus der Pfanne",
+      "desc": "mit Makkaroni und Käse überbacken dazu Brot und Salat",
+      "translations": {
+        "en": {
+          "name": "Pan-fried Turkey Strips",
+          "desc": "Baked with macaroni and cheese, served with bread and salad"
+        },
+        "el": {
+          "name": "Γαλοπούλα τηγανητή σε φέτες",
+          "desc": "Ψητή με μακαρόνια και τυρί, με ψωμί και σαλάτα"
+        },
+        "fr": {
+          "name": "Émincé de dinde à la poêle",
+          "desc": "Gratiné avec macaronis et fromage, accompagné de pain et de salade"
+        },
+        "es": {
+          "name": "Tiras de pavo a la sartén",
+          "desc": "Gratinado con macarrones y queso, acompañado de pan y ensalada"
+        },
+        "it": {
+          "name": "Straccetti di tacchino in padella",
+          "desc": "Gratinati con maccheroni e formaggio, con pane e insalata"
+        },
+        "nl": {
+          "name": "Gebakken kalkoenreepjes uit de pan",
+          "desc": "Gegratineerd met macaroni en kaas, geserveerd met brood en salade"
+        },
+        "pl": {
+          "name": "Smażone paski indyka z patelni",
+          "desc": "Zapiekane z makaronem i serem, podawane z chlebem i sałatką"
+        },
+        "tr": {
+          "name": "Tavada Hindi Şeritleri",
+          "desc": "Makarna ve peynirle fırınlanmış, ekmek ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Skallopina Putenfleisch 'Hawaii'",
+      "desc": "In Sahnesauce mit Ananas und Käse, dazu Folienkartoffel und Salat",
+      "translations": {
+        "en": {
+          "name": "Turkey Scallopini 'Hawaii'",
+          "desc": "In cream sauce with pineapple and cheese, served with baked potato and salad"
+        },
+        "el": {
+          "name": "Σκαλοπίνι γαλοπούλας 'Χαβάη'",
+          "desc": "Σε κρεμώδη σάλτσα με ανανά και τυρί, με πατάτα φούρνου και σαλάτα"
+        },
+        "fr": {
+          "name": "Scaloppine de dinde 'Hawaii'",
+          "desc": "En sauce crème avec ananas et fromage, accompagnée de pomme de terre en papillote et de salade"
+        },
+        "es": {
+          "name": "Escalopines de pavo 'Hawaii'",
+          "desc": "En salsa de crema con piña y queso, acompañados de patata al horno y ensalada"
+        },
+        "it": {
+          "name": "Scaloppine di tacchino 'Hawaii'",
+          "desc": "In salsa di panna con ananas e formaggio, con patata al cartoccio e insalata"
+        },
+        "nl": {
+          "name": "Kalkoenschnitzel 'Hawaii'",
+          "desc": "In roomsaus met ananas en kaas, geserveerd met folieaardappel en salade"
+        },
+        "pl": {
+          "name": "Skaloppini z indyka 'Hawaii'",
+          "desc": "W sosie śmietanowym z ananasem i serem, podawane z ziemniakiem w folii i sałatką"
+        },
+        "tr": {
+          "name": "Hindi Skallopini 'Hawaii'",
+          "desc": "Ananas ve peynirli kremalı sos ile, fırın patates ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Skallopina Schweinefile 'Jäger'",
+      "desc": "in Sahnesauce mit Champignons und Käse dazu Folienkartoffel und Salat",
+      "translations": {
+        "en": {
+          "name": "Pork Fillet Scallopini 'Hunter'",
+          "desc": "In cream sauce with mushrooms and cheese, served with baked potato and salad"
+        },
+        "el": {
+          "name": "Σκαλοπίνι χοιρινού φιλέτο 'Κυνηγός'",
+          "desc": "Σε κρεμώδη σάλτσα με μανιτάρια και τυρί, με πατάτα φούρνου και σαλάτα"
+        },
+        "fr": {
+          "name": "Scaloppine de filet de porc 'Chasseur'",
+          "desc": "En sauce crème avec champignons et fromage, accompagnée de pomme de terre en papillote et de salade"
+        },
+        "es": {
+          "name": "Escalopines de filete de cerdo 'Cazador'",
+          "desc": "En salsa de crema con champiñones y queso, acompañados de patata al horno y ensalada"
+        },
+        "it": {
+          "name": "Scaloppine di filetto di maiale 'Cacciatore'",
+          "desc": "In salsa di panna con funghi e formaggio, con patata al cartoccio e insalata"
+        },
+        "nl": {
+          "name": "Varkensfilet scaloppini 'Jager'",
+          "desc": "In roomsaus met champignons en kaas, geserveerd met folieaardappel en salade"
+        },
+        "pl": {
+          "name": "Skaloppini z polędwicy wieprzowej 'Myśliwski'",
+          "desc": "W sosie śmietanowym z pieczarkami i serem, podawane z ziemniakiem w folii i sałatką"
+        },
+        "tr": {
+          "name": "Domuz Filetosu Skallopini 'Avcı'",
+          "desc": "Mantar ve peynirli kremalı sos ile, fırın patates ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Skallopina Schweinefilet 'Hawaii'",
+      "desc": "in Sahnesauce mit Ananas und Käse, dazu Folienkartoffel und Salat",
+      "translations": {
+        "en": {
+          "name": "Pork Fillet Scallopini 'Hawaii'",
+          "desc": "In cream sauce with pineapple and cheese, served with baked potato and salad"
+        },
+        "el": {
+          "name": "Σκαλοπίνι χοιρινού φιλέτο 'Χαβάη'",
+          "desc": "Σε κρεμώδη σάλτσα με ανανά και τυρί, με πατάτα φούρνου και σαλάτα"
+        },
+        "fr": {
+          "name": "Scaloppine de filet de porc 'Hawaii'",
+          "desc": "En sauce crème avec ananas et fromage, accompagnée de pomme de terre en papillote et de salade"
+        },
+        "es": {
+          "name": "Escalopines de filete de cerdo 'Hawaii'",
+          "desc": "En salsa de crema con piña y queso, acompañados de patata al horno y ensalada"
+        },
+        "it": {
+          "name": "Scaloppine di filetto di maiale 'Hawaii'",
+          "desc": "In salsa di panna con ananas e formaggio, con patata al cartoccio e insalata"
+        },
+        "nl": {
+          "name": "Varkensfilet scaloppini 'Hawaii'",
+          "desc": "In roomsaus met ananas en kaas, geserveerd met folieaardappel en salade"
+        },
+        "pl": {
+          "name": "Skaloppini z polędwicy wieprzowej 'Hawaii'",
+          "desc": "W sosie śmietanowym z ananasem i serem, podawane z ziemniakiem w folii i sałatką"
+        },
+        "tr": {
+          "name": "Domuz Filetosu Skallopini 'Hawaii'",
+          "desc": "Ananas ve peynirli kremalı sos ile, fırın patates ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Skallopina Schweinefilet 'Vom Koch'",
+      "desc": "in Sahnesauce mit Schinken und Käse dazu Folienkartoffel und Salat",
+      "translations": {
+        "en": {
+          "name": "Pork Fillet Scallopini 'Chef's Style'",
+          "desc": "In cream sauce with ham and cheese, served with baked potato and salad"
+        },
+        "el": {
+          "name": "Σκαλοπίνι χοιρινού φιλέτο 'του Σεφ'",
+          "desc": "Σε κρεμώδη σάλτσα με ζαμπόν και τυρί, με πατάτα φούρνου και σαλάτα"
+        },
+        "fr": {
+          "name": "Scaloppine de filet de porc 'du Chef'",
+          "desc": "En sauce crème avec jambon et fromage, accompagnée de pomme de terre en papillote et de salade"
+        },
+        "es": {
+          "name": "Escalopines de filete de cerdo 'del Chef'",
+          "desc": "En salsa de crema con jamón y queso, acompañados de patata al horno y ensalada"
+        },
+        "it": {
+          "name": "Scaloppine di filetto di maiale 'dello Chef'",
+          "desc": "In salsa di panna con prosciutto e formaggio, con patata al cartoccio e insalata"
+        },
+        "nl": {
+          "name": "Varkensfilet scaloppini 'van de Chef'",
+          "desc": "In roomsaus met ham en kaas, geserveerd met folieaardappel en salade"
+        },
+        "pl": {
+          "name": "Skaloppini z polędwicy wieprzowej 'od Kucharza'",
+          "desc": "W sosie śmietanowym z szynką i serem, podawane z ziemniakiem w folii i sałatką"
+        },
+        "tr": {
+          "name": "Domuz Filetosu Skallopini 'Şefin Usulü'",
+          "desc": "Jambon ve peynirli kremalı sos ile, fırın patates ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Suzukakia",
+      "desc": "in Metaxa-Champignonsauce mit Käse überbacken",
+      "translations": {
+        "en": {
+          "name": "Suzukakia",
+          "desc": "2 hearty minced meat patties with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Σουτζουκάκια",
+          "desc": "2 χορταστικά κεφτεδάκια με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Suzukakia",
+          "desc": "2 copieuses boulettes de viande hachée avec frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Suzukakia",
+          "desc": "2 sustanciosas albóndigas de carne picada con patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Suzukakia",
+          "desc": "2 saporite polpette di carne macinata con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Suzukakia",
+          "desc": "2 stevige gehaktballen met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Suzukakia",
+          "desc": "2 syte kotlety mielone z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Suzukakia",
+          "desc": "2 doyurucu köfte, patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Tigania Schweinefilet",
+      "desc": "in Weinsauce aus der Pfanne mit Champignons und verschiedenem Gemüse dazu Pommes und Salat",
+      "translations": {
+        "en": {
+          "name": "Tigania Pork Fillet",
+          "desc": "Pan-fried in wine sauce with mushrooms and mixed vegetables, served with fries and salad"
+        },
+        "el": {
+          "name": "Τηγανιά χοιρινό φιλέτο",
+          "desc": "Τηγανητό σε σάλτσα κρασιού με μανιτάρια και διάφορα λαχανικά, με πατάτες και σαλάτα"
+        },
+        "fr": {
+          "name": "Tigania filet de porc",
+          "desc": "Poêlé en sauce au vin avec champignons et légumes variés, accompagné de frites et de salade"
+        },
+        "es": {
+          "name": "Tigania filete de cerdo",
+          "desc": "Salteado en salsa de vino con champiñones y verduras variadas, acompañado de patatas fritas y ensalada"
+        },
+        "it": {
+          "name": "Tigania filetto di maiale",
+          "desc": "Saltato in padella in salsa di vino con funghi e verdure miste, con patatine fritte e insalata"
+        },
+        "nl": {
+          "name": "Tigania varkensfilet",
+          "desc": "Gebakken in wijnsaus met champignons en gemengde groenten, geserveerd met friet en salade"
+        },
+        "pl": {
+          "name": "Tigania polędwica wieprzowa",
+          "desc": "Smażona w sosie winnym z pieczarkami i różnymi warzywami, podawana z frytkami i sałatką"
+        },
+        "tr": {
+          "name": "Tigania Domuz Filetosu",
+          "desc": "Mantar ve karışık sebzeli şarap sosunda tavada pişirilmiş, patates kızartması ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Bratkartoffeln",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "Fried Potatoes",
+          "desc": ""
+        },
+        "el": {
+          "name": "Τηγανητές πατάτες",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Pommes de terre sautées",
+          "desc": ""
+        },
+        "es": {
+          "name": "Patatas fritas a la sartén",
+          "desc": ""
+        },
+        "it": {
+          "name": "Patate fritte in padella",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Gebakken aardappelen",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Smażone ziemniaki",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Kızarmış Patates",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Broccoli in Sahnesauce",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "Broccoli in Cream Sauce",
+          "desc": ""
+        },
+        "el": {
+          "name": "Μπρόκολο σε κρεμώδη σάλτσα",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Brocoli en sauce crème",
+          "desc": ""
+        },
+        "es": {
+          "name": "Brócoli en salsa de crema",
+          "desc": ""
+        },
+        "it": {
+          "name": "Broccoli in salsa di panna",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Broccoli in roomsaus",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Brokuły w sosie śmietanowym",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Kremalı Soslu Brokoli",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Folienkartoffel mit Tsatziki oder Kräuterbutter",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "Baked Potato with Tzatziki or Herb Butter",
+          "desc": ""
+        },
+        "el": {
+          "name": "Πατάτα φούρνου με τζατζίκι ή βούτυρο με βότανα",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Pomme de terre en papillote avec tzatziki ou beurre aux herbes",
+          "desc": ""
+        },
+        "es": {
+          "name": "Patata al horno con tzatziki o mantequilla de hierbas",
+          "desc": ""
+        },
+        "it": {
+          "name": "Patata al cartoccio con tzatziki o burro alle erbe",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Folieaardappel met tzatziki of kruidenboter",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Ziemniak w folii z tzatziki lub masłem ziołowym",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Folyoda Patates ile Cacık veya Otlu Tereyağı",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Pommes frites",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "French Fries",
+          "desc": ""
+        },
+        "el": {
+          "name": "Τηγανητές πατάτες",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Frites",
+          "desc": ""
+        },
+        "es": {
+          "name": "Patatas fritas",
+          "desc": ""
+        },
+        "it": {
+          "name": "Patatine fritte",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Friet",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Frytki",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Patates Kızartması",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Reis",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "Rice",
+          "desc": ""
+        },
+        "el": {
+          "name": "Ρύζι",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Riz",
+          "desc": ""
+        },
+        "es": {
+          "name": "Arroz",
+          "desc": ""
+        },
+        "it": {
+          "name": "Riso",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Rijst",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Ryż",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Pilav",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Sauce Extra",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "Extra Sauce",
+          "desc": ""
+        },
+        "el": {
+          "name": "Επιπλέον σάλτσα",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Sauce supplémentaire",
+          "desc": ""
+        },
+        "es": {
+          "name": "Salsa extra",
+          "desc": ""
+        },
+        "it": {
+          "name": "Salsa extra",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Extra saus",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Dodatkowy sos",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Ekstra Sos",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Spinat in Sahnesauce",
+      "desc": "",
+      "translations": {
+        "en": {
+          "name": "Spinach in Cream Sauce",
+          "desc": ""
+        },
+        "el": {
+          "name": "Σπανάκι σε κρεμώδη σάλτσα",
+          "desc": ""
+        },
+        "fr": {
+          "name": "Épinards en sauce crème",
+          "desc": ""
+        },
+        "es": {
+          "name": "Espinacas en salsa de crema",
+          "desc": ""
+        },
+        "it": {
+          "name": "Spinaci in salsa di panna",
+          "desc": ""
+        },
+        "nl": {
+          "name": "Spinazie in roomsaus",
+          "desc": ""
+        },
+        "pl": {
+          "name": "Szpinak w sosie śmietanowym",
+          "desc": ""
+        },
+        "tr": {
+          "name": "Kremalı Soslu Ispanak",
+          "desc": ""
+        }
+      }
+    },
+    {
+      "name": "Calamares",
+      "desc": "frittierter Tintenfisch mit Pommes frites, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Calamares",
+          "desc": "Fried squid with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Καλαμάρια",
+          "desc": "Τηγανητά καλαμάρια με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Calamars",
+          "desc": "Calmars frits avec frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Calamares",
+          "desc": "Calamares fritos con patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Calamari",
+          "desc": "Calamari fritti con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Calamares",
+          "desc": "Gefrituurde inktvis met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Calamares",
+          "desc": "Smażona kałamarnica z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Kalamar",
+          "desc": "Kızarmış kalamar, patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Calamares gegrillt",
+      "desc": "gegrillter Tintenfisch mit Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Grilled Calamares",
+          "desc": "Grilled squid with rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Καλαμάρια στη σχάρα",
+          "desc": "Ψητά καλαμάρια με ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Calamars grillés",
+          "desc": "Calmars grillés avec riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Calamares a la plancha",
+          "desc": "Calamares a la plancha con arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Calamari alla griglia",
+          "desc": "Calamari grigliati con riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Gegrilde calamares",
+          "desc": "Gegrilde inktvis met rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Grillowane calamares",
+          "desc": "Grillowana kałamarnica z ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Izgara Kalamar",
+          "desc": "Izgara kalamar, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Forelle",
+      "desc": "gegrillt, dazu Folienkartoffel und Salat",
+      "translations": {
+        "en": {
+          "name": "Trout",
+          "desc": "Grilled, served with baked potato and salad"
+        },
+        "el": {
+          "name": "Πέστροφα",
+          "desc": "Ψητή στη σχάρα, με πατάτα φούρνου και σαλάτα"
+        },
+        "fr": {
+          "name": "Truite",
+          "desc": "Grillée, accompagnée de pomme de terre en papillote et de salade"
+        },
+        "es": {
+          "name": "Trucha",
+          "desc": "A la plancha, acompañada de patata al horno y ensalada"
+        },
+        "it": {
+          "name": "Trota",
+          "desc": "Alla griglia, con patata al cartoccio e insalata"
+        },
+        "nl": {
+          "name": "Forel",
+          "desc": "Gegrild, geserveerd met folieaardappel en salade"
+        },
+        "pl": {
+          "name": "Pstrąg",
+          "desc": "Grillowany, podawany z ziemniakiem w folii i sałatką"
+        },
+        "tr": {
+          "name": "Alabalık",
+          "desc": "Izgara, fırın patates ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Garnelen",
+      "desc": "5 Stück gegrillt, dazu Folienkartoffel und Salat",
+      "translations": {
+        "en": {
+          "name": "Prawns",
+          "desc": "5 pieces grilled, served with baked potato and salad"
+        },
+        "el": {
+          "name": "Γαρίδες",
+          "desc": "5 τεμάχια ψητά στη σχάρα, με πατάτα φούρνου και σαλάτα"
+        },
+        "fr": {
+          "name": "Crevettes",
+          "desc": "5 pièces grillées, accompagnées de pomme de terre en papillote et de salade"
+        },
+        "es": {
+          "name": "Gambas",
+          "desc": "5 piezas a la plancha, acompañadas de patata al horno y ensalada"
+        },
+        "it": {
+          "name": "Gamberi",
+          "desc": "5 pezzi alla griglia, con patata al cartoccio e insalata"
+        },
+        "nl": {
+          "name": "Garnalen",
+          "desc": "5 stuks gegrild, geserveerd met folieaardappel en salade"
+        },
+        "pl": {
+          "name": "Krewetki",
+          "desc": "5 sztuk grillowanych, podawanych z ziemniakiem w folii i sałatką"
+        },
+        "tr": {
+          "name": "Karides",
+          "desc": "5 adet ızgara, fırın patates ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Meeresfrüchte vom Grill",
+      "desc": "Garnelen und Tintenfisch dazu Knoblauchcreme und Salat",
+      "translations": {
+        "en": {
+          "name": "Grilled Seafood",
+          "desc": "Prawns and squid with garlic cream and salad"
+        },
+        "el": {
+          "name": "Θαλασσινά στη σχάρα",
+          "desc": "Γαρίδες και καλαμάρια με κρέμα σκόρδου και σαλάτα"
+        },
+        "fr": {
+          "name": "Fruits de mer grillés",
+          "desc": "Crevettes et calamars avec crème à l'ail et salade"
+        },
+        "es": {
+          "name": "Mariscos a la plancha",
+          "desc": "Gambas y calamares con crema de ajo y ensalada"
+        },
+        "it": {
+          "name": "Frutti di mare alla griglia",
+          "desc": "Gamberi e calamari con crema all'aglio e insalata"
+        },
+        "nl": {
+          "name": "Gegrilde zeevruchten",
+          "desc": "Garnalen en inktvis met knoflookcrème en salade"
+        },
+        "pl": {
+          "name": "Grillowane owoce morza",
+          "desc": "Krewetki i kałamarnica z kremem czosnkowym i sałatką"
+        },
+        "tr": {
+          "name": "Izgara Deniz Ürünleri",
+          "desc": "Karides ve kalamar, sarımsaklı krem ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Schollenfilet",
+      "desc": "mit Broccoli in Sahnesauce dazu Pommes frites und Salat",
+      "translations": {
+        "en": {
+          "name": "Plaice Fillet",
+          "desc": "With broccoli in cream sauce, served with French fries and salad"
+        },
+        "el": {
+          "name": "Φιλέτο γλώσσας",
+          "desc": "Με μπρόκολο σε κρεμώδη σάλτσα, με τηγανητές πατάτες και σαλάτα"
+        },
+        "fr": {
+          "name": "Filet de plie",
+          "desc": "Avec brocoli en sauce crème, accompagné de frites et de salade"
+        },
+        "es": {
+          "name": "Filete de platija",
+          "desc": "Con brócoli en salsa de crema, acompañado de patatas fritas y ensalada"
+        },
+        "it": {
+          "name": "Filetto di passera",
+          "desc": "Con broccoli in salsa di panna, con patatine fritte e insalata"
+        },
+        "nl": {
+          "name": "Scholvfilet",
+          "desc": "Met broccoli in roomsaus, geserveerd met friet en salade"
+        },
+        "pl": {
+          "name": "Filet z flądry",
+          "desc": "Z brokułami w sosie śmietanowym, podawany z frytkami i sałatką"
+        },
+        "tr": {
+          "name": "Pisi Balığı Fileto",
+          "desc": "Brokoli kremalı sos ile, patates kızartması ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "1 Hähnchenspieß",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "1 Chicken Skewer",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "1 Σουβλάκι κοτόπουλο",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "1 Brochette de poulet",
+          "desc": "Accompagnée de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "1 Pincho de pollo",
+          "desc": "Acompañado de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "1 Spiedino di pollo",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "1 Kipspies",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "1 Szaszłyk z kurczaka",
+          "desc": "Podawany z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "1 Tavuk Şiş",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "1 Lamm-Souflaki",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "1 Lamb Souvlaki",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "1 Σουβλάκι αρνί",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "1 Souvlaki d'agneau",
+          "desc": "Accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "1 Souvlaki de cordero",
+          "desc": "Acompañado de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "1 Souvlaki di agnello",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "1 Lamssouvlaki",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "1 Souvlaki z jagnięciny",
+          "desc": "Podawane z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "1 Kuzu Souvlaki",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "1 Souflaki",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "1 Souvlaki",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "1 Σουβλάκι",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "1 Souvlaki",
+          "desc": "Accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "1 Souvlaki",
+          "desc": "Acompañado de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "1 Souvlaki",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "1 Souvlaki",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "1 Souvlaki",
+          "desc": "Podawane z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "1 Souvlaki",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "2 Schweinesteaks",
+      "desc": "gegrillt dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "2 Pork Steaks",
+          "desc": "Grilled, served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "2 Χοιρινές μπριζόλες",
+          "desc": "Ψητές στη σχάρα, με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "2 Steaks de porc",
+          "desc": "Grillés, accompagnés de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "2 Filetes de cerdo",
+          "desc": "A la plancha, acompañados de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "2 Bistecche di maiale",
+          "desc": "Alla griglia, con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "2 Varkenssteaks",
+          "desc": "Gegrild, geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "2 Steki wieprzowe",
+          "desc": "Grillowane, podawane z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "2 Domuz Bifteği",
+          "desc": "Izgara, patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Calamares",
+      "desc": "frittierter Tintenfisch dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Gegrillte Rinderleber",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Grilled Beef Liver",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Ψητό συκώτι μοσχαριού",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Foie de bœuf grillé",
+          "desc": "Accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Hígado de ternera a la plancha",
+          "desc": "Acompañado de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Fegato di manzo alla griglia",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Gegrilde runderlever",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Grillowana wątróbka wołowa",
+          "desc": "Podawana z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Izgara Dana Ciğeri",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros",
+          "desc": "A Greek specialty carved from the mighty rotisserie spit, served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Γύρος",
+          "desc": "Μια ελληνική σπεσιαλιτέ που κόβεται από τον μεγάλο σούβλα, με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros",
+          "desc": "Une spécialité grecque découpée à la broche, accompagnée de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Gyros",
+          "desc": "Una especialidad griega cortada del gran asador, acompañada de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Gyros",
+          "desc": "Una specialità greca tagliata dallo spiedo rotante, con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Gyros",
+          "desc": "Een Griekse specialiteit gesneden van het grote spit, geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Gyros",
+          "desc": "Grecka specjalność krojona z obrotowego rożna, podawana z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Gyros",
+          "desc": "Büyük döner şişten kesilen bir Yunan lezzeti, patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Putensteak gegrillt",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Grilled Turkey Steak",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Ψητό στέικ γαλοπούλας",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Steak de dinde grillé",
+          "desc": "Accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Filete de pavo a la plancha",
+          "desc": "Acompañado de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Bistecca di tacchino alla griglia",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Gegrilde kalkoenbiefstuk",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Grillowany stek z indyka",
+          "desc": "Podawany z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Izgara Hindi Bifteği",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Suzukakia",
+      "desc": "2 herzhafte Hacksteaks dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Gyros 'Pikant'",
+      "desc": "in pikanter Sauce mit Champignons, Paprika und Zwiebeln",
+      "translations": {
+        "en": {
+          "name": "Gyros 'Spicy'",
+          "desc": "In spicy sauce with mushrooms, peppers and onions"
+        },
+        "el": {
+          "name": "Γύρος 'Πικάντικος'",
+          "desc": "Σε πικάντικη σάλτσα με μανιτάρια, πιπεριές και κρεμμύδια"
+        },
+        "fr": {
+          "name": "Gyros 'Épicé'",
+          "desc": "En sauce piquante avec champignons, poivrons et oignons"
+        },
+        "es": {
+          "name": "Gyros 'Picante'",
+          "desc": "En salsa picante con champiñones, pimientos y cebolla"
+        },
+        "it": {
+          "name": "Gyros 'Piccante'",
+          "desc": "In salsa piccante con funghi, peperoni e cipolle"
+        },
+        "nl": {
+          "name": "Gyros 'Pikant'",
+          "desc": "In pittige saus met champignons, paprika en uien"
+        },
+        "pl": {
+          "name": "Gyros 'Pikantny'",
+          "desc": "W pikantnym sosie z pieczarkami, papryką i cebulą"
+        },
+        "tr": {
+          "name": "Acılı Gyros",
+          "desc": "Mantar, biber ve soğanlı baharatlı sos ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros in Metaxa-Champignonsauce",
+      "desc": "mit Käse überbacken, dazu Reis und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Gyros mit Schafskäsesauce",
+      "desc": "dazu Pommes frites und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros with Feta Sauce",
+          "desc": "Served with French fries and salad"
+        },
+        "el": {
+          "name": "Γύρος με σάλτσα φέτας",
+          "desc": "Με τηγανητές πατάτες και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros en sauce feta",
+          "desc": "Accompagné de frites et de salade"
+        },
+        "es": {
+          "name": "Gyros con salsa de queso feta",
+          "desc": "Acompañado de patatas fritas y ensalada"
+        },
+        "it": {
+          "name": "Gyros con salsa di feta",
+          "desc": "Con patatine fritte e insalata"
+        },
+        "nl": {
+          "name": "Gyros met fetasaus",
+          "desc": "Geserveerd met friet en salade"
+        },
+        "pl": {
+          "name": "Gyros z sosem fetowym",
+          "desc": "Podawany z frytkami i sałatką"
+        },
+        "tr": {
+          "name": "Beyaz Peynir Soslu Gyros",
+          "desc": "Patates kızartması ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros Spezial",
+      "desc": "mit Champignons und Käse überbacken in pikanter Sahnesauce, dazu Pommes und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros Special",
+          "desc": "With mushrooms and cheese, baked in garlic cream sauce, served with fries and salad"
+        },
+        "el": {
+          "name": "Γύρος Σπέσιαλ",
+          "desc": "Με μανιτάρια και τυρί, ψητό σε σάλτσα σκόρδου-κρέμας, με τηγανητές πατάτες και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros Spécial",
+          "desc": "Avec champignons et fromage gratiné en sauce crème à l'ail, accompagné de frites et de salade"
+        },
+        "es": {
+          "name": "Gyros Especial",
+          "desc": "Con champiñones y queso gratinado en salsa de crema de ajo, acompañado de patatas fritas y ensalada"
+        },
+        "it": {
+          "name": "Gyros Speciale",
+          "desc": "Con funghi e formaggio gratinato in salsa di panna all'aglio, con patatine fritte e insalata"
+        },
+        "nl": {
+          "name": "Gyros Speciaal",
+          "desc": "Met champignons en kaas gegratineerd in knoflookroomsaus, geserveerd met friet en salade"
+        },
+        "pl": {
+          "name": "Gyros Specjalny",
+          "desc": "Z pieczarkami i serem, zapiekany w sosie śmietanowo-czosnkowym, podawany z frytkami i sałatką"
+        },
+        "tr": {
+          "name": "Özel Gyros",
+          "desc": "Mantar ve peynirle, sarımsaklı kremalı sos içinde fırınlanmış, patates kızartması ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Lammfilet 'pikant'",
+      "desc": "in pikanter Sauce mit Champignons, Paprika und Zwiebeln dazu Reis und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Leber in Rotweinsauce",
+      "desc": "mit Champignons und Zwiebeln dazu Reis und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Skallopina Pute 'Hawaii'",
+      "desc": "in Sahnesauce mit Ananas und Käse, dazu Folienkartoffel und Salat",
+      "translations": {
+        "en": {
+          "name": "Turkey Scallopini 'Hawaii'",
+          "desc": "In cream sauce with pineapple and cheese, served with baked potato and salad"
+        },
+        "el": {
+          "name": "Σκαλοπίνι γαλοπούλας 'Χαβάη'",
+          "desc": "Σε κρεμώδη σάλτσα με ανανά και τυρί, με πατάτα φούρνου και σαλάτα"
+        },
+        "fr": {
+          "name": "Scaloppine de dinde 'Hawaii'",
+          "desc": "En sauce crème avec ananas et fromage, accompagnée de pomme de terre en papillote et de salade"
+        },
+        "es": {
+          "name": "Escalopines de pavo 'Hawaii'",
+          "desc": "En salsa de crema con piña y queso, acompañados de patata al horno y ensalada"
+        },
+        "it": {
+          "name": "Scaloppine di tacchino 'Hawaii'",
+          "desc": "In salsa di panna con ananas e formaggio, con patata al cartoccio e insalata"
+        },
+        "nl": {
+          "name": "Kalkoen scaloppini 'Hawaii'",
+          "desc": "In roomsaus met ananas en kaas, geserveerd met folieaardappel en salade"
+        },
+        "pl": {
+          "name": "Skaloppini z indyka 'Hawaii'",
+          "desc": "W sosie śmietanowym z ananasem i serem, podawane z ziemniakiem w folii i sałatką"
+        },
+        "tr": {
+          "name": "Hindi Skallopini 'Hawaii'",
+          "desc": "Ananas ve peynirli kremalı sos ile, fırın patates ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Skallopina Schweinefilet 'Hawaii'",
+      "desc": "in Sahnesauce mit Ananas und Käse, dazu Folienkartoffel und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Skallopina Schweinefilet 'Jäger'",
+      "desc": "in Sahnesauce mit Champignons und Käse, dazu Folienkartoffel und Salat",
+      "translations": {
+        "en": {
+          "name": "Pork Fillet Scallopini 'Hunter'",
+          "desc": "In cream sauce with mushrooms and cheese, served with baked potato and salad"
+        },
+        "el": {
+          "name": "Σκαλοπίνι χοιρινού φιλέτο 'Κυνηγός'",
+          "desc": "Σε κρεμώδη σάλτσα με μανιτάρια και τυρί, με πατάτα φούρνου και σαλάτα"
+        },
+        "fr": {
+          "name": "Scaloppine de filet de porc 'Chasseur'",
+          "desc": "En sauce crème avec champignons et fromage, accompagnée de pomme de terre en papillote et de salade"
+        },
+        "es": {
+          "name": "Escalopines de filete de cerdo 'Cazador'",
+          "desc": "En salsa de crema con champiñones y queso, acompañados de patata al horno y ensalada"
+        },
+        "it": {
+          "name": "Scaloppine di filetto di maiale 'Cacciatore'",
+          "desc": "In salsa di panna con funghi e formaggio, con patata al cartoccio e insalata"
+        },
+        "nl": {
+          "name": "Varkensfilet scaloppini 'Jager'",
+          "desc": "In roomsaus met champignons en kaas, geserveerd met folieaardappel en salade"
+        },
+        "pl": {
+          "name": "Skaloppini z polędwicy wieprzowej 'Myśliwski'",
+          "desc": "W sosie śmietanowym z pieczarkami i serem, podawane z ziemniakiem w folii i sałatką"
+        },
+        "tr": {
+          "name": "Domuz Filetosu Skallopini 'Avcı'",
+          "desc": "Mantar ve peynirli kremalı sos ile, fırın patates ve salata eşliğinde servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Skallopina Schweinefilet 'vom Koch'",
+      "desc": "In Sahnesauce mit Schinken und Käse, dazu Folienkartoffel und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Suzukakia in Metaxa-Champignonsauce",
+      "desc": "mit Käse überbacken dazu Reis und Salat",
+      "translations": {
+        "en": {
+          "name": "Suzukakia in Metaxa Mushroom Sauce",
+          "desc": "Baked with cheese, served with rice and salad"
+        },
+        "el": {
+          "name": "Σουτζουκάκια σε σάλτσα Μεταξά με μανιτάρια",
+          "desc": "Με λιωμένο τυρί, με ρύζι και σαλάτα"
+        },
+        "fr": {
+          "name": "Suzukakia en sauce Metaxa aux champignons",
+          "desc": "Gratiné au fromage, accompagné de riz et de salade"
+        },
+        "es": {
+          "name": "Suzukakia en salsa Metaxa con champiñones",
+          "desc": "Gratinado con queso, acompañado de arroz y ensalada"
+        },
+        "it": {
+          "name": "Suzukakia in salsa Metaxa ai funghi",
+          "desc": "Gratinato con formaggio, con riso e insalata"
+        },
+        "nl": {
+          "name": "Suzukakia in Metaxa-champignonsaus",
+          "desc": "Gegratineerd met kaas, geserveerd met rijst en salade"
+        },
+        "pl": {
+          "name": "Suzukakia w sosie Metaxa z pieczarkami",
+          "desc": "Zapiekane z serem, podawane z ryżem i sałatką"
+        },
+        "tr": {
+          "name": "Metaxa Mantarlı Soslu Suzukakia",
+          "desc": "Peynirle fırınlanmış, pilav ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Platte für 2 Personen",
+      "desc": "2 Souflaki, 2 Schweinesteaks, 2 Suzukakia, Gyros mit Salatplatte, Pommes frites, Reis und Tsatziki",
+      "translations": {
+        "en": {
+          "name": "Platter for 2 People",
+          "desc": "2 souvlaki, 2 pork steaks, 2 suzukakia, gyros with salad plate, French fries, rice and tzatziki"
+        },
+        "el": {
+          "name": "Πιατέλα για 2 άτομα",
+          "desc": "2 σουβλάκια, 2 χοιρινές μπριζόλες, 2 σουτζουκάκια, γύρος με πιατέλα σαλάτας, τηγανητές πατάτες, ρύζι και τζατζίκι"
+        },
+        "fr": {
+          "name": "Plateau pour 2 personnes",
+          "desc": "2 souvlakis, 2 steaks de porc, 2 suzukakia, gyros avec assiette de salade, frites, riz et tzatziki"
+        },
+        "es": {
+          "name": "Bandeja para 2 personas",
+          "desc": "2 souvlakis, 2 filetes de cerdo, 2 suzukakia, gyros con plato de ensalada, patatas fritas, arroz y tzatziki"
+        },
+        "it": {
+          "name": "Piatto misto per 2 persone",
+          "desc": "2 souvlaki, 2 bistecche di maiale, 2 suzukakia, gyros con piatto di insalata, patatine fritte, riso e tzatziki"
+        },
+        "nl": {
+          "name": "Schotel voor 2 personen",
+          "desc": "2 souvlaki, 2 varkenssteaks, 2 suzukakia, gyros met saladeschotel, friet, rijst en tzatziki"
+        },
+        "pl": {
+          "name": "Talerz dla 2 osób",
+          "desc": "2 souvlaki, 2 steki wieprzowe, 2 suzukakia, gyros z talerzem sałatki, frytki, ryż i tzatziki"
+        },
+        "tr": {
+          "name": "2 Kişilik Tabak",
+          "desc": "2 souvlaki, 2 domuz bifteği, 2 suzukakia, gyros ile salata tabağı, patates kızartması, pilav ve cacık"
+        }
+      }
+    },
+    {
+      "name": "Platte für 3 Personen",
+      "desc": "3 Souflaki, 3 Lammkoteletts, 3 Schweinesteaks, 3 Suzukakia, Gyros mit Salatplatte, Pommes frites, Reis und Tsatziki",
+      "translations": {
+        "en": {
+          "name": "Platter for 3 People",
+          "desc": "3 souvlaki, 3 lamb chops, 3 pork steaks, 3 suzukakia, gyros with salad plate, French fries, rice and tzatziki"
+        },
+        "el": {
+          "name": "Πιατέλα για 3 άτομα",
+          "desc": "3 σουβλάκια, 3 παϊδάκια αρνιού, 3 χοιρινές μπριζόλες, 3 σουτζουκάκια, γύρος με πιατέλα σαλάτας, τηγανητές πατάτες, ρύζι και τζατζίκι"
+        },
+        "fr": {
+          "name": "Plateau pour 3 personnes",
+          "desc": "3 souvlakis, 3 côtelettes d'agneau, 3 steaks de porc, 3 suzukakia, gyros avec assiette de salade, frites, riz et tzatziki"
+        },
+        "es": {
+          "name": "Bandeja para 3 personas",
+          "desc": "3 souvlakis, 3 chuletas de cordero, 3 filetes de cerdo, 3 suzukakia, gyros con plato de ensalada, patatas fritas, arroz y tzatziki"
+        },
+        "it": {
+          "name": "Piatto misto per 3 persone",
+          "desc": "3 souvlaki, 3 costolette di agnello, 3 bistecche di maiale, 3 suzukakia, gyros con piatto di insalata, patatine fritte, riso e tzatziki"
+        },
+        "nl": {
+          "name": "Schotel voor 3 personen",
+          "desc": "3 souvlaki, 3 lamskoteletjes, 3 varkenssteaks, 3 suzukakia, gyros met saladeschotel, friet, rijst en tzatziki"
+        },
+        "pl": {
+          "name": "Talerz dla 3 osób",
+          "desc": "3 souvlaki, 3 kotlety jagnięce, 3 steki wieprzowe, 3 suzukakia, gyros z talerzem sałatki, frytki, ryż i tzatziki"
+        },
+        "tr": {
+          "name": "3 Kişilik Tabak",
+          "desc": "3 souvlaki, 3 kuzu pirzola, 3 domuz bifteği, 3 suzukakia, gyros ile salata tabağı, patates kızartması, pilav ve cacık"
+        }
+      }
+    },
+    {
+      "name": "Platte für 4 Personen",
+      "desc": "4 Souflaki, 4 Lammkoteletts, 4 Schweinesteaks, 4 Suzukakia, Gyros mit Salatplatte, Pommes frites, Reis und Tsatziki",
+      "translations": {
+        "en": {
+          "name": "Platter for 4 People",
+          "desc": "4 souvlaki, 4 lamb chops, 4 pork steaks, 4 suzukakia, gyros with salad plate, French fries, rice and tzatziki"
+        },
+        "el": {
+          "name": "Πιατέλα για 4 άτομα",
+          "desc": "4 σουβλάκια, 4 παϊδάκια αρνιού, 4 χοιρινές μπριζόλες, 4 σουτζουκάκια, γύρος με πιατέλα σαλάτας, τηγανητές πατάτες, ρύζι και τζατζίκι"
+        },
+        "fr": {
+          "name": "Plateau pour 4 personnes",
+          "desc": "4 souvlakis, 4 côtelettes d'agneau, 4 steaks de porc, 4 suzukakia, gyros avec assiette de salade, frites, riz et tzatziki"
+        },
+        "es": {
+          "name": "Bandeja para 4 personas",
+          "desc": "4 souvlakis, 4 chuletas de cordero, 4 filetes de cerdo, 4 suzukakia, gyros con plato de ensalada, patatas fritas, arroz y tzatziki"
+        },
+        "it": {
+          "name": "Piatto misto per 4 persone",
+          "desc": "4 souvlaki, 4 costolette di agnello, 4 bistecche di maiale, 4 suzukakia, gyros con piatto di insalata, patatine fritte, riso e tzatziki"
+        },
+        "nl": {
+          "name": "Schotel voor 4 personen",
+          "desc": "4 souvlaki, 4 lamskoteletjes, 4 varkenssteaks, 4 suzukakia, gyros met saladeschotel, friet, rijst en tzatziki"
+        },
+        "pl": {
+          "name": "Talerz dla 4 osób",
+          "desc": "4 souvlaki, 4 kotlety jagnięce, 4 steki wieprzowe, 4 suzukakia, gyros z talerzem sałatki, frytki, ryż i tzatziki"
+        },
+        "tr": {
+          "name": "4 Kişilik Tabak",
+          "desc": "4 souvlaki, 4 kuzu pirzola, 4 domuz bifteği, 4 suzukakia, gyros ile salata tabağı, patates kızartması, pilav ve cacık"
+        }
+      }
+    },
+    {
+      "name": "1 Lamm und 1 Schweinefleisch-Souvlaki",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "1 Lamb and 1 Pork Souvlaki",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "1 Σουβλάκι αρνί και 1 χοιρινό σουβλάκι",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "1 Souvlaki d'agneau et 1 de porc",
+          "desc": "Accompagnés de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "1 Souvlaki de cordero y 1 de cerdo",
+          "desc": "Acompañados de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "1 Souvlaki di agnello e 1 di maiale",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "1 Lams- en 1 varkens-souvlaki",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "1 Souvlaki z jagnięciny i 1 wieprzowe",
+          "desc": "Podawane z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "1 Kuzu ve 1 Domuz Souvlaki",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Bifteki",
+      "desc": "Hacksteak gefüllt mit Fetakäse, Tomaten, Paprika und Zwiebeln, dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Bifteki",
+          "desc": "Minced meat patty stuffed with feta cheese, tomatoes, peppers and onions, served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Μπιφτέκι",
+          "desc": "Κιμαδόπιτα γεμιστή με φέτα, ντομάτες, πιπεριές και κρεμμύδια, με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Bifteki",
+          "desc": "Steak haché fourré au fromage feta, tomates, poivrons et oignons, accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Bifteki",
+          "desc": "Hamburguesa rellena de queso feta, tomates, pimientos y cebolla, acompañada de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Bifteki",
+          "desc": "Polpettone ripieno di feta, pomodori, peperoni e cipolle, con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Bifteki",
+          "desc": "Gehaktbal gevuld met fetakaas, tomaten, paprika en uien, geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Bifteki",
+          "desc": "Kotlet mielony nadziewany fetą, pomidorami, papryką i cebulą, podawany z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Bifteki",
+          "desc": "Beyaz peynir, domates, biber ve soğan doldurulmuş köfte, patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Bifteki mit Käse überbacken",
+      "desc": "Hacksteak gefüllt mit Fetakäse, Tomaten, Paprika und Zwiebeln, dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Bifteki Baked with Cheese",
+          "desc": "Minced meat patty stuffed with feta cheese, tomatoes, peppers and onions, served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Μπιφτέκι με λιωμένο τυρί",
+          "desc": "Κιμαδόπιτα γεμιστή με φέτα, ντομάτες, πιπεριές και κρεμμύδια, με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Bifteki gratiné au fromage",
+          "desc": "Steak haché fourré au fromage feta, tomates, poivrons et oignons, accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Bifteki gratinado con queso",
+          "desc": "Hamburguesa rellena de queso feta, tomates, pimientos y cebolla, acompañada de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Bifteki gratinato con formaggio",
+          "desc": "Polpettone ripieno di feta, pomodori, peperoni e cipolle, con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Bifteki gegratineerd met kaas",
+          "desc": "Gehaktbal gevuld met fetakaas, tomaten, paprika en uien, geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Bifteki zapiekane z serem",
+          "desc": "Kotlet mielony nadziewany fetą, pomidorami, papryką i cebulą, podawany z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Peynirle Fırınlanmış Bifteki",
+          "desc": "Beyaz peynir, domates, biber ve soğan doldurulmuş köfte, patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gegrillte Rinderleber",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Grillteller",
+      "desc": "Souvlaki, Souzukakia, Gyros, Lammkotelett, dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Grill Plate",
+          "desc": "Souvlaki, suzukakia, gyros, lamb chop, served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Πιατέλα Σχάρας",
+          "desc": "Σουβλάκι, σουτζουκάκια, γύρος, παϊδάκι αρνιού, με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Assiette de grillades",
+          "desc": "Souvlaki, suzukakia, gyros, côtelette d'agneau, accompagnés de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Parrillada",
+          "desc": "Souvlaki, suzukakia, gyros, chuleta de cordero, acompañados de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Piatto misto alla griglia",
+          "desc": "Souvlaki, suzukakia, gyros, costoletta di agnello, con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Grillschotel",
+          "desc": "Souvlaki, suzukakia, gyros, lamskotelet, geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Talerz z grilla",
+          "desc": "Souvlaki, suzukakia, gyros, kotlet jagnięcy, podawane z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Izgara Tabağı",
+          "desc": "Souvlaki, suzukakia, gyros, kuzu pirzola, patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros",
+      "desc": "Eine griechische Spezialität, die vom mächtigen Fleischspieß geschnitten wird, dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Gyros in Schafskäsesauce",
+      "desc": "dazu Salat und Brot",
+      "translations": {
+        "en": {
+          "name": "Gyros in Feta Sauce",
+          "desc": "Served with salad and bread"
+        },
+        "el": {
+          "name": "Γύρος σε σάλτσα φέτας",
+          "desc": "Με σαλάτα και ψωμί"
+        },
+        "fr": {
+          "name": "Gyros en sauce feta",
+          "desc": "Accompagné de salade et de pain"
+        },
+        "es": {
+          "name": "Gyros en salsa de queso feta",
+          "desc": "Acompañado de ensalada y pan"
+        },
+        "it": {
+          "name": "Gyros in salsa di feta",
+          "desc": "Con insalata e pane"
+        },
+        "nl": {
+          "name": "Gyros in fetasaus",
+          "desc": "Geserveerd met salade en brood"
+        },
+        "pl": {
+          "name": "Gyros w sosie fetowym",
+          "desc": "Podawany z sałatką i chlebem"
+        },
+        "tr": {
+          "name": "Beyaz Peynir Soslu Gyros",
+          "desc": "Salata ve ekmek ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros mit 1 Lamm-Souvlaki",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros with 1 Lamb Souvlaki",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Γύρος με 1 σουβλάκι αρνί",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros avec 1 souvlaki d'agneau",
+          "desc": "Accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Gyros con 1 souvlaki de cordero",
+          "desc": "Acompañado de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Gyros con 1 souvlaki di agnello",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Gyros met 1 lamssouvlaki",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Gyros z 1 souvlaki z jagnięciny",
+          "desc": "Podawany z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "1 Kuzu Souvlaki ile Gyros",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros mit 1 Souvlaki",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros with 1 Souvlaki",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Γύρος με 1 σουβλάκι",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros avec 1 souvlaki",
+          "desc": "Accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Gyros con 1 souvlaki",
+          "desc": "Acompañado de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Gyros con 1 souvlaki",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Gyros met 2 suzukakia",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Gyros z 2 suzukakia",
+          "desc": "Podawany z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "2 Suzukakia ile Gyros",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros mit 2 Suzukakia",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Gyros mit gebratenen Zwiebeln",
+      "desc": "dazu Bratkartoffeln, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros with Fried Onions",
+          "desc": "Served with fried potatoes, tzatziki and salad"
+        },
+        "el": {
+          "name": "Γύρος με τηγανητά κρεμμύδια",
+          "desc": "Με τηγανητές πατάτες, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros aux oignons frits",
+          "desc": "Accompagné de pommes de terre sautées, tzatziki et salade"
+        },
+        "es": {
+          "name": "Gyros con cebolla frita",
+          "desc": "Acompañado de patatas fritas a la sartén, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Gyros con cipolle fritte",
+          "desc": "Con patate fritte in padella, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Gyros met gebakken uien",
+          "desc": "Geserveerd met gebakken aardappelen, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Gyros z smażoną cebulą",
+          "desc": "Podawany z smażonymi ziemniakami, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Kızarmış Soğanlı Gyros",
+          "desc": "Kızarmış patates, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros mit Leber",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {
+        "en": {
+          "name": "Gyros with Liver",
+          "desc": "Served with French fries, rice, tzatziki and salad"
+        },
+        "el": {
+          "name": "Γύρος με συκώτι",
+          "desc": "Με τηγανητές πατάτες, ρύζι, τζατζίκι και σαλάτα"
+        },
+        "fr": {
+          "name": "Gyros au foie",
+          "desc": "Accompagné de frites, riz, tzatziki et salade"
+        },
+        "es": {
+          "name": "Gyros con hígado",
+          "desc": "Acompañado de patatas fritas, arroz, tzatziki y ensalada"
+        },
+        "it": {
+          "name": "Gyros con fegato",
+          "desc": "Con patatine fritte, riso, tzatziki e insalata"
+        },
+        "nl": {
+          "name": "Gyros met lever",
+          "desc": "Geserveerd met friet, rijst, tzatziki en salade"
+        },
+        "pl": {
+          "name": "Gyros z wątróbką",
+          "desc": "Podawany z frytkami, ryżem, tzatziki i sałatką"
+        },
+        "tr": {
+          "name": "Ciğerli Gyros",
+          "desc": "Patates kızartması, pilav, cacık ve salata ile servis edilir"
+        }
+      }
+    },
+    {
+      "name": "Gyros Spezial",
+      "desc": "mit Champignons und Käse überbacken in Knoblauch-Sahnesauce, dazu Pommes frites und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Schweinefilet-Medaillons",
+      "desc": "mit Broccoli in Sahnesauce, dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Souflaki Original",
+      "desc": "In Metaxa-Champignonsahnesauce, dazu Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Souflaki, 2 Fleischspieße",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Suzukakia 4 herzhafte Hacksteaks",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Teller-Mix Zeus für 1 Person",
+      "desc": "Souvlaki, Souzukaki, Gyros, Schweinesteak, dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Lamm Koteletts",
+      "desc": "5 Stück nach griechischer Art dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Lamm Souvlaki",
+      "desc": "2 Fleischspieße mit Broccoli in Sahnesauce, dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Lamm Steak",
+      "desc": "mit gebratenen Champignons und Zwiebeln, dazu Pommes, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Lamm Teller",
+      "desc": "Lamm-Souflaki, Lamm-Steak, Lamm-Koteletts dazu Pommes, Broccoli, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Lamm-Filet",
+      "desc": "mit Broccoli in Sahnesauce dazu Pommes frites, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Lamm-Filet in Metaxasauce",
+      "desc": "mit Broccoli in Sahnesauce, dazu Pommes, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Lamm-Filet in Pfeffersauce",
+      "desc": "mit Broccoli in Sahnesauce dazu Pommes frites, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Lamm-Filet in Sahnesauce",
+      "desc": "mit Broccoli in Sahnesauce, dazu Pommes, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Bauernsalat",
+      "desc": "Krautsalat, Tomaten, Gurken, Peperoni, Oliven und Schafskäse",
+      "translations": {}
+    },
+    {
+      "name": "Chtipit",
+      "desc": "Pikantes Schafskäsemousse",
+      "translations": {}
+    },
+    {
+      "name": "Dolmakia",
+      "desc": "Gefüllte Weinblätter mit Reis",
+      "translations": {}
+    },
+    {
+      "name": "Feta",
+      "desc": "Käse mit Zwiebelringen",
+      "translations": {}
+    },
+    {
+      "name": "Gemischte Vorspeisen",
+      "desc": "Für zwei Personen",
+      "translations": {}
+    },
+    {
+      "name": "Gyrossalat",
+      "desc": "Eisbergsalat, Tomaten, Gurken, Peperoni, Oliven, Dressing und Gyros",
+      "translations": {}
+    },
+    {
+      "name": "Kalamarissalat",
+      "desc": "mit Knoblauch",
+      "translations": {}
+    },
+    {
+      "name": "Knoblauchcreme",
+      "desc": "mit Brot",
+      "translations": {}
+    },
+    {
+      "name": "Krautsalat",
+      "desc": "",
+      "translations": {}
+    },
+    {
+      "name": "Portion Oliven",
+      "desc": "",
+      "translations": {}
+    },
+    {
+      "name": "Portion Peperoni",
+      "desc": "",
+      "translations": {}
+    },
+    {
+      "name": "Putensalat",
+      "desc": "Eisbergsalat, Gurken, Tomaten, Putenstreifen, Dressing",
+      "translations": {}
+    },
+    {
+      "name": "Tarama",
+      "desc": "Fischrogensalat",
+      "translations": {}
+    },
+    {
+      "name": "Tomaten-Gurkensalat",
+      "desc": "mit Schafskäse, Paprika, Peperoni, Oliven, Zwiebeln",
+      "translations": {}
+    },
+    {
+      "name": "Tsatziki",
+      "desc": "Speisequark, Jogurt, Dill, Gurken, Knoblauch mit Brot",
+      "translations": {}
+    },
+    {
+      "name": "2 kleine Schweinesteaks",
+      "desc": "mit Pommes, Reis, Salat und Tsatziki",
+      "translations": {}
+    },
+    {
+      "name": "Gyros",
+      "desc": "mit Pommes, Reis und Tsatziki",
+      "translations": {}
+    },
+    {
+      "name": "Hähnchen Nuggets",
+      "desc": "mit Pommes",
+      "translations": {}
+    },
+    {
+      "name": "Putensteak",
+      "desc": "mit Pommes, Reis und Tsatziki",
+      "translations": {}
+    },
+    {
+      "name": "Souvlaki",
+      "desc": "mit Pommes, Reis und Tsatziki",
+      "translations": {}
+    },
+    {
+      "name": "Spaghetti Bolognese",
+      "desc": "",
+      "translations": {}
+    },
+    {
+      "name": "Suzukakia",
+      "desc": "2 Hacksteaks mit Pommes, Reis und Tsatziki",
+      "translations": {}
+    },
+    {
+      "name": "Ein großes Puten Souvlaki",
+      "desc": "mit Broccoli in Sahnesauce dazu Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Hähnchenspiesse",
+      "desc": "zwei Fleischspieße, Pommes, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Pfeffersteak \"Pikant\" ca. 250g",
+      "desc": "in Pfeffersauce, Tsatziki und Salat dazu Folienkartoffel und Kräuterbutter",
+      "translations": {}
+    },
+    {
+      "name": "Putensteak gegrillt",
+      "desc": "dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Putensteak gegrillt",
+      "desc": "mit gebratenen Zwiebeln und Champignons dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Rumpsteak ca. 250g",
+      "desc": "mit Broccoli in Sahnesauce dazu Pommes frites, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Schweinefiletmedaillons",
+      "desc": "mit gebratenen Zwiebeln und Champignons, dazu Pommes frites, Reis und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Schweinefiletmedaillons",
+      "desc": "in Metaxa-Champignonsauce mit Käse überbacken, dazu Pommes frites und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Schweinesteak gegrillt ca. 250g",
+      "desc": "mit gebratenen Zwiebeln und Champignons dazu Pommes frites, Reis, Tsatziki und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Steak auf Toast ca. 250g",
+      "desc": "Rumpsteak mit gebratenen Zwiebeln und Champignons dazu Pommes frites, Pommes, und Salat",
+      "translations": {}
+    },
+    {
+      "name": "Griechische Bohnensuppe",
+      "desc": "",
+      "translations": {}
+    },
+    {
+      "name": "Hühnersuppe",
+      "desc": "",
+      "translations": {}
+    },
+    {
+      "name": "Tomatensuppe",
+      "desc": "",
+      "translations": {}
+    },
+    {
+      "name": "Zwiebelsuppe",
+      "desc": "mit Käse überbacken",
+      "translations": {}
+    },
+    {
+      "name": "Auberginen",
+      "desc": "Frittiert mit Tsatziki",
+      "translations": {}
+    },
+    {
+      "name": "Broccoli",
+      "desc": "In Knoblauch-Sahnesauce mit Käse überbacken",
+      "translations": {}
+    },
+    {
+      "name": "Bruschetta 2 Stück",
+      "desc": "mit Tomaten, Zwiebeln und Schafskäse",
+      "translations": {}
+    },
+    {
+      "name": "Gigantes",
+      "desc": "Dicke Bohnen in Tomatensauce",
+      "translations": {}
+    },
+    {
+      "name": "Muscheln aus der Pfanne",
+      "desc": "Muschelfilet in Tomaten-Schafskäsesauce",
+      "translations": {}
+    },
+    {
+      "name": "Peperoni",
+      "desc": "Gegrillt mit Tsatziki",
+      "translations": {}
+    },
+    {
+      "name": "Saganaki Gegrillt",
+      "desc": "Gegrillter Schafskäse fein garniert",
+      "translations": {}
+    },
+    {
+      "name": "Saganaki Paniert",
+      "desc": "Schafskäse paniert, fein garniert auf Eisbergsalat",
+      "translations": {}
+    },
+    {
+      "name": "Saganaki Pikant",
+      "desc": "warme Schafskäsecreme mit Tomaten, Knoblauch und Peperoni",
+      "translations": {}
+    },
+    {
+      "name": "Sardellen",
+      "desc": "Frittiert und fein garniert",
+      "translations": {}
+    },
+    {
+      "name": "Scampis",
+      "desc": "in Tomaten-Schafskäsesauce",
+      "translations": {}
+    },
+    {
+      "name": "Spinat",
+      "desc": "In Knoblauch-Sahnesauce mit Käse überbacken",
+      "translations": {}
+    },
+    {
+      "name": "Zucchini",
+      "desc": "Gebraten mit Knoblauch und Tsatziki",
+      "translations": {}
+    }
+  ]
+}
