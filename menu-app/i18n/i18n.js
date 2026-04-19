@@ -94,7 +94,10 @@ window.OpaI18n = (function () {
         updateLangBtn(code);
         
         const menu = document.getElementById('lang-dropdown-menu');
-        if (menu) menu.innerHTML = renderDropdown();
+        if (menu) {
+            menu.innerHTML = renderDropdown();
+            attachLangOptionListeners();
+        }
         setDropdownOpen(false);
     }
 
@@ -132,12 +135,40 @@ window.OpaI18n = (function () {
         const handle = '<div class="lang-sheet-handle"></div>';
         const options = Object.values(LANGUAGES).map(l => `
             <button class="lang-option ${l.code === currentLang ? 'active' : ''}"
-                    onclick="OpaI18n.setDropdownOpen(false); OpaI18n.setLang('${l.code}');">
+                    data-lang="${l.code}"
+                    type="button">
                 <span class="lang-flag">${l.flag}</span>
                 <span class="lang-label">${l.label}</span>
                 ${l.code === currentLang ? '<i class="fas fa-check" style="margin-left:auto;color:var(--gold,#C8A96E);"></i>' : ''}
             </button>`).join('');
         return handle + options;
+    }
+
+    function attachLangOptionListeners() {
+        const menu = document.getElementById('lang-dropdown-menu');
+        if (!menu) return;
+        menu.querySelectorAll('.lang-option[data-lang]').forEach(btn => {
+            // Remove any existing listeners by replacing the node
+            const clone = btn.cloneNode(true);
+            btn.parentNode.replaceChild(clone, btn);
+            
+            let touchHandled = false;
+            
+            clone.addEventListener('touchend', (e) => {
+                e.preventDefault();        // prevent ghost click
+                e.stopPropagation();       // don't bubble to document
+                touchHandled = true;
+                const code = clone.dataset.lang;
+                OpaI18n.setLang(code);     // setLang handles closing
+            }, { passive: false });
+            
+            clone.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (touchHandled) { touchHandled = false; return; } // already handled
+                const code = clone.dataset.lang;
+                OpaI18n.setLang(code);
+            });
+        });
     }
 
     async function init() {
@@ -156,14 +187,18 @@ window.OpaI18n = (function () {
         window._opaCurrentLang = startLang;
 
         const langMenu = document.getElementById('lang-dropdown-menu');
-        if (langMenu) langMenu.innerHTML = renderDropdown();
+        if (langMenu) {
+            langMenu.innerHTML = renderDropdown();
+            attachLangOptionListeners();
+        }
 
         document.addEventListener('click', (e) => {
             const dd  = document.getElementById('lang-dropdown');
-            if (!dd) return;
-            if (dd.classList.contains('open') && !dd.contains(e.target)) {
-                setDropdownOpen(false);
-            }
+            const menu = document.getElementById('lang-dropdown-menu');
+            if (!dd || !dd.classList.contains('open')) return;
+            // Don't close if clicking the button itself or inside the menu
+            if (dd.contains(e.target) || (menu && menu.contains(e.target))) return;
+            setDropdownOpen(false);
         });
 
         // Create backdrop for mobile bottom sheet
@@ -179,5 +214,5 @@ window.OpaI18n = (function () {
         }
     }
 
-    return { init, t, setLang, applyTranslations, renderDropdown, setDropdownOpen, getLanguages: () => LANGUAGES, getCurrent: () => currentLang };
+    return { init, t, setLang, applyTranslations, renderDropdown, setDropdownOpen, attachLangOptionListeners, getLanguages: () => LANGUAGES, getCurrent: () => currentLang };
 })();
