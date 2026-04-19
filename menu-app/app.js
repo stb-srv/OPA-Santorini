@@ -355,18 +355,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
         
-        const langKeys = { home: 'nav.home', menu: 'nav.menu', reservations: 'nav.reservations', location: 'nav.location' };
+        const TAB_I18N = { home: 'nav.home', menu: 'nav.menu', reservations: 'nav.reservations', location: 'nav.location' };
 
         c.innerHTML = active.map(t => {
-            const i18n = langKeys[t.id] ? `data-i18n="${langKeys[t.id]}"` : '';
-            return `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}')" ${i18n}>${t.label}</a>`;
+            const i18nKey = TAB_I18N[t.id] || '';
+            const i18nAttr = i18nKey ? `data-i18n="${i18nKey}"` : '';
+            return `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}')" ${i18nAttr}>${t.label}</a>`;
         }).join('');
 
         const drawer = document.getElementById('nav-mobile-drawer');
         if (drawer) {
             drawer.innerHTML = active.map(t => {
-                const i18n = langKeys[t.id] ? `data-i18n="${langKeys[t.id]}"` : '';
-                return `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}'); window.closeMobileNav();" ${i18n}>${t.label}</a>`;
+                const i18nKey = TAB_I18N[t.id] || '';
+                const i18nAttr = i18nKey ? `data-i18n="${i18nKey}"` : '';
+                return `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}'); window.closeMobileNav();" ${i18nAttr}>${t.label}</a>`;
             }).join('');
         }
     }
@@ -413,7 +415,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // "Alle"-Button immer zuerst
         const allBtn = `<button class="cat-btn active" onclick="window.filterMenu('Alle', this)" data-i18n="menu.all_categories">
-            <i class="fas fa-th-large"></i> Alle
+            <i class="fas fa-th-large"></i> ${window.OpaI18n ? OpaI18n.t('menu.all_categories') : 'Alle'}
         </button>`;
 
         // Nur Kategorien anzeigen die aktiv sind UND mindestens ein aktives+verfügbares Gericht haben
@@ -438,8 +440,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.OPA_DAILY_SPECIALS_ENABLED) {
             const hasSpecials = menuItems.some(i => i.is_daily_special && i.active !== false && i.available !== false);
             if (hasSpecials) {
+                const label = window.OpaI18n ? OpaI18n.t('menu.daily_specials').replace('⭐ ','') : 'Tagesspecials';
                 specialBtn = `<button class="cat-btn cat-btn--special" onclick="window.filterMenu('__special__', this)" data-i18n="menu.daily_specials">
-                    ⭐ Tagesspecials
+                    ⭐ ${label}
                 </button>`;
             }
         }
@@ -484,12 +487,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             favBtn = document.createElement('button');
             favBtn.className = 'cat-btn cat-btn--fav';
             favBtn.setAttribute('data-i18n', 'menu.favorites');
-            favBtn.innerHTML = `❤️ Favoriten (${favSet.size})`;
+            const label = window.OpaI18n ? OpaI18n.t('menu.favorites').replace('❤️ ','') : 'Favoriten';
+            favBtn.innerHTML = `❤️ ${label} (${favSet.size})`;
             favBtn.onclick = function() { window.filterMenu('__fav__', this); };
             catBar.appendChild(favBtn);
         } else if (favBtn) {
             if (favSet.size === 0) favBtn.remove();
-            else favBtn.innerHTML = `❤️ Favoriten (${favSet.size})`;
+            else {
+                const label = window.OpaI18n ? OpaI18n.t('menu.favorites').replace('❤️ ','') : 'Favoriten';
+                favBtn.innerHTML = `❤️ ${label} (${favSet.size})`;
+            }
         }
     }
 
@@ -576,7 +583,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                  data-item-price="${price}"
                  ${tileClickable ? 'data-cart-tile="1"' : ''}>
                 <div class="dish-card-img">
-                    ${(item.is_daily_special && window.OPA_DAILY_SPECIALS_ENABLED) ? `<span class="daily-special-badge">⭐ Heute</span>` : ''}
+                    ${(item.is_daily_special && window.OPA_DAILY_SPECIALS_ENABLED) ? `<span class="daily-special-badge" data-i18n="menu.today_badge">⭐ ${window.OpaI18n ? OpaI18n.t('menu.today_badge') : 'Heute'}</span>` : ''}
                     ${item.image
                         ? `<img src="${item.image}" alt="${itemName}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                            <span style="display:none"><i class="fas fa-utensils"></i> ${item.cat}</span>`
@@ -819,17 +826,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="glass-panel" style="padding:40px; border-radius:32px;">
                 <div style="display:flex; flex-wrap:wrap; gap:40px; align-items:center;">
                     <div style="flex:1; min-width:300px;">
-                        <span class="badge" style="margin-bottom:15px; background:var(--primary);">Unser Standort</span>
-                        <h2 style="margin-bottom:15px; font-size:2rem;">So finden Sie uns</h2>
+                        <span class="badge" style="margin-bottom:15px; background:var(--primary);" data-i18n="location.title">Unser Standort</span>
+                        <h2 style="margin-bottom:15px; font-size:2rem;" data-i18n="location.title">So finden Sie uns</h2>
                         <p style="font-size:1.1rem; line-height:1.6; opacity:.8; margin-bottom:30px;">
                             ${loc.address ? loc.address.replace(/\n/g, '<br>') : `Wir freuen uns auf Ihren Besuch im ${restaurantName}.`}
                         </p>
                         <div style="display:flex; flex-wrap:wrap; gap:12px;">
-                            <a href="${mapUrl}" target="_blank" class="btn small" style="background:#4285F4; border:none; display:flex; align-items:center; gap:8px;">
+                            <a href="${mapUrl}" target="_blank" class="btn small" style="background:#4285F4; border:none; display:flex; align-items:center; gap:8px;" data-i18n="location.google_maps">
                                 <i class="fab fa-google"></i> Google Maps
                             </a>
                             ${isApple ? `
-                            <a href="http://maps.apple.com/?q=${encAddr}" target="_blank" class="btn small outline" style="display:flex; align-items:center; gap:8px;">
+                            <a href="http://maps.apple.com/?q=${encAddr}" target="_blank" class="btn small outline" style="display:flex; align-items:center; gap:8px;" data-i18n="location.apple_maps">
                                 <i class="fab fa-apple"></i> Apple Maps
                             </a>` : ''}
                         </div>
@@ -1035,26 +1042,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         const end   = v.end   ? new Date(v.end)   : null;
         const manual = v.enabled === true;
         let isActive = false;
-        if (manual) isActive = true;
-        else if (start && end && now >= start && now <= end) isActive = true;
-        if (isActive && !sessionStorage.getItem('opa_vacation_seen')) {
-            const modal = document.getElementById('vacation-modal');
-            if (modal) {
-                modal.innerHTML = `
-                    <div class="vacation-glass">
-                        <div class="vac-icon">🏖️</div>
-                        <h2>${v.title || 'Betriebsferien'}</h2>
-                        <p>${v.text || 'Wir machen Urlaub!'}</p>
-                        <button class="btn" onclick="window.closeVacation()">Verstanden</button>
-                    </div>`;
-                modal.classList.add('active');
+        if (isActive) {
+            let seen = false;
+            try { seen = sessionStorage.getItem('opa_vacation_seen'); } catch(e) {}
+            if (!seen) {
+                const modal = document.getElementById('vacation-modal');
+                if (modal) {
+                    modal.innerHTML = `
+                        <div class="vacation-glass">
+                            <div class="vac-icon">🏖️</div>
+                            <h2>${v.title || 'Betriebsferien'}</h2>
+                            <p>${v.text || 'Wir machen Urlaub!'}</p>
+                            <button class="btn" onclick="window.closeVacation()">Verstanden</button>
+                        </div>`;
+                    modal.classList.add('active');
+                }
             }
         }
     }
 
     window.closeVacation = () => {
         const modal = document.getElementById('vacation-modal');
-        if (modal) { modal.classList.remove('active'); sessionStorage.setItem('opa_vacation_seen', '1'); }
+        if (modal) {
+            modal.classList.remove('active');
+            try { sessionStorage.setItem('opa_vacation_seen', '1'); } catch(e) {}
+        }
     };
 
     function checkHolidayStatus(v) {
@@ -1062,7 +1074,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const now = new Date();
         const start = v.start ? new Date(v.start) : null;
         const end   = v.end   ? new Date(v.end)   : null;
-        if (start && end && now >= start && now <= end && !sessionStorage.getItem('opa_holiday_seen')) {
+        let seen = false;
+        try { seen = sessionStorage.getItem('opa_holiday_seen'); } catch(e) {}
+        if (start && end && now >= start && now <= end && !seen) {
             const modal = document.getElementById('holiday-modal');
             if (modal) {
                 document.getElementById('holiday-title').textContent = v.title || 'Feiertags-Info';
@@ -1074,7 +1088,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.closeHoliday = () => {
         const modal = document.getElementById('holiday-modal');
-        if (modal) { modal.classList.remove('active'); sessionStorage.setItem('opa_holiday_seen', '1'); }
+        if (modal) {
+            modal.classList.remove('active');
+            try { sessionStorage.setItem('opa_holiday_seen', '1'); } catch(e) {}
+        }
     };
 
     function renderOpeningHoursTable(oh) {
