@@ -7,5 +7,5 @@
   "location": { "title":"So finden Sie uns","google_maps":"Google Maps öffnen","apple_maps":"Apple Maps öffnen" },
   "footer": { "rights":"Alle Rechte vorbehalten" },
   "cookie": { "title":"Cookie-Einstellungen","accept":"Alle akzeptieren","decline":"Ablehnen" },
-  "opening_hours": { "open_until":"Geöffnet bis {time}","opens_at":"Öffnet {time} Uhr","closed_today":"Heute geschlossen","closes_soon":"Schließt {time} Uhr" }
+  "opening_hours": { "open_until":"Geöffnet bis {time}","opens_at":"Öffnet {time} Uhr","closed_today":"Heute geschlossen","closes_soon":"Schließt {time} Uhr","ruhetag":"Ruhetag","today":"Heute","uhr":"Uhr","days":{"Mo":"Montag","Di":"Dienstag","Mi":"Mittwoch","Do":"Donnerstag","Fr":"Freitag","Sa":"Samstag","So":"Sonntag"} }
 }

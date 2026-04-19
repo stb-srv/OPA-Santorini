@@ -287,7 +287,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Öffnungszeiten-Widget befüllen
         if (d.openingHours) {
             const days = ['Mo','Di','Mi','Do','Fr','Sa','So'];
-            const labels = { Mo:'Montag', Di:'Dienstag', Mi:'Mittwoch', Do:'Donnerstag', Fr:'Freitag', Sa:'Samstag', So:'Sonntag' };
             const todayKey = ['So','Mo','Di','Mi','Do','Fr','Sa'][new Date().getDay()];
             const now = new Date();
             const nowMins = now.getHours() * 60 + now.getMinutes();
@@ -298,9 +297,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 rows.innerHTML = days.map(day => {
                     const entry = d.openingHours[day] || { closed: true };
                     const isToday = day === todayKey;
-                    const timeStr = entry.closed ? 'Ruhetag' : `${entry.open} – ${entry.close} Uhr`;
+                    
+                    const dayLabel = window.OpaI18n ? OpaI18n.t(`opening_hours.days.${day}`) : day;
+                    const ruhetag  = window.OpaI18n ? OpaI18n.t('opening_hours.ruhetag') : 'Ruhetag';
+                    const uhr      = window.OpaI18n ? OpaI18n.t('opening_hours.uhr') : 'Uhr';
+                    const todayLbl = window.OpaI18n ? OpaI18n.t('opening_hours.today') : 'Heute';
+
+                    const timeStr = entry.closed ? ruhetag : `${entry.open} – ${entry.close} ${uhr}`.trim();
+                    const todayBadge = isToday ? ` <span style="font-size:.65rem; background:var(--gold,#C8A96E); color:#fff; padding:1px 6px; border-radius:10px; margin-left:4px;">${todayLbl}</span>` : '';
+
                     return `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 18px; ${isToday ? 'background:rgba(27,58,92,0.05); font-weight:700;' : ''}">
-                        <span style="font-size:.82rem; ${isToday ? 'color:var(--blue,#1B3A5C);' : 'color:#555;'}">${labels[day]}${isToday ? ' <span style="font-size:.65rem; background:var(--gold,#C8A96E); color:#fff; padding:1px 6px; border-radius:10px; margin-left:4px;">Heute</span>' : ''}</span>
+                        <span style="font-size:.82rem; ${isToday ? 'color:var(--blue,#1B3A5C);' : 'color:#555;'}">${dayLabel}${todayBadge}</span>
                         <span style="font-size:.8rem; ${entry.closed ? 'color:#aaa;' : 'color:#333;'}">${timeStr}</span>
                     </div>`;
                 }).join('');
@@ -310,7 +317,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (badge) {
                 const todayEntry = d.openingHours[todayKey];
                 if (!todayEntry || todayEntry.closed) {
-                    badge.textContent = 'Heute geschlossen';
+                    badge.textContent = window.OpaI18n ? OpaI18n.t('opening_hours.closed_today') : 'Heute geschlossen';
                     badge.style.opacity = '.7';
                 } else {
                     const [oh, om] = todayEntry.open.split(':').map(Number);
@@ -323,12 +330,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             badge.style.background = '#f59e0b';
                         } else {
                             badge.textContent = OpaI18n ? OpaI18n.t('opening_hours.open_until', { time: todayEntry.close }) : `Geöffnet bis ${todayEntry.close}`;
+                            badge.style.background = 'var(--primary)';
                         }
+                        badge.style.opacity = '1';
                     } else {
                         badge.textContent = nowMins < openMins
                             ? (OpaI18n ? OpaI18n.t('opening_hours.opens_at', { time: todayEntry.open }) : `Öffnet ${todayEntry.open} Uhr`)
                             : (OpaI18n ? OpaI18n.t('opening_hours.closed_today') : 'Heute geschlossen');
                         badge.style.opacity = '.7';
+                        badge.style.background = 'var(--primary)';
                     }
                 }
             }
@@ -1139,6 +1149,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Hook für i18n — wird nach Sprachwechsel aufgerufen
     window.OpaRender = () => {
+        applyBranding(homeData); // Enthält Öffnungszeiten
         renderCategories();
         applyMenuFilter();
     };

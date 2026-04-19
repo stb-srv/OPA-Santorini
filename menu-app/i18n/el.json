@@ -7,5 +7,5 @@
   "location": { "title":"Πώς να μας βρείτε","google_maps":"Άνοιγμα Google Maps","apple_maps":"Άνοιγμα Apple Maps" },
   "footer": { "rights":"Με επιφύλαξη παντός δικαιώματος" },
   "cookie": { "title":"Ρυθμίσεις cookies","accept":"Αποδοχή όλων","decline":"Απόρριψη" },
-  "opening_hours": { "open_until":"Ανοιχτά έως {time}","opens_at":"Ανοίγει στις {time}","closed_today":"Σήμερα κλειστά","closes_soon":"Κλείνει στις {time}" }
+  "opening_hours": { "open_until":"Ανοιχτά έως {time}","opens_at":"Ανοίγει στις {time}","closed_today":"Σήμερα κλειστά","closes_soon":"Κλείνει στις {time}","ruhetag":"Κλειστά","today":"Σήμερα","uhr":"","days":{"Mo":"Δευτέρα","Di":"Τρίτη","Mi":"Τετάρτη","Do":"Πέμπτη","Fr":"Παρασκευή","Sa":"Σάββατο","So":"Κυριακή"} }
 }
