@@ -35,7 +35,7 @@
         <div class="nav-mobile-overlay" id="nav-mobile-overlay" 
              onclick="window.closeMobileNav()"></div>
         <div class="nav-mobile-drawer" id="nav-mobile-drawer"></div>
-        <button type="button" class="nav-cta" onclick="window.switchTab('reservations')">Tisch reservieren</button>
+        <button type="button" class="nav-cta" onclick="window.switchTab('reservations')" data-i18n="nav.reservations">Tisch reservieren</button>
     </nav>
 
     <!-- HERO -->
@@ -46,7 +46,7 @@
             <p class="hero-label">WILLKOMMEN BEI</p>
             <h1 id="hero-title">OPA! Santorini</h1>
             <p class="hero-sub" id="hero-slogan">Authentische Griechische Küche</p>
-            <a class="hero-btn" onclick="window.switchTab('menu')">Speisekarte <i class="fas fa-arrow-down"></i></a>
+            <a class="hero-btn" onclick="window.switchTab('menu')" data-i18n="nav.menu">Speisekarte <i class="fas fa-arrow-down"></i></a>
         </div>
     </section>
 
@@ -60,7 +60,7 @@
                 <span class="label">ÜBER UNS</span>
                 <h2 id="welcome-title">Willkommen</h2>
                 <p id="welcome-text">Genießen Sie die Aromen Griechenlands.</p>
-                <a class="btn" onclick="window.switchTab('menu')">Zur Karte <i class="fas fa-utensils"></i></a>
+                <a class="btn" onclick="window.switchTab('menu')" data-i18n="nav.menu">Zur Karte <i class="fas fa-utensils"></i></a>
             </div>
         </div>
     </section>
@@ -78,7 +78,7 @@
         <div class="container">
             <div style="text-align:center; margin-bottom:50px;">
                 <span class="label">GENUSS ERLEBEN</span>
-                <h2>Unsere Karte</h2>
+                <h2 data-i18n="nav.menu">Unsere Karte</h2>
             </div>
             <div class="menu-search-wrap">
                 <i class="fas fa-search menu-search-icon"></i>
@@ -86,7 +86,7 @@
             </div>
             <div class="cat-bar" id="categories"></div>
             <div class="menu-grid" id="menu-list"></div>
-            <p class="menu-empty" id="menu-empty" style="display:none;">Keine Gerichte gefunden.</p>
+            <p class="menu-empty" id="menu-empty" style="display:none;" data-i18n="menu.empty">Keine Gerichte gefunden.</p>
         </div>
     </section>
 
@@ -95,21 +95,21 @@
         <div class="container">
             <div style="text-align:center; margin-bottom:60px;">
                 <span class="label">RESERVIERUNG</span>
-                <h2>Tisch reservieren</h2>
+                <h2 data-i18n="reservations.title">Tisch reservieren</h2>
             </div>
             
             <div class="res-stepper-container">
                 <!-- STEP 1: PERSONS -->
                 <div class="res-card res-step" id="res-step-1">
                     <div class="res-step-header">
-                        <h3>Anzahl der Personen</h3>
+                        <h3 data-i18n="reservations.guests">Anzahl der Personen</h3>
                         <div class="person-selector">
                             <button type="button" class="btn-circle" onclick="window.adjustGuests(-1)"><i class="fas fa-minus"></i></button>
                             <div class="person-input-wrap">
                                 <input type="number" id="res-guests" value="2" min="1" max="20" readonly>
                             </div>
                             <button type="button" class="btn-circle" onclick="window.adjustGuests(1)"><i class="fas fa-plus"></i></button>
-                            <span class="person-label">Personen</span>
+                            <span class="person-label" data-i18n="reservations.guests">Personen</span>
                         </div>
                     </div>
                 </div>
@@ -117,7 +117,7 @@
                 <!-- STEP 2: DATE -->
                 <div class="res-card res-step" id="res-step-2">
                     <div class="res-step-header">
-                        <h3>Reservierungsdatum</h3>
+                        <h3 data-i18n="reservations.date">Reservierungsdatum</h3>
                         <div class="calendar-nav">
                             <button type="button" onclick="window.navCalendar(-1)"><i class="fas fa-chevron-left"></i></button>
                             <span id="calendar-month-year">Lade...</span>
@@ -133,7 +133,7 @@
                 <div class="res-card res-step" id="res-step-3" style="opacity:.3; pointer-events:none;">
                     <div class="res-area-time-split">
                         <div class="res-area-sidebar">
-                            <h3>Bereich / Uhrzeit</h3>
+                            <h3 data-i18n="reservations.time">Bereich / Uhrzeit</h3>
                             <div id="res-area-list" class="area-tab-list">
                                 <!-- Rendered by app.js -->
                             </div>
@@ -144,7 +144,7 @@
                                 <button type="button" onclick="window.navTime(1)">Später <i class="fas fa-chevron-right"></i></button>
                             </div>
                             <div id="res-time-grid" class="time-grid-modern">
-                                <p style="text-align:center; padding:40px; opacity:.5;">Bitte wählen Sie zuerst ein Datum.</p>
+                                <p style="text-align:center; padding:40px; opacity:.5;" data-i18n="reservations.date">Bitte wählen Sie zuerst ein Datum.</p>
                             </div>
                         </div>
                     </div>
@@ -154,23 +154,23 @@
                 <div id="res-contact-overlay" class="res-overlay" style="display:none;">
                     <div class="res-modal glass-panel">
                         <button type="button" class="close-overlay" onclick="window.closeResModal()">&times;</button>
-                        <h3>Kontaktdaten</h3>
+                        <h3 data-i18n="reservations.title">Kontaktdaten</h3>
                         <p id="res-summary-text" style="font-size:.9rem; margin-bottom:20px; opacity:.7;"></p>
                         <form id="res-form" class="form-stack">
                             <input type="text"  placeholder="Ihr vollständiger Name" id="res-name"
-                                   autocomplete="name" required>
+                                   autocomplete="name" required data-i18n-placeholder="reservations.name">
                             <input type="email" placeholder="E-Mail-Adresse"         id="res-email"
-                                   autocomplete="email" required>
+                                   autocomplete="email" required data-i18n-placeholder="reservations.email">
                             <input type="tel"   placeholder="Telefonnummer"          id="res-phone"
-                                   autocomplete="tel" required>
+                                   autocomplete="tel" required data-i18n-placeholder="reservations.phone">
                             <textarea placeholder="Anmerkungen (optional)"           id="res-note"
-                                      rows="3" autocomplete="off"></textarea>
+                                      rows="3" autocomplete="off" data-i18n-placeholder="reservations.note"></textarea>
                             
                             <div id="res-status-msg" style="display:none; margin-bottom:15px; padding:20px; border-radius:12px; border:1px solid #f59e0b; background:rgba(245,158,11,.05); color:#d97706; font-size:.9rem; text-align:center;">
                                 <i class="fas fa-info-circle"></i> Für diesen Termin ist nur eine Anfrage möglich.
                             </div>
 
-                            <button type="submit" class="btn full" id="res-submit">Kostenfrei reservieren <i class="fas fa-check"></i></button>
+                            <button type="submit" class="btn full" id="res-submit" data-i18n="reservations.submit">Kostenfrei reservieren <i class="fas fa-check"></i></button>
                         </form>
                     </div>
                 </div>
@@ -211,10 +211,10 @@
     <section class="section bg-warm" id="view-legal" style="display:none;">
         <div class="container" style="max-width:800px;">
             <div style="display:flex; gap:20px; margin-bottom:40px;">
-                <button class="btn small" onclick="window.setLegalView('impressum')">Impressum</button>
-                <button class="btn small outline" onclick="window.setLegalView('privacy')">Datenschutz</button>
+                <button class="btn small" onclick="window.setLegalView('impressum')" data-i18n="legal.imprint">Impressum</button>
+                <button class="btn small outline" onclick="window.setLegalView('privacy')" data-i18n="legal.privacy">Datenschutz</button>
             </div>
-            <h2 id="legal-title">Impressum</h2>
+            <h2 id="legal-title" data-i18n="legal.imprint">Impressum</h2>
             <div id="legal-content" class="legal-body"></div>
         </div>
     </section>
@@ -227,13 +227,13 @@
                 <p class="footer-muted" id="footer-slogan">Willkommen</p>
             </div>
             <div class="footer-links">
-                <a onclick="window.switchTab('legal'); window.setLegalView('impressum')">Impressum</a>
-                <a onclick="window.switchTab('legal'); window.setLegalView('privacy')">Datenschutz</a>
+                <a onclick="window.switchTab('legal'); window.setLegalView('impressum')" data-i18n="legal.imprint">Impressum</a>
+                <a onclick="window.switchTab('legal'); window.setLegalView('privacy')" data-i18n="legal.privacy">Datenschutz</a>
                 <!-- DSGVO: Widerruf jederzeit möglich -->
-                <a onclick="window.OPAConsent && window.OPAConsent.showPreferences()" style="cursor:pointer;" title="Cookie-Einstellungen anpassen">Cookie-Einstellungen</a>
+                <a onclick="window.OPAConsent && window.OPAConsent.showPreferences()" style="cursor:pointer;" title="Cookie-Einstellungen anpassen" data-i18n="cookie.title">Cookie-Einstellungen</a>
             </div>
             <div class="footer-muted" style="text-align:right;">
-                © <span id="footer-year"></span> Alle Rechte vorbehalten. OPA!
+                © <span id="footer-year"></span> <span data-i18n="footer.rights">Alle Rechte vorbehalten.</span> OPA!
             </div>
         </div>
     </footer>
@@ -256,15 +256,15 @@
                     <div class="cookie-text-area">
                         <div class="cookie-header-mini">
                             <i class="fas fa-shield-alt"></i>
-                            <strong>Privatsphäre &amp; Cookies</strong>
+                            <strong data-i18n="cookie.title">Privatsphäre &amp; Cookies</strong>
                         </div>
                         <p id="cookie-text">Wir nutzen Cookies, um das Nutzererlebnis zu verbessern und unsere Website optimal zu betreiben.</p>
                     </div>
                     <!-- DSGVO: Alle 3 Buttons gleichwertig, kein Greenwashing -->
                     <div class="cookie-actions-bar">
-                        <button class="btn small" onclick="window.acceptAllCookies()">Alle akzeptieren</button>
-                        <button class="btn small outline" onclick="window.rejectNonEssential()">Nur notwendige</button>
-                        <button class="btn-link" onclick="window.toggleCookieView(true)">Einstellungen anpassen</button>
+                        <button class="btn small" onclick="window.acceptAllCookies()" data-i18n="cookie.accept">Alle akzeptieren</button>
+                        <button class="btn small outline" onclick="window.rejectNonEssential()" data-i18n="cookie.decline">Nur notwendige</button>
+                        <button class="btn-link" onclick="window.toggleCookieView(true)" data-i18n="cookie.title">Einstellungen anpassen</button>
                     </div>
                 </div>
             </div>
@@ -273,18 +273,18 @@
             <div id="cookie-view-settings" style="display:none;">
                 <div class="cookie-header">
                     <i class="fas fa-sliders-h"></i>
-                    <h2>Cookie-Einstellungen</h2>
+                    <h2 data-i18n="cookie.title">Cookie-Einstellungen</h2>
                 </div>
                 <div class="cookie-categories" id="cookie-categories-dynamic"></div>
                 <div class="cookie-actions">
-                    <button class="btn small" onclick="window.saveCustomCookies()">Auswahl speichern</button>
+                    <button class="btn small" onclick="window.saveCustomCookies()" data-i18n="cookie.accept">Auswahl speichern</button>
                     <button class="btn-text" onclick="window.toggleCookieView(false)">← Zurück</button>
                 </div>
             </div>
 
             <div class="cookie-footer">
-                <a onclick="window.switchTab('legal'); window.setLegalView('privacy')">Datenschutz</a> &bull;
-                <a onclick="window.switchTab('legal'); window.setLegalView('impressum')">Impressum</a>
+                <a onclick="window.switchTab('legal'); window.setLegalView('privacy')" data-i18n="legal.privacy">Datenschutz</a> &bull;
+                <a onclick="window.switchTab('legal'); window.setLegalView('impressum')" data-i18n="legal.imprint">Impressum</a>
             </div>
         </div>
     </div>

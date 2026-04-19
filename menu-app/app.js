@@ -203,14 +203,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     });
                     const res = await r.json();
                     if (res.success) {
-                        if (res.isInquiry) toast('Vielen Dank für Ihre Anfrage! Wir prüfen die Verfügbarkeit.');
-                        else toast('Vielen Dank für Ihre Reservierung! Wir freuen uns auf Sie.');
+                        toast(OpaI18n.t('reservations.success'));
                         resForm.reset();
                         checkLiveAvailability();
                     } else {
-                        toast(res.reason || 'Etwas ist schiefgelaufen.');
+                        toast(res.reason || OpaI18n.t('reservations.error'));
                     }
-                } catch (err) { toast('Verbindungsfehler. Bitte versuchen Sie es später erneut.'); }
+                } catch (err) { toast(OpaI18n.t('reservations.error')); }
             });
         }
 
@@ -252,8 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // i18n initialisieren
         if (window.OpaI18n) {
             await OpaI18n.init();
-            const langMenu = document.getElementById('lang-dropdown-menu');
-            if (langMenu) langMenu.innerHTML = OpaI18n.renderDropdown();
+            // Dropdown ist bereits in init() befüllt
         }
     }
 
@@ -345,7 +343,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             tabs = [
                 { id: 'home', label: 'Startseite', active: true },
                 { id: 'menu', label: 'Speisekarte', active: true },
-                { id: 'reservations', label: 'Reservierung(Tisch)', active: true },
+                { id: 'reservations', label: 'Reservierung', active: true },
                 { id: 'location', label: 'Standort', active: true }
             ];
         }
@@ -356,15 +354,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (p.active !== false) active.push({ id: `custom-${p.id}`, label: p.title, active: true });
             });
         }
-        c.innerHTML = active.map(t =>
-            `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}')">${t.label}</a>`
-        ).join('');
+        
+        const langKeys = { home: 'nav.home', menu: 'nav.menu', reservations: 'nav.reservations', location: 'nav.location' };
+
+        c.innerHTML = active.map(t => {
+            const i18n = langKeys[t.id] ? `data-i18n="${langKeys[t.id]}"` : '';
+            return `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}')" ${i18n}>${t.label}</a>`;
+        }).join('');
 
         const drawer = document.getElementById('nav-mobile-drawer');
         if (drawer) {
-            drawer.innerHTML = active.map(t =>
-                `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}'); window.closeMobileNav();">${t.label}</a>`
-            ).join('');
+            drawer.innerHTML = active.map(t => {
+                const i18n = langKeys[t.id] ? `data-i18n="${langKeys[t.id]}"` : '';
+                return `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}'); window.closeMobileNav();" ${i18n}>${t.label}</a>`;
+            }).join('');
         }
     }
 
@@ -409,7 +412,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const dbCats = window.OPA_CATEGORIES || [];
 
         // "Alle"-Button immer zuerst
-        const allBtn = `<button class="cat-btn active" onclick="window.filterMenu('Alle', this)">
+        const allBtn = `<button class="cat-btn active" onclick="window.filterMenu('Alle', this)" data-i18n="menu.all_categories">
             <i class="fas fa-th-large"></i> Alle
         </button>`;
 
@@ -425,6 +428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
             .map(cat => {
                 const iconHtml = cat.icon ? `<i class="${cat.icon}"></i> ` : '';
+                // Kategorien aus DB sind bereits lokalisiert oder sprachneutral
                 return `<button class="cat-btn" onclick="window.filterMenu('${cat.label}', this)">
                     ${iconHtml}${cat.label}
                 </button>`;
@@ -434,7 +438,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (window.OPA_DAILY_SPECIALS_ENABLED) {
             const hasSpecials = menuItems.some(i => i.is_daily_special && i.active !== false && i.available !== false);
             if (hasSpecials) {
-                specialBtn = `<button class="cat-btn cat-btn--special" onclick="window.filterMenu('__special__', this)">
+                specialBtn = `<button class="cat-btn cat-btn--special" onclick="window.filterMenu('__special__', this)" data-i18n="menu.daily_specials">
                     ⭐ Tagesspecials
                 </button>`;
             }
@@ -479,6 +483,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (favSet.size > 0 && !favBtn) {
             favBtn = document.createElement('button');
             favBtn.className = 'cat-btn cat-btn--fav';
+            favBtn.setAttribute('data-i18n', 'menu.favorites');
             favBtn.innerHTML = `❤️ Favoriten (${favSet.size})`;
             favBtn.onclick = function() { window.filterMenu('__fav__', this); };
             catBar.appendChild(favBtn);
@@ -585,7 +590,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="dish-card-footer">
                         <span class="dish-price">${price} €</span>
                         ${allergenBadges}
-                        ${tileClickable ? '<span class="dish-card-add-hint">+ Hinzufügen</span>' : ''}
+                        ${tileClickable ? `<span class="dish-card-add-hint" data-i18n="menu.add_to_cart">${OpaI18n ? OpaI18n.t('menu.add_to_cart') : '+ Hinzufügen'}</span>` : ''}
                     </div>
                 </div>
                 <button class="fav-btn ${favSet.has(id) ? 'active' : ''}" 
@@ -1012,12 +1017,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 const res = await r.json();
                 if (res.success) {
-                    toast('Reservierung erfolgreich!');
+                    toast(OpaI18n.t('reservations.success'));
                     window.closeResModal();
                     window.switchTab('home');
                     resForm2.reset();
                 } else { toast('Fehler: ' + (res.reason || 'Unbekannt')); }
-            } catch (e) { toast('Verbindungsfehler!'); }
+            } catch (e) { toast(OpaI18n.t('reservations.error')); }
             btn.disabled = false;
             btn.innerHTML = 'Kostenfrei reservieren <i class="fas fa-check"></i>';
         };

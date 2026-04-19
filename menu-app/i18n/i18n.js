@@ -20,6 +20,13 @@ window.OpaI18n = (function () {
     let currentLang = 'de';
     let translations = {};
 
+    function safeLsGet(key, fallback = 'de') {
+        try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
+    }
+    function safeLsSet(key, val) {
+        try { localStorage.setItem(key, val); } catch { /* sandboxed iframe safety */ }
+    }
+
     // Basis-URL automatisch ermitteln (relativ zur i18n.js Datei)
     function getBase() {
         const scripts = document.querySelectorAll('script[src*="i18n.js"]');
@@ -27,7 +34,6 @@ window.OpaI18n = (function () {
             const src = scripts[scripts.length - 1].src;
             return src.substring(0, src.lastIndexOf('/') + 1);
         }
-        // Fallback: relativ zum aktuellen Dokument + i18n/
         return 'i18n/';
     }
 
@@ -58,24 +64,38 @@ window.OpaI18n = (function () {
         return str;
     }
 
-    async function setLanguage(code) {
+    async function setLang(code) {
         await load(code);
         document.documentElement.dir  = LANGUAGES[code]?.dir || 'ltr';
         document.documentElement.lang = code;
         window._opaCurrentLang = code;
-        try { localStorage.setItem('opa_lang', code); } catch { /* Safari privat */ }
-        applyDOM();
+        
+        safeLsSet('opa_lang', code);
+        applyTranslations();
+        
         if (window.OpaRender) window.OpaRender();
         updateLangBtn(code);
+        
         const menu = document.getElementById('lang-dropdown-menu');
         if (menu) menu.innerHTML = renderDropdown();
     }
 
-    function applyDOM() {
+    function applyTranslations() {
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const val = t(el.dataset.i18n);
-            if (el.tagName === 'INPUT') el.placeholder = val;
-            else el.textContent = val;
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.placeholder = val;
+            } else {
+                // Icons erhalten
+                const icon = el.querySelector('i');
+                if (icon) {
+                    el.childNodes.forEach(node => {
+                        if (node.nodeType === 3) node.textContent = val;
+                    });
+                } else {
+                    el.textContent = val;
+                }
+            }
         });
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
             el.placeholder = t(el.dataset.i18nPlaceholder);
@@ -93,7 +113,7 @@ window.OpaI18n = (function () {
     function renderDropdown() {
         return Object.values(LANGUAGES).map(l => `
             <button class="lang-option ${l.code === currentLang ? 'active' : ''}"
-                    onclick="OpaI18n.setLanguage('${l.code}'); document.getElementById('lang-dropdown').classList.remove('open');">
+                    onclick="OpaI18n.setLang('${l.code}'); document.getElementById('lang-dropdown').classList.remove('open');">
                 <span class="lang-flag">${l.flag}</span>
                 <span class="lang-label">${l.label}</span>
                 ${l.code === currentLang ? '<i class="fas fa-check" style="margin-left:auto;color:var(--gold,#C8A96E);"></i>' : ''}
@@ -101,7 +121,7 @@ window.OpaI18n = (function () {
     }
 
     async function init() {
-        const saved       = (() => { try { return localStorage.getItem('opa_lang'); } catch { return null; } })();
+        const saved = safeLsGet('opa_lang', null);
         const browserLang = navigator.language?.slice(0, 2) || 'de';
         const startLang   = (saved && LANGUAGES[saved]) ? saved
                           : (LANGUAGES[browserLang] ? browserLang : 'de');
@@ -110,15 +130,14 @@ window.OpaI18n = (function () {
         } catch(e) {
             console.warn('[OpaI18n] Ladefehler:', e);
         }
-        applyDOM();
+        
+        applyTranslations();
         updateLangBtn(startLang);
         window._opaCurrentLang = startLang;
 
-        // Dropdown sofort befüllen
         const langMenu = document.getElementById('lang-dropdown-menu');
         if (langMenu) langMenu.innerHTML = renderDropdown();
 
-        // Klick außerhalb → Dropdown schließen
         document.addEventListener('click', (e) => {
             const dd  = document.getElementById('lang-dropdown');
             const btn = document.getElementById('lang-switcher-btn');
@@ -127,5 +146,5 @@ window.OpaI18n = (function () {
         });
     }
 
-    return { init, t, setLanguage, renderDropdown, getLanguages: () => LANGUAGES, getCurrent: () => currentLang };
+    return { init, t, setLang, applyTranslations, renderDropdown, getLanguages: () => LANGUAGES, getCurrent: () => currentLang };
 })();
