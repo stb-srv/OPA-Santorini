@@ -58,6 +58,8 @@ if (dbType === 'mysql' || dbType === 'mariadb') {
             active    INTEGER DEFAULT 1,
             available INTEGER DEFAULT 1,
             is_daily_special INTEGER DEFAULT 0,
+            translations TEXT DEFAULT '{}',
+            sort_order INTEGER DEFAULT 0,
             updated_at TEXT
         );
 
@@ -120,6 +122,8 @@ if (dbType === 'mysql' || dbType === 'mariadb') {
         "ALTER TABLE menu ADD COLUMN updated_at TEXT",
         "ALTER TABLE menu ADD COLUMN sort_order INTEGER DEFAULT 0",
         "ALTER TABLE menu ADD COLUMN is_daily_special INTEGER DEFAULT 0",
+        "ALTER TABLE menu ADD COLUMN translations TEXT DEFAULT '{}'",
+        "ALTER TABLE menu ADD COLUMN sort_order INTEGER DEFAULT 0",
         "ALTER TABLE orders ADD COLUMN table_id TEXT",
         "ALTER TABLE orders ADD COLUMN table_name TEXT",
         "ALTER TABLE orders ADD COLUMN status TEXT DEFAULT 'pending'",
@@ -158,11 +162,11 @@ if (dbType === 'mysql' || dbType === 'mariadb') {
         deleteUser:         db.prepare('DELETE FROM users WHERE user = ?'),
         getMenu:            db.prepare('SELECT * FROM menu ORDER BY cat, COALESCE(sort_order, 0), name'),
         getMenuById:        db.prepare('SELECT * FROM menu WHERE id = ?'),
-        addMenu:            db.prepare('INSERT INTO menu (id, number, name, price, cat, desc, allergens, additives, image, active, available, is_daily_special, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+        addMenu:            db.prepare('INSERT INTO menu (id, number, name, price, cat, desc, allergens, additives, image, active, available, is_daily_special, translations, sort_order, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
         deleteMenu:         db.prepare('DELETE FROM menu WHERE id = ?'),
         deleteAllMenu:      db.prepare('DELETE FROM menu'),
-        upsertMenu:         db.prepare('INSERT OR REPLACE INTO menu (id, number, name, price, cat, desc, allergens, additives, image, active, available, is_daily_special, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
-        updateMenuRow:      db.prepare('UPDATE menu SET number = ?, name = ?, price = ?, cat = ?, desc = ?, allergens = ?, additives = ?, image = ?, active = ?, available = ?, is_daily_special = ?, updated_at = ? WHERE id = ?'),
+        upsertMenu:         db.prepare('INSERT OR REPLACE INTO menu (id, number, name, price, cat, desc, allergens, additives, image, active, available, is_daily_special, translations, sort_order, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'),
+        updateMenuRow:      db.prepare('UPDATE menu SET number = ?, name = ?, price = ?, cat = ?, desc = ?, allergens = ?, additives = ?, image = ?, active = ?, available = ?, is_daily_special = ?, translations = ?, sort_order = ?, updated_at = ? WHERE id = ?'),
         getCategories:      db.prepare('SELECT * FROM categories ORDER BY sort_order ASC, label ASC'),
         getCategoryById:    db.prepare('SELECT * FROM categories WHERE id = ?'),
         addCategory:        db.prepare('INSERT INTO categories (id, label, icon, active, sort_order) VALUES (?, ?, ?, ?, ?)'),
@@ -209,31 +213,36 @@ if (dbType === 'mysql' || dbType === 'mariadb') {
                 active: Number(r.active) !== 0,
                 available: r.available !== undefined ? Number(r.available) !== 0 : Number(r.active) !== 0,
                 allergens: safeJsonParse(r.allergens, []),
-                additives: safeJsonParse(r.additives, [])
+                additives: safeJsonParse(r.additives, []),
+                translations: safeJsonParse(r.translations, {})
             }));
         },
         addMenu: (m) => {
-            stmts.addMenu.run(m.id, m.number||null, m.name, m.price, m.cat, m.desc, JSON.stringify(m.allergens||[]), JSON.stringify(m.additives||[]), m.image||null, m.active!==false?1:0, m.available!==false?1:0, m.is_daily_special?1:0, m.updated_at||null);
+            stmts.addMenu.run(m.id, m.number||null, m.name, m.price, m.cat, m.desc, JSON.stringify(m.allergens||[]), JSON.stringify(m.additives||[]), m.image||null, m.active!==false?1:0, m.available!==false?1:0, m.is_daily_special?1:0, JSON.stringify(m.translations||{}), m.sort_order||0, m.updated_at||null);
         },
         updateMenu: (id, update) => {
             const existing = stmts.getMenuById.get(id);
             if (!existing) return null;
             const merged = { ...existing, ...update,
                 allergens: safeJsonParse(typeof update.allergens!=='undefined'?JSON.stringify(update.allergens):existing.allergens,[]),
-                additives: safeJsonParse(typeof update.additives!=='undefined'?JSON.stringify(update.additives):existing.additives,[]) };
+                additives: safeJsonParse(typeof update.additives!=='undefined'?JSON.stringify(update.additives):existing.additives,[]),
+                translations: safeJsonParse(typeof update.translations!=='undefined'?JSON.stringify(update.translations):existing.translations,{})
+            };
             const rawAvail = update.available !== undefined ? update.available : (update.active !== undefined ? update.active : null);
             const activeVal = rawAvail !== null ? (rawAvail ? 1 : 0) : Number(existing.active);
             const availVal = rawAvail !== null ? (rawAvail ? 1 : 0) : (existing.available !== undefined ? Number(existing.available) : Number(existing.active));
             const specialVal = update.is_daily_special !== undefined ? (update.is_daily_special ? 1 : 0) : Number(existing.is_daily_special || 0);
             const updatedAt = update.updated_at || existing.updated_at || null;
-            stmts.updateMenuRow.run(merged.number||null, merged.name, merged.price, merged.cat, merged.desc, JSON.stringify(merged.allergens), JSON.stringify(merged.additives), merged.image||null, activeVal, availVal, specialVal, updatedAt, id);
-            return { ...merged, active: activeVal !== 0, available: availVal !== 0, is_daily_special: specialVal !== 0, updated_at: updatedAt };
+            const sortOrder = typeof update.sort_order !== 'undefined' ? update.sort_order : (existing.sort_order || 0);
+
+            stmts.updateMenuRow.run(merged.number||null, merged.name, merged.price, merged.cat, merged.desc, JSON.stringify(merged.allergens), JSON.stringify(merged.additives), merged.image||null, activeVal, availVal, specialVal, JSON.stringify(merged.translations), sortOrder, updatedAt, id);
+            return { ...merged, active: activeVal !== 0, available: availVal !== 0, is_daily_special: specialVal !== 0, sort_order: sortOrder, updated_at: updatedAt };
         },
         deleteMenu: (id) => stmts.deleteMenu.run(id),
         saveMenu: (items) => {
             db.transaction((list) => {
                 stmts.deleteAllMenu.run();
-                list.forEach(m => stmts.upsertMenu.run(m.id||Date.now().toString(), m.number||null, m.name, m.price, m.cat, m.desc, JSON.stringify(m.allergens||[]), JSON.stringify(m.additives||[]), m.image||null, m.active!==false?1:0, m.available!==false?1:0, m.is_daily_special?1:0, m.updated_at||null));
+                list.forEach((m, i) => stmts.upsertMenu.run(m.id||Date.now().toString(), m.number||null, m.name, m.price, m.cat, m.desc, JSON.stringify(m.allergens||[]), JSON.stringify(m.additives||[]), m.image||null, m.active!==false?1:0, m.available!==false?1:0, m.is_daily_special?1:0, JSON.stringify(m.translations||{}), m.sort_order||i, m.updated_at||null));
             })(items);
         },
         getCategories: () => stmts.getCategories.all(),

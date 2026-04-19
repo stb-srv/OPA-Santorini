@@ -1,0 +1,36 @@
+[
+  {
+    "name": "Gyros Teller",
+    "translations": {
+      "en": {
+        "name": "Gyros Plate",
+        "desc": "Traditional pork gyros served with pita bread, onions, tomatoes and tzatziki."
+      },
+      "el": {
+        "name": "Γύρος Μερίδα",
+        "desc": "Παραδοσιακός χοιρινός γύρος με πίτα, κρεμμύδι, ντομάτα και τζατζίκι."
+      },
+      "fr": {
+        "name": "Assiette Gyros",
+        "desc": "Gyros de porc traditionnel servi avec du pain pita, des oignons, des tomates et du tzatziki."
+      },
+      "it": {
+        "name": "Piatto Gyros",
+        "desc": "Gyros di maiale tradizionale servito con pane pita, cipolle, pomodori e tzatziki."
+      }
+    }
+  },
+  {
+    "name": "Tzatziki",
+    "translations": {
+      "en": {
+        "name": "Tzatziki",
+        "desc": "Creamy yogurt-garlic dip with cucumber and herbs."
+      },
+      "el": {
+        "name": "Τζατζίκι",
+        "desc": "Κρεμώδες ντιπ γιαουρτιού με σκόρδο, αγγούρι και μυρωδικά."
+      }
+    }
+  }
+]

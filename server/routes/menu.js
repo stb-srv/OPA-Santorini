@@ -242,5 +242,68 @@ module.exports = (requireAuth, requireLicense) => {
         }
     });
 
+    /**
+     * WORKFLOW FÜR MASSENÜBERSETZUNGEN:
+     * 1. GET /api/menu/export-translations → translations-export.json herunterladen
+     * 2. Die JSON-Datei an eine KI geben mit dem Prompt:
+     *    "Übersetze alle leeren translations-Felder für alle Sprachen.
+     *     Behalte das exakte JSON-Format bei. Fachbegriffe korrekt übersetzen."
+     * 3. Die übersetzte JSON-Datei über den Import-Button hochladen
+     * 4. Fertig – alle Gerichte sind übersetzt
+     */
+
+    router.get('/menu/export-translations', requireAuth, async (req, res) => {
+        try {
+            const menu = await DB.getMenu();
+            const exportData = menu.map(item => ({
+                name:         item.name,
+                desc:         item.desc || '',
+                translations: item.translations || {}
+            }));
+            res.json(exportData);
+        } catch (e) {
+            res.status(500).json({ success: false, reason: e.message });
+        }
+    });
+
+    router.post('/menu/import-translations', requireAuth, async (req, res) => {
+        try {
+            const importData = req.body;
+            if (!Array.isArray(importData)) return res.status(400).json({ success: false, reason: 'Ungültiges Format (Array erwartet).' });
+
+            const currentMenu = await DB.getMenu();
+            let updated = 0;
+            let skipped = 0;
+            const notFound = [];
+
+            for (const entry of importData) {
+                if (!entry.name) { skipped++; continue; }
+
+                // Case-insensitive Suche nach dem Gericht anhand des Namens
+                const match = currentMenu.find(m => m.name.trim().toLowerCase() === entry.name.trim().toLowerCase());
+
+                if (match) {
+                    const newTranslations = entry.translations || {};
+                    // Merge: Vorhandene Sprachen behalten, neue hinzufügen oder überschreiben
+                    const mergedTranslations = { ...(match.translations || {}), ...newTranslations };
+
+                    await DB.updateMenu(match.id, { translations: mergedTranslations });
+                    updated++;
+                } else {
+                    notFound.push(entry.name);
+                }
+            }
+
+            res.json({
+                success: true,
+                updated,
+                skipped,
+                not_found: notFound
+            });
+        } catch (e) {
+            res.status(500).json({ success: false, reason: e.message });
+        }
+    });
+
     return router;
 };

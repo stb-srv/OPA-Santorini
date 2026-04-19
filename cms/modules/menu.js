@@ -329,6 +329,9 @@ function renderDishesTab(menu, categories, allergens, additives) {
                     <button class="btn-primary" style="background:#4b5563; opacity:.8; padding:10px 15px;" id="btn-export-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
                     <button class="btn-primary" style="background:#4b5563; opacity:.8; padding:10px 15px;" id="btn-export-menu"><i class="fas fa-download"></i> Backup</button>
                     <button class="btn-primary" style="background:#4b5563; opacity:.8; padding:10px 15px;" id="btn-import-menu"><i class="fas fa-upload"></i> Restore</button>
+                    <div style="width:1px; height:24px; background:rgba(0,0,0,0.1); margin:0 5px;"></div>
+                    <button class="btn-primary" style="background:#0ea5e9; padding:10px 15px;" id="btn-export-translations" title="Alle Texte f\u00fcr KI-\u00dcbersetzung exportieren"><i class="fas fa-language"></i> 📤 Export</button>
+                    <button class="btn-primary" style="background:#0ea5e9; padding:10px 15px;" id="btn-import-translations" title="\u00dcbersetzte JSON hochladen"><i class="fas fa-file-import"></i> 📥 Import</button>
                     ${renderHelpIcon('menu_tools')}
                 </div>
             </div>
@@ -767,7 +770,6 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             a.click();
             URL.revokeObjectURL(url);
         };
-
         const importBtn = container.querySelector('#btn-import-menu');
         if (importBtn) importBtn.onclick = () => {
             const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
@@ -788,6 +790,53 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
                             }
                         }
                     } catch (err) { showToast('Ung\u00fcltige Datei', 'error'); }
+                };
+                reader.readAsText(file);
+            };
+            inp.click();
+        };
+
+        const exportTrBtn = container.querySelector('#btn-export-translations');
+        if (exportTrBtn) exportTrBtn.onclick = async () => {
+            try {
+                const data = await apiGet('menu/export-translations');
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'translations-export.json';
+                a.click();
+                URL.revokeObjectURL(url);
+                showToast('Export bereit! \u2705');
+            } catch (err) { showToast('Export fehlgeschlagen', 'error'); }
+        };
+
+        const importTrBtn = container.querySelector('#btn-import-translations');
+        if (importTrBtn) importTrBtn.onclick = () => {
+            const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
+            inp.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (!Array.isArray(data)) throw new Error('Array erwartet');
+                        
+                        if (await showConfirm('\u00dcbersetzungen importieren?', `${data.length} Gerichte in der Datei gefunden. Vorhandene \u00dcbersetzungen werden ggf. erg\u00e4nzt.`)) {
+                            const res = await apiPost('menu/import-translations', data);
+                            if (res && res.success) {
+                                let msg = `\ud83d\uddf3\ufe0f ${res.updated} aktualisiert`;
+                                if (res.skipped > 0) msg += `, \u26a0\ufe0f ${res.skipped} übersprungen`;
+                                if (res.not_found && res.not_found.length > 0) msg += `. Nicht gefunden: ${res.not_found.slice(0,3).join(', ')}${res.not_found.length > 3 ? '...' : ''}`;
+                                
+                                showToast(msg, res.not_found?.length > 0 ? 'warning' : 'success');
+                                // Refresh menu to show potentially updated data
+                                cachedMenuData = null;
+                                renderMenu(container, document.getElementById('view-title'), 'dishes', true);
+                            } else {
+                                showToast(res?.reason || 'Import fehlgeschlagen.', 'error');
+                            }
+                        }
+                    } catch (err) { showToast('Ung\u00fcltige Datei oder Format', 'error'); }
                 };
                 reader.readAsText(file);
             };
