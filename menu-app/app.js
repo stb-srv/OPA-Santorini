@@ -2,6 +2,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     const API = '/api';
     let homeData = {};
     let menuItems = [];
+    const SEARCH_ALIASES = {
+        'nudeln':      ['penne', 'pasta', 'spaghetti', 'linguine', 'tagliatelle', 'rigatoni'],
+        'pasta':       ['penne', 'spaghetti', 'nudeln', 'linguine'],
+        'hähnchen':    ['chicken', 'poulet', 'huhn', 'hühnchen'],
+        'chicken':     ['hähnchen', 'huhn', 'hühnchen'],
+        'pommes':      ['frites', 'fritten', 'pommes frites'],
+        'steak':       ['beef', 'rind', 'rindfleisch', 'entrecote'],
+        'lachs':       ['salmon', 'salm'],
+        'garnelen':    ['shrimps', 'prawns', 'scampi', 'gambas'],
+        'lamm':        ['lammfleisch', 'lamb'],
+        'schweinfleisch': ['schwein', 'pork'],
+        'veggie':      ['vegetarisch', 'vegan', 'ohne fleisch'],
+        'scharf':      ['spicy', 'pikant', 'hot'],
+        'suppe':       ['soup', 'brühe', 'eintopf'],
+        'salat':       ['salad', 'blattsalat'],
+        'dessert':     ['nachspeise', 'nachtisch', 'süßspeise', 'eis'],
+        'käse':        ['cheese', 'feta', 'halloumi'],
+    };
     let currentView = 'home';
 
     // --- Plugin Registry ---
@@ -426,10 +444,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         let items = menuItems.filter(i => i.active !== false && i.available !== false);
         if (activeCat !== 'all') items = items.filter(i => i.cat === activeCat);
         if (searchQuery) {
-            items = items.filter(i =>
-                i.name.toLowerCase().includes(searchQuery) ||
-                (i.desc && i.desc.toLowerCase().includes(searchQuery))
-            );
+            // Erweiterte Suchbegriffe durch Aliase
+            const searchTerms = [searchQuery];
+            Object.entries(SEARCH_ALIASES).forEach(([alias, targets]) => {
+                if (alias.includes(searchQuery) || searchQuery.includes(alias)) {
+                    searchTerms.push(...targets);
+                }
+                targets.forEach(t => {
+                    if (t.includes(searchQuery) || searchQuery.includes(t)) {
+                        searchTerms.push(alias, ...targets);
+                    }
+                });
+            });
+            const uniqueTerms = [...new Set(searchTerms)];
+
+            items = items.filter(i => {
+                const name = i.name.toLowerCase();
+                const desc = (i.desc || '').toLowerCase();
+                const aliases = (i.aliases || []).map(a => a.toLowerCase()); // aus DB
+                return uniqueTerms.some(term =>
+                    name.includes(term) || desc.includes(term) ||
+                    aliases.some(a => a.includes(term) || term.includes(a))
+                );
+            });
         }
         renderMenu(items);
     }
