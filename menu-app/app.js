@@ -839,22 +839,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     window.setLegalView = (type) => {
         if (!homeData.legal) return;
-        
-        // Titel setzen
-        const titleEl = document.getElementById('legal-title');
-        if (titleEl) titleEl.textContent = type === 'impressum' ? 'Impressum' : 'Datenschutzerklärung';
-        
-        // Inhalt setzen (innerHTML für HTML-Formatierung)
-        const contentEl = document.getElementById('legal-content');
-        if (contentEl) {
-            const text = type === 'impressum' ? homeData.legal.impressum : homeData.legal.privacy;
-            // Zeilenumbrüche in <br> umwandeln falls plain text
-            contentEl.innerHTML = text ? text.replace(/\n/g, '<br>') : '';
-        }
-        
-        // Button-Styling umschalten
-        const btnImpressum = document.querySelector('#view-legal .btn[onclick*="impressum"]');
-        const btnPrivacy   = document.querySelector('#view-legal .btn[onclick*="privacy"]');
+
+        // Inhalt setzen
+        document.getElementById('legal-title').textContent =
+            type === 'impressum' ? 'Impressum' : 'Datenschutzerklärung';
+        document.getElementById('legal-content').textContent =
+            type === 'impressum' ? homeData.legal.impressum : homeData.legal.privacy;
+
+        // Button-Styling aktiv/inaktiv tauschen
+        const btnImpressum = document.querySelector('#view-legal .btn:first-child');
+        const btnPrivacy   = document.querySelector('#view-legal .btn:nth-child(2)');
         if (btnImpressum && btnPrivacy) {
             if (type === 'impressum') {
                 btnImpressum.classList.remove('outline');
