@@ -63,6 +63,7 @@ window.OpaI18n = (function () {
         document.documentElement.dir  = LANGUAGES[code]?.dir || 'ltr';
         document.documentElement.lang = code;
         window._opaCurrentLang = code;
+        try { localStorage.setItem('opa_lang', code); } catch { /* Safari privat */ }
         applyDOM();
         if (window.OpaRender) window.OpaRender();
         updateLangBtn(code);
@@ -100,8 +101,10 @@ window.OpaI18n = (function () {
     }
 
     async function init() {
+        const saved       = (() => { try { return localStorage.getItem('opa_lang'); } catch { return null; } })();
         const browserLang = navigator.language?.slice(0, 2) || 'de';
-        const startLang   = LANGUAGES[browserLang] ? browserLang : 'de';
+        const startLang   = (saved && LANGUAGES[saved]) ? saved
+                          : (LANGUAGES[browserLang] ? browserLang : 'de');
         try {
             await load(startLang);
         } catch(e) {
