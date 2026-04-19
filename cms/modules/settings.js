@@ -724,72 +724,6 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
             };
         }
 
-        // --- Image AI Handlers ---
-        if (settingsTab === 'image-ai') {
-            const testConnection = async (provider) => {
-                const btn = container.querySelector(`#btn-test-${provider === 'google-ai' ? 'google-ai' : provider}`);
-                const orig = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                
-                try {
-                    const keys = settings.imageApiKeys || {};
-                    let key = container.querySelector(`#img-${provider}-key`).value;
-                    if (!key && keys[provider === 'google-ai' ? 'googleAiKey' : (provider + 'Key')]) {
-                        key = keys[provider === 'google-ai' ? 'googleAiKey' : (provider + 'Key')];
-                    }
-
-                    if (!key) {
-                        showToast('Kein Key zum Testen vorhanden.', 'error');
-                        btn.disabled = false; btn.innerHTML = orig;
-                        return;
-                    }
-
-                    // Simple search test
-                    let res;
-                    if (provider === 'unsplash' || provider === 'pexels') {
-                        res = await apiPost('image-ai/search', { query: 'Grapes', provider });
-                    } else {
-                        // Gemini test is expensive, just check config endpoint for now or do a tiny generation if possible
-                        // But let's try to reach the config endpoint first
-                        const config = await apiGet('image-ai/config');
-                        if (config && config.hasGoogleAi) {
-                            showToast('Google AI Key ist konfiguriert! ✅');
-                        } else {
-                            showToast('Google AI Key scheint nicht korrekt gespeichert zu sein.', 'warning');
-                        }
-                        btn.disabled = false; btn.innerHTML = orig;
-                        return;
-                    }
-
-                    if (res && res.success) {
-                        showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} Verbindung erfolgreich! ✅`);
-                    } else {
-                        showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} Fehler: ${res?.reason || 'Unbekannt'}`, 'error');
-                    }
-                } catch (e) {
-                    showToast('Verbindungsfehler: ' + e.message, 'error');
-                }
-                btn.disabled = false; btn.innerHTML = orig;
-            };
-
-            container.querySelector('#btn-test-unsplash').onclick = () => testConnection('unsplash');
-            container.querySelector('#btn-test-pexels').onclick = () => testConnection('pexels');
-            container.querySelector('#btn-test-google-ai').onclick = () => testConnection('google-ai');
-        }
-
-        // Reset Template Buttons
-        container.querySelectorAll('.btn-reset-tpl').forEach(btn => {
-            btn.onclick = () => {
-                const box = btn.closest('.template-box');
-                const tplKey = box.dataset.tplKey;
-                const type = MAIL_TYPES.find(t => t.key === tplKey);
-                box.querySelector('.tpl-subject').value = '';
-                box.querySelector('.tpl-body').value = '';
-                showToast(`${type.label} wurde auf Standard zurückgesetzt (Speichern erforderlich)`);
-            };
-        });
-
         window.insertAtCursor = (chip, text) => {
             const box = chip.closest('.template-box');
             const target = box.querySelector('.tpl-body:focus, .tpl-subject:focus') || box.querySelector('.tpl-body');
@@ -800,6 +734,65 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
             target.selectionStart = target.selectionEnd = start + text.length;
             target.focus();
         };
+    }
+
+    // --- Image AI Handlers ---
+    if (settingsTab === 'image-ai') {
+        const testConnection = async (provider) => {
+            const btn = container.querySelector(`#btn-test-${provider === 'google-ai' ? 'google-ai' : provider}`);
+            const orig = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            try {
+                const keys = settings.imageApiKeys || {};
+                let key = container.querySelector(`#img-${provider}-key`).value.trim();
+                
+                // If it's Google AI, we might want to save it first if changed
+                if (provider === 'google-ai' && key) {
+                    await apiPost('settings', { 
+                        imageApiKeys: { 
+                            ...(settings.imageApiKeys || {}), 
+                            googleAiKey: key 
+                        } 
+                    });
+                    // Update local state
+                    if (!settings.imageApiKeys) settings.imageApiKeys = {};
+                    settings.imageApiKeys.googleAiKey = key;
+                }
+
+                if (!key && keys[provider === 'google-ai' ? 'googleAiKey' : (provider + 'Key')]) {
+                    key = keys[provider === 'google-ai' ? 'googleAiKey' : (provider + 'Key')];
+                }
+
+                if (!key) {
+                    showToast('Kein Key zum Testen vorhanden.', 'error');
+                    btn.disabled = false; btn.innerHTML = orig;
+                    return;
+                }
+
+                let res;
+                if (provider === 'unsplash' || provider === 'pexels') {
+                    res = await apiPost('image-ai/search', { query: 'Grapes', provider });
+                } else if (provider === 'google-ai') {
+                    // Real generation test
+                    res = await apiPost('image-ai/generate', { prompt: 'a single red tomato, food photography' });
+                }
+
+                if (res && res.success) {
+                    showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} Verbindung erfolgreich! ✅`);
+                } else {
+                    showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} Fehler: ${res?.reason || 'Unbekannt'}`, 'error');
+                }
+            } catch (e) {
+                showToast('Verbindungsfehler: ' + e.message, 'error');
+            }
+            btn.disabled = false; btn.innerHTML = orig;
+        };
+
+        container.querySelector('#btn-test-unsplash').onclick = () => testConnection('unsplash');
+        container.querySelector('#btn-test-pexels').onclick = () => testConnection('pexels');
+        container.querySelector('#btn-test-google-ai').onclick = () => testConnection('google-ai');
     }
 
     // --- Allgemeiner Speichern-Button ---
@@ -881,13 +874,21 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                     showToast(r?.reason || 'Fehler beim Speichern.', 'error');
                 }
             } else if (settingsTab === 'image-ai') {
-                const keys = settings.imageApiKeys || {};
+                // Fetch fresh settings first to avoid using stale keys when masking is active
+                const currentSettings = await apiGet('settings') || {};
+                const existingKeys = currentSettings.imageApiKeys || {};
+                
+                const unsplashInput  = container.querySelector('#img-unsplash-key').value.trim();
+                const pexelsInput    = container.querySelector('#img-pexels-key').value.trim();
+                const googleAiInput  = container.querySelector('#img-google-ai-key').value.trim();
+                
                 const newKeys = {
-                    unsplashKey: container.querySelector('#img-unsplash-key').value || keys.unsplashKey,
-                    pexelsKey: container.querySelector('#img-pexels-key').value || keys.pexelsKey,
-                    googleAiKey: container.querySelector('#img-google-ai-key').value || keys.googleAiKey,
+                    unsplashKey:     unsplashInput  || existingKeys.unsplashKey  || '',
+                    pexelsKey:       pexelsInput    || existingKeys.pexelsKey    || '',
+                    googleAiKey:     googleAiInput  || existingKeys.googleAiKey  || '',
                     defaultProvider: container.querySelector('#img-default-provider').value
                 };
+                
                 const r = await apiPost('settings', { imageApiKeys: newKeys });
                 if (r?.success) {
                     showToast('Bild-KI Einstellungen gespeichert! ✨');
