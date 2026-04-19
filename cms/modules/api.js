@@ -80,14 +80,16 @@ export async function apiPost(route, data) {
 
 export async function apiUpload(file) {
     try {
+        const token = getAuthToken();
+        console.log('[apiUpload] token present:', !!token, '| length:', token?.length || 0);
         const fd = new FormData();
         fd.append('image', file);
         const r = await fetch(`${API_URL}/upload`, {
             method: 'POST',
-            headers: { 'x-admin-token': getAuthToken() },
+            headers: { 'x-admin-token': token },
             body: fd
         });
-        if (r.status === 401) return handleAuthFailure();
+        if (r.status === 401 || r.status === 403) return handleAuthFailure();
         // Parse JSON regardless of status so we get the reason field
         const res = await r.json().catch(() => ({ 
             success: false, 
