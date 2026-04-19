@@ -18,6 +18,13 @@
     <nav class="nav" id="main-nav">
         <a onclick="window.switchTab('home')" class="nav-logo" id="nav-logo" style="cursor:pointer;">OPA!</a>
         <div class="nav-links" id="nav-links"></div>
+        <button class="nav-hamburger" id="nav-hamburger" 
+                aria-label="Menü öffnen" onclick="window.toggleMobileNav()">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-mobile-overlay" id="nav-mobile-overlay" 
+             onclick="window.closeMobileNav()"></div>
+        <div class="nav-mobile-drawer" id="nav-mobile-drawer"></div>
         <button type="button" class="nav-cta" onclick="window.switchTab('reservations')">Tisch reservieren</button>
     </nav>
 

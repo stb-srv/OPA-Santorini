@@ -333,6 +333,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         c.innerHTML = active.map(t =>
             `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}')">${t.label}</a>`
         ).join('');
+
+        const drawer = document.getElementById('nav-mobile-drawer');
+        if (drawer) {
+            drawer.innerHTML = active.map(t =>
+                `<a data-tab="${t.id}" onclick="window.switchTab('${t.id}'); window.closeMobileNav();">${t.label}</a>`
+            ).join('');
+        }
     }
 
     // --- MENU ---
@@ -502,6 +509,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // --- VIEW SWITCHING ---
     window.switchTab = (id) => {
+        window.closeMobileNav();
         // Warenkorb-Drawer schließen falls offen
         if (window.OpaCart) window.OpaCart.close();
 
@@ -969,6 +977,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             return `<div class="res-opening-row ${isToday ? 'today' : ''}"><span>${day}</span><span>${timeStr}</span></div>`;
         }).join('');
     }
+
+    window.toggleMobileNav = () => {
+        const drawer  = document.getElementById('nav-mobile-drawer');
+        const overlay = document.getElementById('nav-mobile-overlay');
+        const btn     = document.getElementById('nav-hamburger');
+        const isOpen  = drawer.classList.contains('active');
+        drawer.classList.toggle('active', !isOpen);
+        overlay.classList.toggle('active', !isOpen);
+        btn.classList.toggle('open', !isOpen);
+    };
+
+    window.closeMobileNav = () => {
+        const drawer  = document.getElementById('nav-mobile-drawer');
+        const overlay = document.getElementById('nav-mobile-overlay');
+        const btn     = document.getElementById('nav-hamburger');
+        if (drawer)  drawer.classList.remove('active');
+        if (overlay) overlay.classList.remove('active');
+        if (btn)     btn.classList.remove('open');
+    };
 
     init();
 });
