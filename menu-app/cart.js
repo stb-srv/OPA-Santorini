@@ -185,7 +185,12 @@
             </div>
             ${!configLoaded ? '<p class="opa-cart-hint">Lade Verfügbarkeit…</p>' : ''}
             ${isClosed ? `<p class="opa-cart-hint opa-cart-hint--closed">🕑 ${escHtml(cartConfig.closedReason || 'Derzeit keine Bestellungen möglich.')}</p>` : ''}
-            ${configLoaded && !isClosed && !cartConfig.ordersEnabled ? '<p class="opa-cart-hint">ℹ️ Zeige dem Personal diesen Warenkorb oder bestelle direkt.</p>' : ''}`;
+            ${configLoaded && !isClosed && !cartConfig.ordersEnabled ? `
+<div class="opa-cart-hint opa-cart-hint--disabled">
+    <span style="font-size:1.5rem;">🚫</span>
+    <strong>Online-Bestellung aktuell nicht möglich</strong>
+    <p style="margin:4px 0 0;font-size:.85rem;opacity:.85;">Eine Bestellung über unsere Website ist derzeit leider nicht verfügbar. Bitte bestelle direkt bei unserem Personal vor Ort.</p>
+</div>` : ''}`;
 
         document.getElementById('opa-clear-btn')?.addEventListener('click', () => {
             // Custom inline Confirm direkt im Footer
