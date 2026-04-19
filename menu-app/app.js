@@ -248,6 +248,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const hash = window.location.hash?.replace('#', '').trim();
             window.switchTab(hash || 'home');
         });
+
+        // i18n initialisieren
+        if (window.OpaI18n) {
+            await OpaI18n.init();
+            const langMenu = document.getElementById('lang-dropdown-menu');
+            if (langMenu) langMenu.innerHTML = OpaI18n.renderDropdown();
+        }
     }
 
     // --- BRANDING ---
@@ -560,7 +567,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return `
             <div class="dish-card${tileClickable ? ' dish-card--clickable' : ''}"
                  data-menu-item="${id}"
-                 data-item-name="${itemName.replace(/"/g, '&quot;')}"
+                 data-item-name="${item.name.replace(/"/g, '&quot;')}"
                  data-item-price="${price}"
                  ${tileClickable ? 'data-cart-tile="1"' : ''}>
                 <div class="dish-card-img">
@@ -983,19 +990,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         renderResCalendar();
-
-        // i18n initialisieren
-        if (window.OpaI18n) {
-            await OpaI18n.init();
-            const langMenu = document.getElementById('lang-dropdown-menu');
-            if (langMenu) langMenu.innerHTML = OpaI18n.renderDropdown();
-        }
-    };
-
-    // Hook für i18n — wird nach Sprachwechsel aufgerufen
-    window.OpaRender = () => {
-        renderCategories();
-        applyMenuFilter();
     };
 
     const resForm2 = document.getElementById('res-form');
@@ -1112,6 +1106,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (drawer)  drawer.classList.remove('active');
         if (overlay) overlay.classList.remove('active');
         if (btn)     btn.classList.remove('open');
+    };
+
+    // Hook für i18n — wird nach Sprachwechsel aufgerufen
+    window.OpaRender = () => {
+        renderCategories();
+        applyMenuFilter();
     };
 
     init();
