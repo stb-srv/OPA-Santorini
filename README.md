@@ -1,6 +1,10 @@
 # 🏛️ OPA-CMS – Restaurant Management System
 
-> Modulares CMS für Restaurants: Speisekarte, Reservierungen, Website-Editor, Lizenz-System & Plugin-API.  
+![Node.js Version](https://img.shields.io/badge/node-%E2%89%A518-green)
+![License MIT](https://img.shields.io/badge/license-MIT-blue)
+![Platform Linux](https://img.shields.io/badge/platform-Linux-lightgrey)
+
+> Modulares CMS für Restaurants: Speisekarte, Reservierungen, Website-Editor, Warenkorb-System & Plugin-API.  
 > **Komplett über den Browser einrichtbar – keine Konsole oder Server-SSH nach der Installation nötig.**
 
 ---
@@ -9,16 +13,11 @@
 
 - [Voraussetzungen](#voraussetzungen)
 - [Linux Server Setup (Empfohlen)](#-linux-server-setup-empfohlen)
-- [Alternatives Deploy-Skript](#-alternatives-deploy-skript-systemd)
+- [MySQL/MariaDB Setup](#-mysqlmariadb-setup)
+- [Warenkorb & Online-Bestellung](#-warenkorb--online-bestellung)
 - [Erster Start: Setup-Wizard](#-erster-start-setup-wizard)
-- [SMTP-Konfiguration im Browser](#-smtp-konfiguration-im-browser)
+- [.env Variablen-Referenz](#-env-variablen-referenz)
 - [Lizenz aktivieren](#-lizenz-aktivieren)
-- [System aktualisieren](#-system-aktualisieren)
-- [Admin-Passwort vergessen?](#-admin-passwort-vergessen)
-- [Lokale Entwicklung (Mac / Linux)](#-lokale-entwicklung-mac--linux)
-- [CMS-Navigation](#cms-navigation)
-- [Hilfs-Skripte](#-hilfs-skripte)
-- [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Projektstruktur](#-projektstruktur)
 - [Roadmap](#-roadmap)
@@ -28,30 +27,22 @@
 ## Voraussetzungen
 
 **Linux Server (Produktion):**
-
 - Ubuntu 22.04 / 24.04, Debian 12 oder Rocky Linux 9
 - Root-Zugang (einmalig für das Installer-Skript)
 - Offene Ports: 80, 443 (nginx), optional 5000
 
 **Lokal (Entwicklung):**
-
-- Node.js ≥ 18 ([nodejs.org](https://nodejs.org))
+- Node.js ≥ 18
 - npm ≥ 9
-- **Native Build-Tools** (werden von `better-sqlite3` benötigt):
-
-| Betriebssystem        | Installation                                  |
-| --------------------- | --------------------------------------------- |
-| Ubuntu / Debian       | `sudo apt install -y build-essential python3` |
-| Fedora / RHEL / Rocky | `sudo dnf install -y gcc make python3`        |
-| macOS                 | `xcode-select --install`                      |
-
-> ℹ️ Das Start-Skript (`start-mac-linux.sh`) prüft diese Voraussetzungen automatisch und gibt eine klare Fehlermeldung, falls etwas fehlt.
+- **Native Build-Tools** (für `better-sqlite3`):
+  - Ubuntu/Debian: `sudo apt install -y build-essential python3`
+  - macOS: `xcode-select --install`
 
 ---
 
 ## 🚀 Linux Server Setup (Empfohlen)
 
-Dies ist der empfohlene Weg für den Produktivbetrieb mit **PM2** als Prozessmanager. Das Skript erledigt alles vollautomatisch.
+Dies ist der empfohlene Weg für den Produktivbetrieb mit **PM2** als Prozessmanager.
 
 ```bash
 # 1. Repository klonen
@@ -63,401 +54,114 @@ chmod +x install-ubuntu.sh
 sudo ./install-ubuntu.sh
 ```
 
-### Was der Installer erledigt
+---
 
-| Schritt        | Was passiert                                                  |
-| -------------- | ------------------------------------------------------------- |
-| System-Update  | `apt upgrade`, Basis-Pakete, `openssl`                        |
-| Node.js 20 LTS | Installation via NodeSource                                   |
-| PM2            | Prozessmanager mit Autostart nach Reboot                      |
-| `.env`         | Wird automatisch erstellt – PORT, CORS & ADMIN_SECRET befüllt |
-| nginx          | Reverse Proxy für Port 80 (optional)                          |
-| SSL / HTTPS    | Let’s Encrypt via Certbot (optional, Domain muss zeigen)      |
-| Firewall (UFW) | Port 80/443 freigegeben, 5000 nur lokal                       |
+## 🗄️ MySQL/MariaDB Setup
 
-Nach dem Installer läuft das CMS sofort unter `http://<deine-domain>/admin`.
+Standardmäßig nutzt OPA-Santorini **SQLite** (kein Setup nötig). Für größere Installationen oder Shared-Hosting (Netcup, Hetzner etc.) wird **MySQL/MariaDB** empfohlen.
 
-> ✅ **Ab hier ist kein Konsolenzugriff mehr nötig.** Alle weiteren Einstellungen (SMTP, Lizenz, Restaurant-Name, Admin-Passwort) werden direkt im Browser erledigt.
+1. Erstelle eine neue Datenbank und einen Benutzer.
+2. Trage in der `.env` Datei folgende Werte ein:
+
+```env
+DB_TYPE=mysql
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=dein_benutzer
+DB_PASS=dein_passwort
+DB_NAME=deine_db_name
+DB_SSL=false
+```
+
+3. Starte den Server neu. Das Schema wird automatisch inkl. aller Migrationen erstellt.
 
 ---
 
-## 🔧 Alternatives Deploy-Skript (systemd)
+## 🛒 Warenkorb & Online-Bestellung
 
-Alternative zu `install-ubuntu.sh` – nutzt **systemd** statt PM2 und eignet sich für Server ohne vorhandenes PM2-Setup.
+OPA-Santorini verfügt über ein integriertes Warenkorb-System für Gäste.
 
-```bash
-git clone https://github.com/stb-srv/OPA-Santorini.git /opt/opa-santorini
-cd /opt/opa-santorini
-bash deploy.sh
-```
-
-| Merkmal          | `install-ubuntu.sh`         | `deploy.sh`                         |
-| ---------------- | --------------------------- | ----------------------------------- |
-| Prozessmanager   | PM2                         | systemd                             |
-| Zielgruppe       | Shared-Server, mehrere Apps | Dedizierter Server, einfaches Setup |
-| HTTPS / Certbot  | Optional (interaktiv)       | Optional (interaktiv)               |
-| Admin-Erstellung | Via Setup-Wizard im Browser | Via Setup-Wizard im Browser         |
+- **Dine-In**: Gäste scannen einen QR-Code am Tisch und bestellen direkt an ihre Tischnummer.
+- **Abholung (Pickup)**: Bestellen von zu Hause mit Angabe der gewünschten Abholzeit.
+- **Lieferung (Delivery)**: Integriertes Formular für Lieferadresse und Kontaktdaten.
+- **Vollständig Clientseitig**: Der Warenkorb nutzt den LocalStorage – kein Login für Gäste erforderlich.
+- **Status-Steuerung**: Bestellungen können im Admin-Panel pro Modus (Tisch/Abholung/Lieferung) aktiviert oder deaktiviert werden.
 
 ---
 
 ## 🧙 Erster Start: Setup-Wizard
 
-Beim ersten Aufruf von `http://<deine-domain>/admin` startet automatisch der **Setup-Wizard**. Er führt dich durch alle nötigen Schritte:
+Beim ersten Aufruf von `http://<deine-domain>/admin` startet der **Setup-Wizard**:
 
-1. **Restaurantname** eingeben
-2. **Admin-Zugangsdaten** festlegen (Benutzername + Passwort)
-3. **E-Mail-Adresse** des Admins hinterlegen (für Passwort-Reset)
-4. **Fertig** – das System startet mit einem kostenlosen 30-Tage-Trial
+1. **Restaurantname** & Branding festlegen
+2. **Admin-Konto** erstellen (Benutzername + Passwort)
+3. **Recovery-Codes** generieren (Sicher aufbewahren!)
 
-Nach dem Setup wirst du direkt ins CMS weitergeleitet.
-
-> 💡 **Recovery-Codes**: Am Ende des Setups bekommst du 3 Wiederherstellungs-Codes. **Speichere diese sicher ab** – sie erlauben dir den Zugang wiederherzustellen, falls du dein Passwort vergisst.
-
-> ⚠️ **Wichtig:** Die Setup-Konfiguration wird in `server/config.json` gespeichert (nicht in `.env`). Diese Datei ist in `.gitignore` aufgeführt und wird **nicht** ins Repository committed – sie bleibt bei `git pull` unangetastet. Führe **kein** `git clean -fd` aus, da dies `server/config.json` und damit alle Setup-Einstellungen löschen würde.
+> ⚠️ **Wichtig:** Die Konfiguration liegt in `server/config.json`. Diese Datei niemals committen oder löschen.
 
 ---
 
-## 📧 SMTP-Konfiguration im Browser
+## ⚙️ .env Variablen-Referenz
 
-Die E-Mail-Konfiguration für Reservierungsbestätigungen wird **vollständig im CMS** vorgenommen – kein SSH nötig.
-
-1. Ins CMS einloggen → **⚙️ Einstellungen** → **E-Mail**
-2. Folgende Felder ausfüllen:
-
-| Feld          | Beispiel                 | Erklärung                       |
-| ------------- | ------------------------ | ------------------------------- |
-| SMTP Host     | `smtp.ionos.de`          | Dein E-Mail-Server              |
-| SMTP Port     | `465`                    | 465 = SSL/TLS, 587 = STARTTLS   |
-| Sicher (SSL)  | `✓`                      | Ein bei Port 465                |
-| Benutzername  | `info@meinrestaurant.de` | Dein E-Mail-Login               |
-| Passwort      | `dein-smtp-passwort`     | E-Mail-Passwort                 |
-| Absender-Name | `Mein Restaurant`        | Wird im E-Mail-Client angezeigt |
-
-3. **Speichern** klicken → eine Test-E-Mail wird automatisch an deine Admin-Adresse gesendet
-
-**Gängige SMTP-Einstellungen:**
-
-| Anbieter          | Host                 | Port |
-| ----------------- | -------------------- | ---- |
-| IONOS (1&1)       | `smtp.ionos.de`      | 465  |
-| Strato            | `smtp.strato.de`     | 465  |
-| GMX               | `mail.gmx.net`       | 465  |
-| Gmail             | `smtp.gmail.com`     | 587  |
-| Outlook/Office365 | `smtp.office365.com` | 587  |
+| Variable | Beschreibung | Standard |
+|---|---|---|
+| `PORT` | Port des Express-Servers | `5000` |
+| `ADMIN_SECRET` | JWT Signing Key (sehr lang & zufällig) | - |
+| `CORS_ORIGINS` | Erlaubte Frontend-Domains (kommagetrennt) | - |
+| `DB_TYPE` | `sqlite` oder `mysql` | `sqlite` |
+| `DB_HOST` | Hostname der MySQL DB | `localhost` |
+| `DB_PORT` | Port der MySQL DB | `3306` |
+| `DB_USER` | Benutzername MySQL | - |
+| `DB_PASS` | Passwort MySQL | - |
+| `DB_NAME` | Datenbankname | - |
+| `DB_SSL` | SSL für DB-Verbindung (`true`/`false`) | `false` |
+| `PEXELS_API_KEY` | Key für automatische Speisefotos | - |
+| `UNSPLASH_ACCESS_KEY` | Zweiter Key für Speisefotos | - |
 
 ---
 
 ## 🔑 Lizenz aktivieren
 
-Das System startet automatisch mit einem **kostenlosen 30-Tage-Trial** (FREE-Plan). Eine bezahlte Lizenz wird ebenfalls komplett im Browser aktiviert:
+Das System bietet verschiedene Pläne (Starter, Pro, Pro+, Enterprise). Die Aktivierung erfolgt direkt im CMS unter **Einstellungen → Lizenz**.
 
-1. CMS → **⚙️ Einstellungen** → **Lizenz**
-2. Lizenzschlüssel eingeben und auf **Aktivieren** klicken
-3. Der Plan wird sofort freigeschaltet
-
-**Verfügbare Pläne:**
-
-| Plan         | Speisen | Tische     | Module                         |
-| ------------ | ------- | ---------- | ------------------------------ |
-| FREE (Trial) | 30      | 5          | Speisekarte                    |
-| Starter      | 40      | 30         | + Reservierungen, Bestellungen |
-| Pro          | 100     | 25         | + Custom Design                |
-| Pro+         | 200     | 50         | + Analytics                    |
-| Enterprise   | 500     | unbegrenzt | Alle Module inkl. QR-Pay       |
-
----
-
-## 🔄 System aktualisieren
-
-### PM2-Setup (install-ubuntu.sh)
-
-```bash
-cd /opt/opa-santorini && git pull && npm install --silent && pm2 restart opa-cms
-```
-
-Oder mit dem mitgelieferten Skript:
-
-```bash
-./update-mac-linux.sh
-```
-
-### systemd-Setup (deploy.sh)
-
-```bash
-cd /opt/opa-santorini && git pull && npm install --silent && systemctl restart opa-santorini
-```
-
-### Was beim Update passiert
-
-1. Neuen Code von GitHub pullen (`git pull`)
-2. Neue/geänderte npm-Pakete installieren
-3. CMS-Prozess neu starten
-4. `.env`, Datenbank und alle Einstellungen bleiben **unangetastet**
-
-> ℹ️ Datenbankmigrationen (neue Spalten etc.) werden automatisch beim Start ausgeführt.
-
----
-
-## 🔐 Admin-Passwort vergessen?
-
-### Option 1 – Recovery-Code (empfohlen, kein Server-Zugang nötig)
-
-Falls du beim Setup die Recovery-Codes gespeichert hast:
-
-1. Auf der Login-Seite auf **"Passwort vergessen"** klicken
-2. Einen der 3 Recovery-Codes eingeben
-3. Neues Passwort setzen
-
-### Option 2 – Reset via Konsole (Fallback)
-
-Nur wenn kein Recovery-Code mehr vorhanden ist:
-
-```bash
-cd /opt/opa-santorini
-node reset-admin.js
-# PM2:
-pm2 restart opa-cms
-# systemd:
-systemctl restart opa-santorini
-```
-
-Das Skript gibt die neuen Zugangsdaten direkt in der Konsole aus und erzwingt beim nächsten Login eine Passwortänderung.
-
----
-
-## 💻 Lokale Entwicklung (Mac / Linux)
-
-Für Tests und Entwicklung auf dem eigenen Rechner:
-
-```bash
-chmod +x start-mac-linux.sh
-./start-mac-linux.sh
-```
-
-Das Skript:
-
-- Prüfen automatisch ob Node.js und native Build-Tools vorhanden sind
-- Erstellen automatisch eine `.env` aus `.env.example` (ADMIN_SECRET wird auto-generiert)
-- Installieren fehlende npm-Pakete via `npm install`
-- Starten den Server auf Port 5000
-- CMS erreichbar unter: `http://localhost:5000/admin`
-- Beim ersten Aufruf startet der **Setup-Wizard** automatisch
-
-> ℹ️ **Hinweis:** Das Admin-Panel (`/admin`) wird vom Express-Server ausgeliefert und ist nur erreichbar wenn der Server läuft – das direkte Öffnen von `cms/index.html` im Browser funktioniert nicht.
-
----
-
-## CMS-Navigation
-
-```
-📊 Dashboard
-🌐 Website
-   ├─ Startseite & Bilder
-   ├─ Seiten verwalten
-   ├─ Impressum & Datenschutz
-   ├─ Cookie Banner
-   ├─ Standort & Karte
-   ├─ Urlaub
-   └─ Feiertage
-🍽 Restaurant
-   ├─ Reservierungen
-   ├─ Tische
-   └─ Öffnungszeiten
-📋 Speisekarte
-   ├─ Gerichte
-   ├─ Kategorien
-   ├─ Allergene
-   └─ Zusatzstoffe
-⚙️ System
-   ├─ Einstellungen (inkl. SMTP & Lizenz)
-   └─ Erweiterungen (Plugins)
-```
-
----
-
-## 🛠️ Hilfs-Skripte
-
-Alle Skripte liegen im Ordner `scripts/` und werden direkt auf dem Server ausgeführt.
-
-### 🔒 fix-license-token.js
-
-Erneuert das Lizenz-JWT in der Datenbank, falls es abgelaufen oder ungültig ist.
-
-```bash
-node scripts/fix-license-token.js deine-domain.de
-pm2 restart opa-cms
-```
-
----
-
-### 🌄 auto-images.js – Automatische Speisefotos
-
-Lädt für alle Gerichte ohne Bild automatisch ein passendes Foto von **Pexels** oder **Unsplash** herunter und speichert es direkt in der Datenbank.
-
-> ⚠️ **Nur für Testzwecke geeignet.**  
-> Für den Produktivbetrieb sollten ausschließlich **eigene Produktfotos** verwendet werden.  
-> Stock-Fotos von Pexels/Unsplash unterliegen deren jeweiligen Lizenzbedingungen und sind **nicht für kommerzielle Produktpräsentation** ohne Attribution gedacht. Eigene Fotos vermeiden Copyright-Risiken, wirken professioneller und erhöhen das Vertrauen der Gäste.
-
-#### Setup (einmalig)
-
-**Pexels** (empfohlen – 200 req/h, kein Tageslimit):
-1. → [pexels.com/api](https://www.pexels.com/api/) – kostenlos registrieren
-2. API Key kopieren und in `.env` eintragen:
-```env
-PEXELS_API_KEY=dein_pexels_key
-```
-
-**Unsplash** (optional, zusätzlicher Fallback – 50 req/h):
-1. → [unsplash.com/developers](https://unsplash.com/developers) – kostenlos registrieren
-2. Access Key kopieren und in `.env` eintragen:
-```env
-UNSPLASH_ACCESS_KEY=dein_unsplash_key
-```
-
-#### Verwendung
-
-```bash
-# Erst testen – nichts wird gespeichert:
-node scripts/auto-images.js --dry-run
-
-# Alle Gerichte ohne Bild bebildern:
-node scripts/auto-images.js
-
-# Nur die ersten 20 (zum schrittweisen Testen):
-node scripts/auto-images.js --limit 20
-
-# Auch Gerichte mit vorhandenem Bild ersetzen:
-node scripts/auto-images.js --overwrite
-
-# Nur eine bestimmte Quelle verwenden:
-node scripts/auto-images.js --source pexels
-node scripts/auto-images.js --source unsplash
-```
-
-#### Beispiel-Ausgabe
-
-```
-🌄 OPA-CMS Auto-Image Script
-==================================================
-🔑 Pexels:   ✅ aktiv (200 req/h, kein Tageslimit)
-🔑 Unsplash: ✅ aktiv (50 req/h)
-🎯 Modus:    Auto (Pexels → Unsplash Fallback)
-
-📊 Gerichte gesamt:  131
-🔍 Zu bebildern:     87
-
-[1/87]  "Gyros Teller"   ... ✅ 📸 Pexels   | Jane Doe -> /uploads/auto-xxx.jpg
-[2/87]  "Spanakopita"    ... ✅ 🌄 Unsplash | John Smith -> /uploads/auto-yyy.jpg
-[3/87]  "Ouzo Sorbet"    ... ⚠️  Kein Bild gefunden – übersprungen.
-```
-
-| Option | Beschreibung |
+| Plan | Highlights |
 |---|---|
-| `--dry-run` | Nur Vorschau, nichts wird gespeichert |
-| `--limit N` | Maximal N Gerichte verarbeiten |
-| `--overwrite` | Auch Gerichte mit vorhandenem Bild ersetzen |
-| `--source pexels` | Nur Pexels verwenden |
-| `--source unsplash` | Nur Unsplash verwenden |
-
----
-
-## ✨ Features
-
-### 🍽️ Speisekarten-Verwaltung
-
-- Gerichte mit Bild, Preis, Nummer & Beschreibung
-- Kategorien, Allergene & Zusatzstoffe
-- PDF-Export der Speisekarte
-- JSON-Backup & Restore (Import/Export)
-- Plan-Limit-Prüfung beim Speichern
-
-### 📅 Reservierungen
-
-- Online-Buchung mit Echtzeit-Verfügbarkeitsprüfung
-- Tisch-Zuweisung & Kombinationstisch-Logik
-- Bestätigungs-/Storno-Links per E-Mail
-- POST-API für programmtische Cancel/Confirm-Aktionen
-- Warteliste / Anfrage-Modus wenn voll
-- Konfigurierbarer Puffer & Aufenthaltsdauer
-
-### 🌐 Website-Editor
-
-- Startseite, Hero-Bereich, Galerie & Öffnungszeiten
-- Impressum, Datenschutz & Cookie-Banner
-- Standort-Karte einbetten
-- Urlaubs- & Feiertagsverwaltung
-
-### 🔑 Lizenz-System
-
-- FREE / STARTER / PRO / PRO+ / ENTERPRISE Pläne
-- 30-Tage-Trial beim Setup
-- Lizenz-Aktivierung komplett im Browser
-- Plan-Module einzeln manuell überschreibbar (Admin)
-
-### 🔌 Plugin-System
-
-- Erweiterungen mit eigenem `server.js` & Frontend
-- Aktivierung/Deaktivierung per Toggle im CMS
-
-### 🔒 Sicherheit
-
-- CORS Origin-Whitelist (konfigurierbar über `CORS_ORIGINS` in `.env`)
-- Rate-Limiting auf Login & Reservierungen
-- bcrypt-Passwort-Hashing
-- JWT-Sessions mit 12h Ablauf
-- Recovery-Codes für Admin-Zugang
-- SMTP-Konfiguration dynamisch aus DB (kein Neustart bei Änderung)
+| **Starter** | Bis 40 Gerichte, Reservierungen & Bestellungen |
+| **Pro** | Bis 100 Gerichte, Custom Design |
+| **Enterprise** | Unbegrenzte Tische, alle Module inkl. QR-Pay |
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Bereich        | Technologie                                      |
-| -------------- | ------------------------------------------------ |
-| Backend        | Node.js, Express                                 |
-| Datenbank      | SQLite via `better-sqlite3`                      |
-| Auth           | JWT + bcrypt                                     |
-| Realtime       | Socket.io                                        |
-| Frontend       | Vanilla JS (ES Modules)                          |
-| Styling        | CSS Custom Properties, Glassmorphism             |
-| E-Mail         | Nodemailer (SMTP, dynamisch aus DB)              |
-| Prozessmanager | PM2 (install-ubuntu.sh) oder systemd (deploy.sh) |
+- **Backend**: Node.js, Express
+- **Datenbank**: SQLite (`better-sqlite3`) ODER MySQL/MariaDB (`mysql2`)
+- **Frontend**: Vanilla JS (ES Modules), CSS Custom Properties (Glassmorphism)
+- **Realtime**: Socket.io (für Bestelleingänge)
+- **E-Mail**: Nodemailer (dynamischer SMTP aus DB)
 
 ---
 
 ## 📁 Projektstruktur
 
 ```
-/opt/opa-santorini/
-├── server.js              # Express-Server & alle API-Routen
-├── config.js              # Konfiguration (Port, Secrets, SMTP – Prio: config.json > .env)
-├── reset-admin.js         # Admin-Passwort zurücksetzen (Fallback, nur Konsole)
-├── .env                   # Eure Konfiguration (NICHT committen!)
-├── .env.example           # Vorlage für Umgebungsvariablen
-├── install-ubuntu.sh      # Vollautomatischer Server-Setup (PM2, Ubuntu/Debian)
-├── deploy.sh              # Alternatives Deploy-Skript (systemd)
-├── update-mac-linux.sh    # Update-Skript (Linux/Mac, PM2)
-├── start-mac-linux.sh     # Lokaler Start (Mac/Linux, Entwicklung)
+/
+├── server.js              # Entry Point & API Routen
+├── config.js              # Konfigurations-Loader
 ├── server/
-│   ├── database.js        # SQLite-Datenbankschicht (better-sqlite3)
-│   ├── config.json        # Setup-Konfiguration (auto-generiert, NICHT committen!)
-│   ├── license.js         # Lizenz-Logik & Plan-Definitionen
-│   ├── mailer.js          # E-Mail-Versand (Nodemailer, dynamischer SMTP)
-│   └── api.js             # ⚠️ Legacy / deprecated – nicht mehr aktiv
-├── scripts/
-│   ├── fix-license-token.js  # Lizenz-Token in DB erneuern
-│   ├── auto-images.js        # Automatische Speisefotos via Pexels/Unsplash (nur Test!)
-│   └── create-admin.js       # Hilfsskript: Admin-User anlegen (Konsole)
-├── cms/                   # Admin-Interface
-│   ├── index.html
-│   ├── setup.html         # Setup-Wizard (Ersteinrichtung)
-│   ├── app.js
-│   ├── style.css
-│   └── modules/           # CMS-Module (menu, reservations, ...)
-├── menu-app/              # Gäste-Frontend (Speisekarte)
-├── plugins/               # Erweiterungen
-├── uploads/               # Hochgeladene Bilder
-└── tmp/                   # Temporäre Dateien
+│   ├── database.js        # DB-Adapter & SQLite Logik
+│   ├── database-mysql.js  # MySQL/MariaDB Adapter
+│   ├── routes/            # API Endpunkte (auth, menu, orders, cart...)
+│   ├── license.js         # Lizenz-Prüfung
+│   └── mailer.js          # E-Mail Versand
+├── cms/                   # Admin-Panel (ES Modules)
+│   ├── app.js             # Hauptlogik CMS
+│   └── modules/           # Module (menu.js, reservations.js...)
+├── menu-app/              # Gäste-Frontend
+│   ├── app.js             # Hauptlogik Speisekarte
+│   ├── cart.js            # Warenkorb-Logik
+│   └── cart.css           # Warenkorb-Styles
+└── plugins/               # Erweiterungs-Schnittstelle
 ```
 
 ---
@@ -466,7 +170,5 @@ node scripts/auto-images.js --source unsplash
 
 - [ ] Gutschein-System (digitale Geschenkkarten)
 - [ ] Google Reviews Integration
-- [ ] Sammelpass-Digital (jede 10. Bestellung = Rabatt)
-- [ ] QR-Pay (Bezahlung am Tisch per QR-Code)
-- [ ] SMS-Benachrichtigungen
-- [ ] Mehrsprachigkeit (DE / EN / GR)
+- [ ] QR-Pay (Bezahlung am Tisch)
+- [ ] Mehrsprachigkeit (DE / EN / EL)
