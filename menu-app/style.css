@@ -1008,6 +1008,7 @@ a { text-decoration:none; color:inherit; cursor:pointer; }
     cursor: pointer; font-size: .88rem;
     color: #333; text-align: left;
     transition: background .15s;
+    touch-action: pan-y; /* Allow scroll gestures to pass through */
 }
 .lang-option:hover { background: rgba(0,0,0,0.04); }
 .lang-option.active {
@@ -1036,6 +1037,7 @@ a { text-decoration:none; color:inherit; cursor:pointer; }
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
         touch-action: pan-y;
+        padding-top: 12px;
         padding-bottom: env(safe-area-inset-bottom, 20px);
         z-index: 2001;
     }

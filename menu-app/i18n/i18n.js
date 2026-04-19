@@ -153,14 +153,28 @@ window.OpaI18n = (function () {
             btn.parentNode.replaceChild(clone, btn);
             
             let touchHandled = false;
-            
+            let touchStartY = 0;
+            let isSwiping = false;
+
+            clone.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+                isSwiping = false;
+            }, { passive: true });
+
+            clone.addEventListener('touchmove', (e) => {
+                if (Math.abs(e.touches[0].clientY - touchStartY) > 8) {
+                    isSwiping = true;
+                }
+            }, { passive: true });
+
             clone.addEventListener('touchend', (e) => {
-                e.preventDefault();        // prevent ghost click
+                if (isSwiping) return; // User scrolled, ignore tap
+                
                 e.stopPropagation();       // don't bubble to document
                 touchHandled = true;
                 const code = clone.dataset.lang;
                 OpaI18n.setLang(code);     // setLang handles closing
-            }, { passive: false });
+            }, { passive: true });
             
             clone.addEventListener('click', (e) => {
                 e.stopPropagation();
