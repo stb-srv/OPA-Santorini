@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Startpagina","menu":"Menu","reservations":"Reservering","location":"Locatie" },
+  "menu": { "search_placeholder":"Gerecht zoeken…","all_categories":"Alle","daily_specials":"⭐ Dagsspecials","favorites":"❤️ Favorieten","empty":"Geen gerechten gevonden.","add_to_cart":"Toevoegen aan winkelwagen","allergens":"Allergenen","today_badge":"Vandaag" },
+  "cart": { "title":"Winkelwagen","empty":"Uw winkelwagen is leeg.","total":"Totaal","order":"Bestellen","remove":"Verwijderen" },
+  "reservations": { "title":"Reservering","name":"Naam","email":"E-mail","phone":"Telefoon","date":"Datum","time":"Tijd","guests":"Personen","note":"Opmerking","submit":"Reservering aanvragen","success":"Dank u! We kijken uit naar uw bezoek.","error":"Er ging iets mis. Probeer het opnieuw." },
+  "legal": { "imprint":"Impressum","privacy":"Privacybeleid" },
+  "location": { "title":"Hoe u ons vindt","google_maps":"Open Google Maps","apple_maps":"Open Apple Maps" },
+  "footer": { "rights":"Alle rechten voorbehouden" },
+  "cookie": { "title":"Cookie-instellingen","accept":"Alles accepteren","decline":"Weigeren" },
+  "opening_hours": { "open_until":"Open tot {time}","opens_at":"Opent om {time}","closed_today":"Vandaag gesloten","closes_soon":"Sluit om {time}" }
+}

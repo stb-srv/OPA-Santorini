@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Home","menu":"Menu","reservations":"Prenotazione","location":"Posizione" },
+  "menu": { "search_placeholder":"Cerca piatto…","all_categories":"Tutti","daily_specials":"⭐ Speciali del giorno","favorites":"❤️ Preferiti","empty":"Nessun piatto trovato.","add_to_cart":"Aggiungi al carrello","allergens":"Allergeni","today_badge":"Oggi" },
+  "cart": { "title":"Carrello","empty":"Il carrello è vuoto.","total":"Totale","order":"Ordina","remove":"Rimuovi" },
+  "reservations": { "title":"Prenotazione","name":"Nome","email":"Email","phone":"Telefono","date":"Data","time":"Orario","guests":"Persone","note":"Nota","submit":"Richiedi prenotazione","success":"Grazie! Vi aspettiamo.","error":"Qualcosa è andato storto. Riprova." },
+  "legal": { "imprint":"Note legali","privacy":"Informativa sulla privacy" },
+  "location": { "title":"Come trovarci","google_maps":"Apri Google Maps","apple_maps":"Apri Apple Maps" },
+  "footer": { "rights":"Tutti i diritti riservati" },
+  "cookie": { "title":"Impostazioni cookie","accept":"Accetta tutti","decline":"Rifiuta" },
+  "opening_hours": { "open_until":"Aperto fino alle {time}","opens_at":"Apre alle {time}","closed_today":"Chiuso oggi","closes_soon":"Chiude alle {time}" }
+}

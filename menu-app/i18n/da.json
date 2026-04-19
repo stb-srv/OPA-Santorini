@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Startside","menu":"Menukort","reservations":"Reservation","location":"Placering" },
+  "menu": { "search_placeholder":"Søg ret…","all_categories":"Alle","daily_specials":"⭐ Dagens retter","favorites":"❤️ Favoritter","empty":"Ingen retter fundet.","add_to_cart":"Tilføj til kurv","allergens":"Allergener","today_badge":"I dag" },
+  "cart": { "title":"Kurv","empty":"Din kurv er tom.","total":"Total","order":"Bestil","remove":"Fjern" },
+  "reservations": { "title":"Reservation","name":"Navn","email":"E-mail","phone":"Telefon","date":"Dato","time":"Tid","guests":"Gæster","note":"Bemærkning","submit":"Anmod om reservation","success":"Tak! Vi glæder os til at se dig.","error":"Noget gik galt. Prøv igen." },
+  "legal": { "imprint":"Impressum","privacy":"Privatlivspolitik" },
+  "location": { "title":"Find os","google_maps":"Åbn Google Maps","apple_maps":"Åbn Apple Maps" },
+  "footer": { "rights":"Alle rettigheder forbeholdes" },
+  "cookie": { "title":"Cookie-indstillinger","accept":"Accepter alle","decline":"Afvis" },
+  "opening_hours": { "open_until":"Åbent til {time}","opens_at":"Åbner kl. {time}","closed_today":"Lukket i dag","closes_soon":"Lukker kl. {time}" }
+}

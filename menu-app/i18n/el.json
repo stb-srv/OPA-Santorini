@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Αρχική","menu":"Μενού","reservations":"Κράτηση","location":"Τοποθεσία" },
+  "menu": { "search_placeholder":"Αναζήτηση πιάτου…","all_categories":"Όλα","daily_specials":"⭐ Σημερινές Προτάσεις","favorites":"❤️ Αγαπημένα","empty":"Δεν βρέθηκαν πιάτα.","add_to_cart":"Προσθήκη στο καλάθι","allergens":"Αλλεργιογόνα","today_badge":"Σήμερα" },
+  "cart": { "title":"Καλάθι","empty":"Το καλάθι σας είναι άδειο.","total":"Σύνολο","order":"Παραγγελία","remove":"Αφαίρεση" },
+  "reservations": { "title":"Κράτηση","name":"Όνομα","email":"Email","phone":"Τηλέφωνο","date":"Ημερομηνία","time":"Ώρα","guests":"Άτομα","note":"Σημείωση","submit":"Αίτηση κράτησης","success":"Ευχαριστούμε! Σας περιμένουμε.","error":"Κάτι πήγε στραβά. Δοκιμάστε ξανά." },
+  "legal": { "imprint":"Στοιχεία εταιρείας","privacy":"Πολιτική απορρήτου" },
+  "location": { "title":"Πώς να μας βρείτε","google_maps":"Άνοιγμα Google Maps","apple_maps":"Άνοιγμα Apple Maps" },
+  "footer": { "rights":"Με επιφύλαξη παντός δικαιώματος" },
+  "cookie": { "title":"Ρυθμίσεις cookies","accept":"Αποδοχή όλων","decline":"Απόρριψη" },
+  "opening_hours": { "open_until":"Ανοιχτά έως {time}","opens_at":"Ανοίγει στις {time}","closed_today":"Σήμερα κλειστά","closes_soon":"Κλείνει στις {time}" }
+}

@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Strona główna","menu":"Menu","reservations":"Rezerwacja","location":"Lokalizacja" },
+  "menu": { "search_placeholder":"Szukaj dania…","all_categories":"Wszystkie","daily_specials":"⭐ Specjały dnia","favorites":"❤️ Ulubione","empty":"Nie znaleziono dań.","add_to_cart":"Dodaj do koszyka","allergens":"Alergeny","today_badge":"Dziś" },
+  "cart": { "title":"Koszyk","empty":"Twój koszyk jest pusty.","total":"Łącznie","order":"Zamów","remove":"Usuń" },
+  "reservations": { "title":"Rezerwacja","name":"Imię","email":"E-mail","phone":"Telefon","date":"Data","time":"Godzina","guests":"Osoby","note":"Uwaga","submit":"Zarezerwuj stolik","success":"Dziękujemy! Czekamy na Ciebie.","error":"Coś poszło nie tak. Spróbuj ponownie." },
+  "legal": { "imprint":"Impressum","privacy":"Polityka prywatności" },
+  "location": { "title":"Jak nas znaleźć","google_maps":"Otwórz Google Maps","apple_maps":"Otwórz Apple Maps" },
+  "footer": { "rights":"Wszelkie prawa zastrzeżone" },
+  "cookie": { "title":"Ustawienia cookies","accept":"Akceptuj wszystkie","decline":"Odrzuć" },
+  "opening_hours": { "open_until":"Otwarte do {time}","opens_at":"Otwiera o {time}","closed_today":"Dziś zamknięte","closes_soon":"Zamyka o {time}" }
+}

@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Home","menu":"Menu","reservations":"Reservation","location":"Location" },
+  "menu": { "search_placeholder":"Search dish…","all_categories":"All","daily_specials":"⭐ Today's Specials","favorites":"❤️ Favorites","empty":"No dishes found.","add_to_cart":"Add to Cart","allergens":"Allergens","today_badge":"Today" },
+  "cart": { "title":"Cart","empty":"Your cart is empty.","total":"Total","order":"Order","remove":"Remove" },
+  "reservations": { "title":"Reservation","name":"Name","email":"E-Mail","phone":"Phone","date":"Date","time":"Time","guests":"Guests","note":"Note","submit":"Request Reservation","success":"Thank you! We look forward to seeing you.","error":"Something went wrong. Please try again." },
+  "legal": { "imprint":"Imprint","privacy":"Privacy Policy" },
+  "location": { "title":"Find Us","google_maps":"Open Google Maps","apple_maps":"Open Apple Maps" },
+  "footer": { "rights":"All rights reserved" },
+  "cookie": { "title":"Cookie Settings","accept":"Accept All","decline":"Decline" },
+  "opening_hours": { "open_until":"Open until {time}","opens_at":"Opens at {time}","closed_today":"Closed today","closes_soon":"Closes at {time}" }
+}

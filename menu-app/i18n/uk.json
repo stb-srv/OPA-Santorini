@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Головна","menu":"Меню","reservations":"Бронювання","location":"Розташування" },
+  "menu": { "search_placeholder":"Пошук страви…","all_categories":"Усі","daily_specials":"⭐ Страви дня","favorites":"❤️ Вибране","empty":"Страви не знайдено.","add_to_cart":"Додати до кошика","allergens":"Алергени","today_badge":"Сьогодні" },
+  "cart": { "title":"Кошик","empty":"Ваш кошик порожній.","total":"Разом","order":"Замовити","remove":"Видалити" },
+  "reservations": { "title":"Бронювання","name":"Ім'я","email":"E-mail","phone":"Телефон","date":"Дата","time":"Час","guests":"Гості","note":"Примітка","submit":"Запросити бронювання","success":"Дякуємо! Чекаємо на вас.","error":"Щось пішло не так. Спробуйте ще раз." },
+  "legal": { "imprint":"Вихідні дані","privacy":"Політика конфіденційності" },
+  "location": { "title":"Як нас знайти","google_maps":"Відкрити Google Maps","apple_maps":"Відкрити Apple Maps" },
+  "footer": { "rights":"Усі права захищені" },
+  "cookie": { "title":"Налаштування cookies","accept":"Прийняти всі","decline":"Відхилити" },
+  "opening_hours": { "open_until":"Відкрито до {time}","opens_at":"Відкривається ο {time}","closed_today":"Сьогодні зачинено","closes_soon":"Зачиняється ο {time}" }
+}

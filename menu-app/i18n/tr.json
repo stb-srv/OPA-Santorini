@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Ana Sayfa","menu":"Menü","reservations":"Rezervasyon","location":"Konum" },
+  "menu": { "search_placeholder":"Yemek ara…","all_categories":"Tümü","daily_specials":"⭐ Günün Önerileri","favorites":"❤️ Favoriler","empty":"Yemek bulunamadı.","add_to_cart":"Sepete ekle","allergens":"Alerjenler","today_badge":"Bugün" },
+  "cart": { "title":"Sepet","empty":"Sepetiniz boş.","total":"Toplam","order":"Sipariş ver","remove":"Kaldır" },
+  "reservations": { "title":"Rezervasyon","name":"Ad","email":"E-posta","phone":"Telefon","date":"Tarih","time":"Saat","guests":"Kişi","note":"Not","submit":"Rezervasyon talep et","success":"Teşekkürler! Sizi bekliyoruz.","error":"Bir şeyler ters gitti. Tekrar deneyin." },
+  "legal": { "imprint":"Künye","privacy":"Gizlilik politikası" },
+  "location": { "title":"Bizi nasıl bulursunuz","google_maps":"Google Maps'i aç","apple_maps":"Apple Maps'i aç" },
+  "footer": { "rights":"Tüm hakları saklıdır" },
+  "cookie": { "title":"Çerez ayarları","accept":"Tümünü kabul et","decline":"Reddet" },
+  "opening_hours": { "open_until":"{time} saatine kadar açık","opens_at":"{time}'de açılıyor","closed_today":"Bugün kapalı","closes_soon":"{time}'de kapanıyor" }
+}

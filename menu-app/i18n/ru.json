@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"Главная","menu":"Меню","reservations":"Бронирование","location":"Местонахождение" },
+  "menu": { "search_placeholder":"Поиск блюда…","all_categories":"Все","daily_specials":"⭐ Блюда дня","favorites":"❤️ Избранное","empty":"Блюда не найдены.","add_to_cart":"Добавить в корзину","allergens":"Аллергены","today_badge":"Сегодня" },
+  "cart": { "title":"Корзина","empty":"Ваша корзина пуста.","total":"Итого","order":"Заказать","remove":"Удалить" },
+  "reservations": { "title":"Бронирование","name":"Имя","email":"E-mail","phone":"Телефон","date":"Дата","time":"Время","guests":"Гости","note":"Примечание","submit":"Запросить бронирование","success":"Спасибо! Ждём вас.","error":"Что-то пошло не так. Попробуйте ещё раз." },
+  "legal": { "imprint":"Выходные данные","privacy":"Политика конфиденциальности" },
+  "location": { "title":"Как нас найти","google_maps":"Открыть Google Maps","apple_maps":"Открыть Apple Maps" },
+  "footer": { "rights":"Все права защищены" },
+  "cookie": { "title":"Настройки cookies","accept":"Принять все","decline":"Отклонить" },
+  "opening_hours": { "open_until":"Открыто до {time}","opens_at":"Открывается в {time}","closed_today":"Сегодня закрыто","closes_soon":"Закрывается в {time}" }
+}

@@ -1,0 +1,11 @@
+{
+  "nav": { "home":"الرئيسية","menu":"القائمة","reservations":"حجز","location":"الموقع" },
+  "menu": { "search_placeholder":"ابحث عن طبق…","all_categories":"الكل","daily_specials":"⭐ عروض اليوم","favorites":"❤️ المفضلة","empty":"لم يتم العثور على أطباق.","add_to_cart":"أضف إلى السلة","allergens":"مسببات الحساسية","today_badge":"اليوم" },
+  "cart": { "title":"السلة","empty":"سلتك فارغة.","total":"المجموع","order":"اطلب","remove":"إزالة" },
+  "reservations": { "title":"حجز","name":"الاسم","email":"البريد الإلكتروني","phone":"الهاتف","date":"التاريخ","time":"الوقت","guests":"عدد الأشخاص","note":"ملاحظة","submit":"طلب حجز","success":"شكراً! نتطلع لاستقبالكم.","error":"حدث خطأ ما. حاول مرة أخرى." },
+  "legal": { "imprint":"بيانات الناشر","privacy":"سياسة الخصوصية" },
+  "location": { "title":"كيفية الوصول إلينا","google_maps":"فتح خرائط جوجل","apple_maps":"فتح خرائط آبل" },
+  "footer": { "rights":"جميع الحقوق محفوظة" },
+  "cookie": { "title":"إعدادات ملفات تعريف الارتباط","accept":"قبول الكل","decline":"رفض" },
+  "opening_hours": { "open_until":"مفتوح حتى {time}","opens_at":"يفتح الساعة {time}","closed_today":"مغلق اليوم","closes_soon":"يغلق الساعة {time}" }
+}
