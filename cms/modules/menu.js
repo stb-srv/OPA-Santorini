@@ -662,10 +662,20 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
         if (imgFile) imgFile.onchange = async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+
+            // Show loading state
+            imgPreview.innerHTML = `<i class="fas fa-spinner fa-spin" style="font-size:1.4rem;opacity:.6;"></i><span>Wird hochgeladen…</span>`;
+
             const res = await apiUpload(file);
             if (res.success) {
                 container.querySelector('#df-img').value = res.url;
                 imgPreview.innerHTML = `<img src="${res.url}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">`;
+            } else {
+                // Reset preview and show error
+                imgPreview.innerHTML = `<i class="fas fa-exclamation-triangle" style="font-size:1.4rem;color:#e53e3e;"></i><span style="color:#e53e3e;">Upload fehlgeschlagen</span>`;
+                showToast(res.reason || 'Bild-Upload fehlgeschlagen.', 'error');
+                // Reset the file input so the same file can be retried
+                imgFile.value = '';
             }
         };
 

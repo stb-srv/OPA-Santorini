@@ -88,12 +88,16 @@ export async function apiUpload(file) {
             body: fd
         });
         if (r.status === 401) return handleAuthFailure();
-        const res = await r.json();
+        // Parse JSON regardless of status so we get the reason field
+        const res = await r.json().catch(() => ({ 
+            success: false, 
+            reason: `HTTP ${r.status}` 
+        }));
         if (res) checkTokenExpiry();
         return res;
     } catch (e) { 
         console.error('API Upload error:', e);
-        return { success: false }; 
+        return { success: false, reason: e.message || 'Verbindungsfehler.' }; 
     }
 }
 
