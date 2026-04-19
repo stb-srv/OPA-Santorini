@@ -56,6 +56,23 @@ window.OpaI18n = (function () {
         currentLang = code;
     }
 
+    function setDropdownOpen(open) {
+        const dd = document.getElementById('lang-dropdown');
+        const backdrop = document.getElementById('lang-backdrop');
+        if (!dd) return;
+        if (open) {
+            dd.classList.add('open');
+            if (window.innerWidth <= 768) {
+                if (backdrop) backdrop.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        } else {
+            dd.classList.remove('open');
+            if (backdrop) backdrop.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
     function t(key, vars = {}) {
         let str = key.split('.').reduce((o, k) => o?.[k], translations) ?? key;
         Object.entries(vars).forEach(([k, v]) => {
@@ -78,6 +95,7 @@ window.OpaI18n = (function () {
         
         const menu = document.getElementById('lang-dropdown-menu');
         if (menu) menu.innerHTML = renderDropdown();
+        setDropdownOpen(false);
     }
 
     function applyTranslations() {
@@ -114,7 +132,7 @@ window.OpaI18n = (function () {
         const handle = '<div class="lang-sheet-handle"></div>';
         const options = Object.values(LANGUAGES).map(l => `
             <button class="lang-option ${l.code === currentLang ? 'active' : ''}"
-                    onclick="OpaI18n.setLang('${l.code}'); document.getElementById('lang-dropdown').classList.remove('open');">
+                    onclick="OpaI18n.setDropdownOpen(false); OpaI18n.setLang('${l.code}');">
                 <span class="lang-flag">${l.flag}</span>
                 <span class="lang-label">${l.label}</span>
                 ${l.code === currentLang ? '<i class="fas fa-check" style="margin-left:auto;color:var(--gold,#C8A96E);"></i>' : ''}
@@ -142,11 +160,24 @@ window.OpaI18n = (function () {
 
         document.addEventListener('click', (e) => {
             const dd  = document.getElementById('lang-dropdown');
-            const btn = document.getElementById('lang-switcher-btn');
-            if (dd && !dd.contains(e.target) && !btn?.contains(e.target))
-                dd.classList.remove('open');
+            if (!dd) return;
+            if (dd.classList.contains('open') && !dd.contains(e.target)) {
+                setDropdownOpen(false);
+            }
         });
+
+        // Create backdrop for mobile bottom sheet
+        let backdrop = document.getElementById('lang-backdrop');
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.id = 'lang-backdrop';
+            backdrop.className = 'lang-backdrop';
+            backdrop.addEventListener('click', () => {
+                setDropdownOpen(false);
+            });
+            document.body.appendChild(backdrop);
+        }
     }
 
-    return { init, t, setLang, applyTranslations, renderDropdown, getLanguages: () => LANGUAGES, getCurrent: () => currentLang };
+    return { init, t, setLang, applyTranslations, renderDropdown, setDropdownOpen, getLanguages: () => LANGUAGES, getCurrent: () => currentLang };
 })();

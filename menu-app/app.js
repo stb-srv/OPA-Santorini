@@ -240,36 +240,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-        // Language Switcher: Mobile Scroll Lock & Tap-Outside
-        document.addEventListener('click', (e) => {
-            const dd = document.getElementById('lang-dropdown');
-            const btn = document.getElementById('lang-switcher-btn');
-            if (!dd) return;
-
-            // Handle button click (toggle is inline in HTML)
-            if (btn && btn.contains(e.target)) {
-                setTimeout(() => {
-                    const isOpen = dd.classList.contains('open');
-                    if (window.innerWidth <= 768) {
-                        document.body.style.overflow = isOpen ? 'hidden' : '';
-                    }
-                }, 100);
-                return;
-            }
-
-            // Handle clicking a language option (which also closes the menu)
-            if (dd.contains(e.target)) {
-                setTimeout(() => {
-                    if (!dd.classList.contains('open')) document.body.style.overflow = '';
-                }, 100);
-            }
-
-            // Tap outside (on dim overlay or elsewhere) to close
-            if (dd.classList.contains('open') && !dd.contains(e.target)) {
-                dd.classList.remove('open');
-                document.body.style.overflow = '';
-            }
-        });
 
         // Beim Laden: Hash aus URL auslesen und Tab wiederherstellen
         const hashOnLoad = window.location.hash?.replace('#', '').trim();

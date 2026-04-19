@@ -950,6 +950,15 @@ a { text-decoration:none; color:inherit; cursor:pointer; }
     display: none;
 }
 
+.lang-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 2000;
+    -webkit-tap-highlight-color: transparent;
+}
+
 /* ── Sprachauswahl ── */
 .lang-switcher { position: relative; }
 
@@ -1018,24 +1027,16 @@ a { text-decoration:none; color:inherit; cursor:pointer; }
 @media (max-width: 768px) {
     .lang-sheet-handle { display: block; }
 
-    .lang-switcher.open::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.4);
-        z-index: 1999;
-    }
-
     .lang-dropdown-menu {
         position: fixed;
         bottom: 0; top: auto; right: 0; left: 0;
         border-radius: 20px 20px 0 0;
         max-height: 70vh; min-width: 100%;
-        overflow-y: scroll;
+        overflow-y: scroll !important;
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
         touch-action: pan-y;
-        padding-bottom: env(safe-area-inset-bottom, 16px);
+        padding-bottom: env(safe-area-inset-bottom, 20px);
         z-index: 2001;
     }
     @keyframes langDropIn {
