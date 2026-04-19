@@ -65,9 +65,15 @@ try {
                 imgSrc:          ["'self'", 'data:', 'blob:',
                                   'https://maps.gstatic.com',
                                   'https://*.googleapis.com',
-                                  'https://ui-avatars.com'],
+                                  'https://ui-avatars.com',
+                                  'https://images.unsplash.com',
+                                  'https://images.pexels.com'],
                 // WebSocket (Socket.IO)
-                connectSrc:      ["'self'", 'ws:', 'wss:', 'https://cdnjs.cloudflare.com'],
+                connectSrc:      ["'self'", 'ws:', 'wss:', 
+                                  'https://cdnjs.cloudflare.com',
+                                  'https://api.unsplash.com',
+                                  'https://api.pexels.com',
+                                  'https://generativelanguage.googleapis.com'],
                 // Google Maps iFrame
                 frameSrc:        ["'self'",
                                   'https://maps.google.com',
@@ -129,6 +135,7 @@ app.use('/api/upload',       require('./server/routes/upload.js')(requireAuth, U
 // Cookie Consent API (DSGVO)
 app.use('/api',              require('./server/routes/cookie.js')(requireAuth));
 app.use('/api/cart',         require('./server/routes/cart.js')(requireLicense, io));
+app.use('/api/image-ai',     requireAuth, require('./server/routes/image-ai.js')(requireAuth, DB));
 
 // Global Backup & Restore
 app.use('/api/backup', requireAuth, require('./server/routes/backup.js'));

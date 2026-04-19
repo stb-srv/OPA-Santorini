@@ -359,9 +359,16 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 </label>
             </div>
             <div style="margin-top:20px;">
-                <label>Bilder-Upload</label>
-                <div id="df-img-preview" class="image-upload-preview" style="width:120px;height:120px;cursor:pointer;border-radius:12px;border:2px dashed rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden;background:rgba(255,255,255,0.5);font-size:.75rem;color:#888;transition:border-color .2s;">
-                    <i class="fas fa-cloud-upload-alt" style="font-size:1.4rem;opacity:.4;"></i><span>Bild hochladen</span>
+                <div style="display:flex; align-items:flex-end; gap:12px;">
+                    <div id="df-img-preview" class="image-upload-preview" style="width:120px;height:120px;cursor:pointer;border-radius:12px;border:2px dashed rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden;background:rgba(255,255,255,0.5);font-size:.75rem;color:#888;transition:border-color .2s;">
+                        <i class="fas fa-cloud-upload-alt" style="font-size:1.4rem;opacity:.4;"></i><span>Bild hochladen</span>
+                    </div>
+                    <div id="ai-image-btn-container" style="display:none;">
+                        <button type="button" id="btn-ai-image" class="btn-primary" 
+                                style="font-size:.8rem; padding:8px 14px; background:linear-gradient(135deg,#6366f1,#8b5cf6); border:none; border-radius:10px;">
+                            ✨ KI-Bild
+                        </button>
+                    </div>
                 </div>
                 <input type="file" id="df-img-file" style="display:none;" accept="image/*">
                 <input type="hidden" id="df-img">
@@ -1058,8 +1065,166 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
                 container.querySelector('#kv-name').value = '';
                 renderMenu(container, document.getElementById('view-title'), currentTab, true);
             } else {
-                showToast(res?.reason || 'Fehler beim Speichern', 'error');
             }
         };
     }
+
+    // --- AI Image Modal Implementation ---
+    async function openAiImageModal() {
+        let modal = document.getElementById('ai-image-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'ai-image-modal';
+            modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);';
+            modal.innerHTML = `
+                <div class="glass-panel" style="background:#fff; border-radius:24px; padding:30px; width:min(700px,92vw); max-height:90vh; overflow-y:auto; position:relative; box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
+                    <button id="ai-modal-close" style="position:absolute; top:18px; right:18px; background:none; border:none; font-size:1.8rem; cursor:pointer; color:#999; line-height:1;">&times;</button>
+                    <h3 style="margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+                        <span style="background:linear-gradient(135deg,#6366f1,#8b5cf6); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">✨ KI-Bild / Suche</span>
+                    </h3>
+                    
+                    <div id="ai-img-tabs" style="display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;"></div>
+                    
+                    <div style="display:flex; gap:10px; margin-bottom:12px;">
+                        <input type="text" id="ai-img-query" class="input-styled" placeholder="Suchbegriff oder Prompt..." style="flex:1;">
+                        <button class="btn-primary" id="btn-ai-img-search" style="white-space:nowrap; background:var(--primary);">
+                            <i class="fas fa-magic"></i> Ausführen
+                        </button>
+                    </div>
+                    <p id="ai-img-hint" style="font-size:.78rem; color:var(--text-muted); margin-bottom:18px; line-height:1.4;"></p>
+                    
+                    <div id="ai-img-results" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; min-height:150px; background:rgba(0,0,0,0.02); border-radius:16px; padding:15px; border:1px dashed rgba(0,0,0,0.05);">
+                        <p style="color:#888; grid-column:1/-1; text-align:center; padding:40px; font-size:.9rem;">
+                            Gib einen Begriff ein und klicke auf "Ausführen".
+                        </p>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                        <p id="ai-img-credit" style="font-size:.7rem; color:#aaa;"></p>
+                        <button class="btn-secondary" id="ai-modal-cancel" style="padding:6px 15px; font-size:.8rem;">Abbrechen</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            modal.querySelector('#ai-modal-close').onclick = () => modal.style.display = 'none';
+            modal.querySelector('#ai-modal-cancel').onclick = () => modal.style.display = 'none';
+        }
+
+        modal.style.display = 'flex';
+        const resultsGrid = modal.querySelector('#ai-img-results');
+        const queryInput = modal.querySelector('#ai-img-query');
+        const searchBtn = modal.querySelector('#btn-ai-img-search');
+        const tabsContainer = modal.querySelector('#ai-img-tabs');
+        const hintEl = modal.querySelector('#ai-img-hint');
+        const creditEl = modal.querySelector('#ai-img-credit');
+
+        // Pre-fill query from dish name if empty
+        const dishName = document.getElementById('df-name')?.value;
+        if (!queryInput.value && dishName) {
+            queryInput.value = dishName;
+        }
+
+        const config = await apiGet('image-ai/config');
+        if (!config) {
+            showToast('Konfiguration konnte nicht geladen werden.', 'error');
+            return;
+        }
+
+        let activeProvider = config.defaultProvider !== 'none' ? config.defaultProvider : (config.hasUnsplash ? 'unsplash' : (config.hasPexels ? 'pexels' : (config.hasGoogleAi ? 'gemini' : '')));
+
+        const updateTabs = () => {
+            tabsContainer.innerHTML = '';
+            const providers = [
+                { id: 'unsplash', name: '🔍 Unsplash', active: config.hasUnsplash },
+                { id: 'pexels', name: '🔍 Pexels', active: config.hasPexels },
+                { id: 'gemini', name: '✨ Gemini Imagen', active: config.hasGoogleAi }
+            ];
+
+            providers.forEach(p => {
+                if (!p.active) return;
+                const btn = document.createElement('button');
+                btn.className = `btn-secondary ${activeProvider === p.id ? 'active' : ''}`;
+                btn.style.cssText = activeProvider === p.id ? 'background:rgba(99,102,241,0.1); border-color:#6366f1; color:#6366f1; font-weight:700;' : '';
+                btn.textContent = p.name;
+                btn.onclick = () => {
+                    activeProvider = p.id;
+                    updateTabs();
+                    updateHint();
+                };
+                tabsContainer.appendChild(btn);
+            });
+        };
+
+        const updateHint = () => {
+            if (activeProvider === 'gemini') {
+                hintEl.innerHTML = '<i class="fas fa-info-circle"></i> <strong>KI-Generierung:</strong> Beschreibe das Bild so detailliert wie möglich. Englische Prompts liefern oft bessere Ergebnisse.';
+            } else {
+                hintEl.innerHTML = `<i class="fas fa-info-circle"></i> <strong>Foto-Suche:</strong> Suche in der ${activeProvider === 'unsplash' ? 'Unsplash' : 'Pexels'} Datenbank nach passenden Stockfotos.`;
+            }
+        };
+
+        updateTabs();
+        updateHint();
+
+        searchBtn.onclick = async () => {
+            const query = queryInput.value.trim();
+            if (!query) return showToast('Bitte Suchbegriff eingeben.', 'warning');
+
+            resultsGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px;"><i class="fas fa-circle-notch fa-spin fa-2x" style="color:#6366f1;"></i><p style="margin-top:10px; color:#666;">Bilder werden geladen...</p></div>';
+            searchBtn.disabled = true;
+
+            try {
+                let res;
+                if (activeProvider === 'gemini') {
+                    res = await apiPost('image-ai/generate', { prompt: query });
+                } else {
+                    res = await apiPost('image-ai/search', { query, provider: activeProvider });
+                }
+
+                if (res && res.success && res.results) {
+                    resultsGrid.innerHTML = '';
+                    res.results.forEach(img => {
+                        const div = document.createElement('div');
+                        div.style.cssText = 'cursor:pointer; border-radius:12px; overflow:hidden; aspect-ratio:1/1; border:3px solid transparent; transition:all .2s; position:relative; group;';
+                        div.innerHTML = `<img src="${img.thumb}" style="width:100%; height:100%; object-fit:cover;">`;
+                        div.onmouseover = () => { div.style.borderColor = '#6366f1'; div.style.transform = 'scale(1.02)'; };
+                        div.onmouseout = () => { div.style.borderColor = 'transparent'; div.style.transform = 'scale(1)'; };
+                        div.onclick = () => {
+                            const dfImg = document.getElementById('df-img');
+                            const preview = document.getElementById('df-img-preview');
+                            if (dfImg && preview) {
+                                dfImg.value = img.url;
+                                preview.innerHTML = `<img src="${img.url}" style="width:100%; height:100%; object-fit:cover; border-radius:10px;">`;
+                                showToast('✅ Bild übernommen');
+                                modal.style.display = 'none';
+                            }
+                        };
+                        resultsGrid.appendChild(div);
+                    });
+                    if (res.results.length === 0) {
+                        resultsGrid.innerHTML = '<p style="grid-column:1/-1; text-align:center; padding:40px;">Keine Ergebnisse gefunden.</p>';
+                    }
+                } else {
+                    resultsGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; padding:40px; color:#dc2626;">Fehler: ${res?.reason || 'Unbekannt'}</p>`;
+                }
+            } catch (e) {
+                resultsGrid.innerHTML = `<p style="grid-column:1/-1; text-align:center; padding:40px; color:#dc2626;">Verbindungsfehler: ${e.message}</p>`;
+            }
+            searchBtn.disabled = false;
+        };
+    }
+
+    // Attach AI Button handler
+    const aiBtn = container.querySelector('#btn-ai-image');
+    if (aiBtn) aiBtn.onclick = openAiImageModal;
+
+    // Check if AI Image should be shown
+    (async () => {
+        const config = await apiGet('image-ai/config');
+        if (config && config.defaultProvider !== 'none') {
+            const btnCont = document.getElementById('ai-image-btn-container');
+            if (btnCont) btnCont.style.display = 'block';
+        }
+    })();
 }

@@ -56,6 +56,7 @@ export async function renderSettings(container, titleEl) {
                 <button class="tab-btn ${settingsTab === 'branding' ? 'active' : ''}" id="tab-btn-branding">Restaurant-Info</button>
                 <button class="tab-btn ${settingsTab === 'reservations' ? 'active' : ''}" id="tab-btn-reservations">Reservierungen</button>
                 <button class="tab-btn ${settingsTab === 'users' ? 'active' : ''}" id="tab-btn-users">Nutzerverwaltung</button>
+                <button class="tab-btn ${settingsTab === 'image-ai' ? 'active' : ''}" id="tab-btn-image-ai"><i class="fas fa-magic" style="margin-right:6px;"></i>Bild-KI</button>
                 <button class="tab-btn ${settingsTab === 'smtp' ? 'active' : ''}" id="tab-btn-smtp"><i class="fas fa-envelope" style="margin-right:6px;"></i>E-Mail / SMTP</button>
             </div>
 
@@ -388,6 +389,91 @@ function renderSettingsTab(settings, branding, users, licInfo) {
         `;
     }
 
+    if (settingsTab === 'image-ai') {
+        const keys = settings.imageApiKeys || {};
+        return `
+            <div style="background:rgba(99,102,241,.05); border:1px solid rgba(99,102,241,.15); border-radius:12px; padding:24px; margin-bottom:28px;">
+                <div style="display:flex; align-items:center; gap:14px; margin-bottom:6px;">
+                    <div style="width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin:0;">Bild-KI & Automatische Bilder</h4>
+                        <p style="color:var(--text-muted); font-size:.82rem; margin:2px 0 0;">
+                            Konfiguriere API-Keys für automatische Bildsuche oder KI-Bildgenerierung bei Gerichten.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label>Standard-Bildquelle für Gerichte</label>
+                    <select id="img-default-provider" class="input-styled">
+                        <option value="none" ${keys.defaultProvider === 'none' ? 'selected' : ''}>Nicht aktiv</option>
+                        <option value="unsplash" ${keys.defaultProvider === 'unsplash' ? 'selected' : ''}>🔍 Unsplash (Suche)</option>
+                        <option value="pexels" ${keys.defaultProvider === 'pexels' ? 'selected' : ''}>🔍 Pexels (Suche)</option>
+                        <option value="gemini" ${keys.defaultProvider === 'gemini' ? 'selected' : ''}>✨ Google Gemini Imagen (KI-Generierung)</option>
+                    </select>
+                </div>
+
+                <!-- Unsplash -->
+                <div class="form-group full">
+                    <label>Unsplash API Key 
+                        <a href="https://unsplash.com/developers" target="_blank" rel="noopener" style="font-size:.75rem; color:var(--accent); margin-left:8px;">
+                            <i class="fas fa-external-link-alt"></i> Key holen
+                        </a>
+                    </label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="password" id="img-unsplash-key" class="input-styled" 
+                               placeholder="${keys.unsplashKey ? '••••••••••••••••' : 'Unsplash Access Key...'}" 
+                               style="flex:1; font-family:monospace;">
+                        <button class="btn-secondary" id="btn-test-unsplash" title="Verbindung testen">
+                            <i class="fas fa-vial"></i> Testen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pexels -->
+                <div class="form-group full">
+                    <label>Pexels API Key
+                        <a href="https://www.pexels.com/api/" target="_blank" rel="noopener" style="font-size:.75rem; color:var(--accent); margin-left:8px;">
+                            <i class="fas fa-external-link-alt"></i> Key holen
+                        </a>
+                    </label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="password" id="img-pexels-key" class="input-styled" 
+                               placeholder="${keys.pexelsKey ? '••••••••••••••••' : 'Pexels API Key...'}" 
+                               style="flex:1; font-family:monospace;">
+                        <button class="btn-secondary" id="btn-test-pexels" title="Verbindung testen">
+                            <i class="fas fa-vial"></i> Testen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Google Gemini -->
+                <div class="form-group full">
+                    <label>Google AI API Key (Gemini Imagen)
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" style="font-size:.75rem; color:var(--accent); margin-left:8px;">
+                            <i class="fas fa-external-link-alt"></i> Key holen (Google AI Studio)
+                        </a>
+                    </label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="password" id="img-google-ai-key" class="input-styled" 
+                               placeholder="${keys.googleAiKey ? '••••••••••••••••' : 'AIza...'}" 
+                               style="flex:1; font-family:monospace;">
+                        <button class="btn-secondary" id="btn-test-google-ai" title="Verbindung testen">
+                            <i class="fas fa-vial"></i> Testen
+                        </button>
+                    </div>
+                    <p style="font-size:.72rem; color:var(--text-muted); margin-top:6px;">
+                        ⚠️ Imagen 3 erfordert einen Google Cloud Billing Account oder ein aktives Google AI Studio Projekt.
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+
     if (settingsTab === 'smtp') {
         const smtp = settings.smtp || {};
         const isConfigured = !!smtp.host;
@@ -482,6 +568,7 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
     container.querySelector('#tab-btn-branding').onclick     = () => { settingsTab = 'branding';     renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-reservations').onclick = () => { settingsTab = 'reservations'; renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-users').onclick        = () => { settingsTab = 'users';        renderSettings(container, titleEl); };
+    container.querySelector('#tab-btn-image-ai').onclick     = () => { settingsTab = 'image-ai';     renderSettings(container, titleEl); };
     container.querySelector('#tab-btn-smtp').onclick         = () => { settingsTab = 'smtp';         renderSettings(container, titleEl); };
 
     // --- Plan-Module + CMS-Sichtbarkeit speichern ---
@@ -637,6 +724,60 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
             };
         }
 
+        // --- Image AI Handlers ---
+        if (settingsTab === 'image-ai') {
+            const testConnection = async (provider) => {
+                const btn = container.querySelector(`#btn-test-${provider === 'google-ai' ? 'google-ai' : provider}`);
+                const orig = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                try {
+                    const keys = settings.imageApiKeys || {};
+                    let key = container.querySelector(`#img-${provider}-key`).value;
+                    if (!key && keys[provider === 'google-ai' ? 'googleAiKey' : (provider + 'Key')]) {
+                        key = keys[provider === 'google-ai' ? 'googleAiKey' : (provider + 'Key')];
+                    }
+
+                    if (!key) {
+                        showToast('Kein Key zum Testen vorhanden.', 'error');
+                        btn.disabled = false; btn.innerHTML = orig;
+                        return;
+                    }
+
+                    // Simple search test
+                    let res;
+                    if (provider === 'unsplash' || provider === 'pexels') {
+                        res = await apiPost('image-ai/search', { query: 'Grapes', provider });
+                    } else {
+                        // Gemini test is expensive, just check config endpoint for now or do a tiny generation if possible
+                        // But let's try to reach the config endpoint first
+                        const config = await apiGet('image-ai/config');
+                        if (config && config.hasGoogleAi) {
+                            showToast('Google AI Key ist konfiguriert! ✅');
+                        } else {
+                            showToast('Google AI Key scheint nicht korrekt gespeichert zu sein.', 'warning');
+                        }
+                        btn.disabled = false; btn.innerHTML = orig;
+                        return;
+                    }
+
+                    if (res && res.success) {
+                        showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} Verbindung erfolgreich! ✅`);
+                    } else {
+                        showToast(`${provider.charAt(0).toUpperCase() + provider.slice(1)} Fehler: ${res?.reason || 'Unbekannt'}`, 'error');
+                    }
+                } catch (e) {
+                    showToast('Verbindungsfehler: ' + e.message, 'error');
+                }
+                btn.disabled = false; btn.innerHTML = orig;
+            };
+
+            container.querySelector('#btn-test-unsplash').onclick = () => testConnection('unsplash');
+            container.querySelector('#btn-test-pexels').onclick = () => testConnection('pexels');
+            container.querySelector('#btn-test-google-ai').onclick = () => testConnection('google-ai');
+        }
+
         // Reset Template Buttons
         container.querySelectorAll('.btn-reset-tpl').forEach(btn => {
             btn.onclick = () => {
@@ -735,6 +876,21 @@ function attachSettingsHandlers(container, settings, branding, users, licInfo, t
                 const r = await apiPost('settings', { smtp: smtpData, emailTemplates });
                 if (r?.success) {
                     showToast('Einstellungen gespeichert! ✉️');
+                    renderSettings(container, titleEl);
+                } else {
+                    showToast(r?.reason || 'Fehler beim Speichern.', 'error');
+                }
+            } else if (settingsTab === 'image-ai') {
+                const keys = settings.imageApiKeys || {};
+                const newKeys = {
+                    unsplashKey: container.querySelector('#img-unsplash-key').value || keys.unsplashKey,
+                    pexelsKey: container.querySelector('#img-pexels-key').value || keys.pexelsKey,
+                    googleAiKey: container.querySelector('#img-google-ai-key').value || keys.googleAiKey,
+                    defaultProvider: container.querySelector('#img-default-provider').value
+                };
+                const r = await apiPost('settings', { imageApiKeys: newKeys });
+                if (r?.success) {
+                    showToast('Bild-KI Einstellungen gespeichert! ✨');
                     renderSettings(container, titleEl);
                 } else {
                     showToast(r?.reason || 'Fehler beim Speichern.', 'error');
