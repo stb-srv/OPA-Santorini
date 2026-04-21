@@ -241,6 +241,8 @@
             document.getElementById('opa-confirm-yes').onclick = () => { clearCart(); };
             document.getElementById('opa-confirm-no').onclick  = () => { confirmEl.remove(); };
         });
+        const checkoutTotal = document.getElementById('opa-checkout-total');
+        if (checkoutTotal) checkoutTotal.textContent = fmt(totalPrice());
         document.getElementById('opa-checkout-btn')?.addEventListener('click', openCheckout);
     }
 
@@ -277,7 +279,7 @@
                 <div id="opa-checkout-form"></div>
                 <div class="opa-checkout-summary">
                     <span>Gesamt:</span>
-                    <strong>${fmt(totalPrice())}</strong>
+                    <strong id="opa-checkout-total">${fmt(totalPrice())}</strong>
                 </div>
                 <button class="opa-cart-btn-checkout" id="opa-checkout-submit" disabled>\u00dcbermitteln</button>
                 <div id="opa-checkout-msg"></div>
