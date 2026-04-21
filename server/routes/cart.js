@@ -240,7 +240,15 @@ module.exports = function cartRoutes(requireLicense, io) {
                 if (!dbItem)        return res.status(400).json({ success: false, reason: `Unbekanntes Gericht: ${item.id}` });
                 if (dbItem.available === false) return res.status(400).json({ success: false, reason: `Gericht nicht verfügbar: ${dbItem.name}` });
                 const qty = Math.max(1, Math.min(MAX_QTY_PER_ITEM, parseInt(item.quantity, 10) || 1));
-                validatedItems.push({ id: dbItem.id, name: dbItem.name, price: parseFloat(dbItem.price) || 0, quantity: qty, extras: item.extras || null });
+                validatedItems.push({
+                    id:       dbItem.id,
+                    name:     dbItem.name,
+                    number:   dbItem.number || null,
+                    price:    parseFloat(dbItem.price) || 0,
+                    quantity: qty,
+                    note:     item.note ? String(item.note).slice(0, 200) : null,
+                    extras:   item.extras || null
+                });
             }
 
             const total   = validatedItems.reduce((s, i) => s + i.price * i.quantity, 0);
