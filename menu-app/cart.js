@@ -34,7 +34,7 @@
     function addItem(item) {
         const existing = cartItems.find(i => i.id === item.id);
         if (existing) { existing.quantity += 1; }
-        else { cartItems.push({ ...item, quantity: 1 }); }
+        else { cartItems.push({ ...item, quantity: 1, note: '' }); }
         saveCart(); render(); animateBadge();
     }
 
@@ -47,10 +47,15 @@
         saveCart(); render();
     }
 
+    function updateNote(id, note) {
+        const item = cartItems.find(i => String(i.id) === String(id));
+        if (item) { item.note = note; saveCart(); }
+    }
+
     function clearCart() { cartItems = []; saveCart(); render(); }
     function totalCount() { return cartItems.reduce((s, i) => s + i.quantity, 0); }
     function totalPrice() { return cartItems.reduce((s, i) => s + (parseFloat(i.price) || 0) * i.quantity, 0); }
-    function fmt(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+    function fmt(n) { return n.toFixed(2).replace('.', ',') + ' \u20ac'; }
 
     async function loadConfig() {
         try {
@@ -70,7 +75,7 @@
         const btn = document.createElement('button');
         btn.id = 'opa-cart-btn';
         btn.className = 'opa-cart-fab';
-        btn.setAttribute('aria-label', 'Warenkorb öffnen');
+        btn.setAttribute('aria-label', 'Warenkorb \u00f6ffnen');
         btn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
                 <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
@@ -93,8 +98,8 @@
         drawer.setAttribute('aria-label', 'Warenkorb');
         drawer.innerHTML = `
             <div class="opa-cart-header">
-                <h2>🛒 Warenkorb</h2>
-                <button class="opa-cart-close" id="opa-cart-close" aria-label="Schließen">&times;</button>
+                <h2>\uD83D\uDED2 Warenkorb</h2>
+                <button class="opa-cart-close" id="opa-cart-close" aria-label="Schlie\u00dfen">&times;</button>
             </div>
             <div class="opa-cart-body" id="opa-cart-body"></div>
             <div class="opa-cart-footer" id="opa-cart-footer"></div>`;
@@ -133,12 +138,12 @@
 
         if (cartItems.length === 0) {
             const mode = window.OPA_CART_CLICK_MODE || 'tile';
-            const hint = mode === 'tile' ? 'Tippe auf ein Gericht um es hinzuzufügen.'
+            const hint = mode === 'tile' ? 'Tippe auf ein Gericht um es hinzuzuf\u00fcgen.'
                        : mode === 'both' ? 'Tippe auf ein Gericht oder den + Button.'
-                       : 'Tippe auf <strong>+</strong> bei einem Gericht um es hinzuzufügen.';
+                       : 'Tippe auf <strong>+</strong> bei einem Gericht um es hinzuzuf\u00fcgen.';
             body.innerHTML = `
                 <div class="opa-cart-empty">
-                    <div class="opa-cart-empty-icon">🛒</div>
+                    <div class="opa-cart-empty-icon">\uD83D\uDED2</div>
                     <p>Dein Warenkorb ist leer.</p>
                     <small>${hint}</small>
                 </div>`;
@@ -146,10 +151,19 @@
             return;
         }
 
-        body.innerHTML = cartItems.map(item => `
+        // Notiz-Felder zwischenspeichern bevor neu gerendert wird
+        const noteValues = {};
+        body.querySelectorAll('.opa-cart-item-note').forEach(inp => {
+            noteValues[inp.dataset.id] = inp.value;
+        });
+
+        body.innerHTML = cartItems.map(item => {
+            const numPrefix = item.number ? `<span class="opa-cart-item-number">${escHtml(String(item.number))}.</span> ` : '';
+            const savedNote = noteValues[String(item.id)] !== undefined ? noteValues[String(item.id)] : (item.note || '');
+            return `
             <div class="opa-cart-item" data-id="${escHtml(String(item.id))}">
                 <div class="opa-cart-item-info">
-                    <span class="opa-cart-item-name">${escHtml(item.name)}</span>
+                    <span class="opa-cart-item-name">${numPrefix}${escHtml(item.name)}</span>
                     <span class="opa-cart-item-price">${fmt(parseFloat(item.price) * item.quantity)}</span>
                 </div>
                 <div class="opa-cart-item-controls">
@@ -157,7 +171,17 @@
                     <span class="opa-cart-qty">${item.quantity}</span>
                     <button class="opa-cart-qty-btn" data-action="add" data-id="${escHtml(String(item.id))}" aria-label="Mehr">&#43;</button>
                 </div>
-            </div>`).join('');
+                <div class="opa-cart-item-note-wrap">
+                    <input
+                        class="opa-cart-item-note"
+                        type="text"
+                        data-id="${escHtml(String(item.id))}"
+                        placeholder="\uD83D\uDCDD Extrawunsch (z.B. ohne Zwiebeln)"
+                        maxlength="120"
+                        value="${escHtml(savedNote)}">
+                </div>
+            </div>`;
+        }).join('');
 
         body.querySelectorAll('.opa-cart-qty-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -165,9 +189,13 @@
                 const action = btn.dataset.action;
                 const item   = cartItems.find(i => String(i.id) === id);
                 if (!item) return;
-                if (action === 'add')    addItem({ id: item.id, name: item.name, price: item.price });
+                if (action === 'add')    addItem({ id: item.id, name: item.name, price: item.price, number: item.number });
                 if (action === 'remove') removeItem(id);
             });
+        });
+
+        body.querySelectorAll('.opa-cart-item-note').forEach(inp => {
+            inp.addEventListener('input', () => updateNote(inp.dataset.id, inp.value));
         });
 
         const isClosed    = configLoaded && !cartConfig.isOpenNow;
@@ -180,20 +208,19 @@
                 <strong>${fmt(price)}</strong>
             </div>
             <div class="opa-cart-actions">
-                ${ordersReady ? `<button class="opa-cart-btn-checkout" id="opa-checkout-btn">📬 Bestellen</button>` : ''}
+                ${ordersReady ? `<button class="opa-cart-btn-checkout" id="opa-checkout-btn">\uD83D\uDCEC Bestellen</button>` : ''}
                 <button class="opa-cart-btn-clear" id="opa-clear-btn">Warenkorb leeren</button>
             </div>
-            ${!configLoaded ? '<p class="opa-cart-hint">Lade Verfügbarkeit…</p>' : ''}
-            ${isClosed ? `<p class="opa-cart-hint opa-cart-hint--closed">🕑 ${escHtml(cartConfig.closedReason || 'Derzeit keine Bestellungen möglich.')}</p>` : ''}
+            ${!configLoaded ? '<p class="opa-cart-hint">Lade Verf\u00fcgbarkeit\u2026</p>' : ''}
+            ${isClosed ? `<p class="opa-cart-hint opa-cart-hint--closed">\uD83D\uDD51 ${escHtml(cartConfig.closedReason || 'Derzeit keine Bestellungen m\u00f6glich.')}</p>` : ''}
             ${configLoaded && !isClosed && !cartConfig.ordersEnabled ? `
 <div class="opa-cart-hint opa-cart-hint--disabled">
-    <span style="font-size:1.5rem;">🚫</span>
-    <strong>Online-Bestellung aktuell nicht möglich</strong>
-    <p style="margin:4px 0 0;font-size:.85rem;opacity:.85;">Eine Bestellung über unsere Website ist derzeit leider nicht verfügbar. Bitte bestelle direkt bei unserem Personal vor Ort.</p>
+    <span style="font-size:1.5rem;">\uD83D\uDEAB</span>
+    <strong>Online-Bestellung aktuell nicht m\u00f6glich</strong>
+    <p style="margin:4px 0 0;font-size:.85rem;opacity:.85;">Eine Bestellung \u00fcber unsere Website ist derzeit leider nicht verf\u00fcgbar. Bitte bestelle direkt bei unserem Personal vor Ort.</p>
 </div>` : ''}`;
 
         document.getElementById('opa-clear-btn')?.addEventListener('click', () => {
-            // Custom inline Confirm direkt im Footer
             const footer = document.getElementById('opa-cart-footer');
             const existingConfirm = footer.querySelector('.opa-clear-confirm');
             if (existingConfirm) return;
@@ -226,9 +253,9 @@
         }
 
         const modes = [];
-        if (cartConfig.dineInEnabled)   modes.push({ key: 'dine_in',  label: '🍽️ Am Tisch', icon: '🍽️' });
-        if (cartConfig.pickupEnabled)   modes.push({ key: 'pickup',   label: '🚗 Abholung', icon: '🚗' });
-        if (cartConfig.deliveryEnabled) modes.push({ key: 'delivery', label: '🚚 Lieferung', icon: '🚚' });
+        if (cartConfig.dineInEnabled)   modes.push({ key: 'dine_in',  label: '\uD83C\uDF7D\uFE0F Am Tisch', icon: '\uD83C\uDF7D\uFE0F' });
+        if (cartConfig.pickupEnabled)   modes.push({ key: 'pickup',   label: '\uD83D\uDE97 Abholung', icon: '\uD83D\uDE97' });
+        if (cartConfig.deliveryEnabled) modes.push({ key: 'delivery', label: '\uD83D\uDE9A Lieferung', icon: '\uD83D\uDE9A' });
 
         const modal = document.createElement('div');
         modal.id = 'opa-checkout-modal';
@@ -237,7 +264,7 @@
             <div class="opa-checkout-inner">
                 <div class="opa-checkout-head">
                     <h2>Bestellung aufgeben</h2>
-                    <button class="opa-cart-close" id="opa-checkout-close" aria-label="Schließen">&times;</button>
+                    <button class="opa-cart-close" id="opa-checkout-close" aria-label="Schlie\u00dfen">&times;</button>
                 </div>
                 <div class="opa-checkout-modes" id="opa-checkout-modes">
                     ${modes.map(m => `
@@ -251,7 +278,7 @@
                     <span>Gesamt:</span>
                     <strong>${fmt(totalPrice())}</strong>
                 </div>
-                <button class="opa-cart-btn-checkout" id="opa-checkout-submit" disabled>Übermitteln</button>
+                <button class="opa-cart-btn-checkout" id="opa-checkout-submit" disabled>\u00dcbermitteln</button>
                 <div id="opa-checkout-msg"></div>
             </div>`;
 
@@ -274,7 +301,6 @@
     function renderCheckoutForm(mode) {
         const form = document.getElementById('opa-checkout-form');
         if (!form) return;
-        // Früheste Abholzeit aus Server-Config (verhindert Vergangenheitswahl im Browser)
         const minTime = cartConfig.minPickupTime || '';
 
         if (mode === 'dine_in') {
@@ -282,25 +308,25 @@
                 <label class="opa-form-label">Tischnummer *
                     <input class="opa-form-input" type="text" id="co-table" placeholder="z.B. 5" autocomplete="off" required>
                 </label>
-                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
-                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" autocomplete="tel" required>
+                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(f\u00fcr R\u00fcckfragen)</small>
+                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 \u2026" autocomplete="tel" required>
                 </label>
                 <label class="opa-form-label">Anmerkung (optional)
-                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie…" autocomplete="off"></textarea>
+                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie\u2026" autocomplete="off"></textarea>
                 </label>`;
         } else if (mode === 'pickup') {
             form.innerHTML = `
                 <label class="opa-form-label">Name *
                     <input class="opa-form-input" type="text" id="co-name" placeholder="Dein Name" autocomplete="name" required>
                 </label>
-                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
-                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" autocomplete="tel" required>
+                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(f\u00fcr R\u00fcckfragen)</small>
+                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 \u2026" autocomplete="tel" required>
                 </label>
-                <label class="opa-form-label">Gewünschte Abholzeit *
+                <label class="opa-form-label">Gew\u00fcnschte Abholzeit *
                     <input class="opa-form-input" type="time" id="co-time" min="${escHtml(minTime)}" autocomplete="off" required>
                 </label>
                 <label class="opa-form-label">Anmerkung (optional)
-                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie…" autocomplete="off"></textarea>
+                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Sonderwunsch, Allergie\u2026" autocomplete="off"></textarea>
                 </label>`;
         } else if (mode === 'delivery') {
             form.innerHTML = `
@@ -308,13 +334,13 @@
                     <input class="opa-form-input" type="text" id="co-name" placeholder="Dein Name" autocomplete="name" required>
                 </label>
                 <label class="opa-form-label">Lieferadresse *
-                    <input class="opa-form-input" type="text" id="co-address" placeholder="Straße, Hausnummer, PLZ" autocomplete="street-address" required>
+                    <input class="opa-form-input" type="text" id="co-address" placeholder="Stra\u00dfe, Hausnummer, PLZ" autocomplete="street-address" required>
                 </label>
-                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(für Rückfragen)</small>
-                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 …" autocomplete="tel" required>
+                <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(f\u00fcr R\u00fcckfragen)</small>
+                    <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 \u2026" autocomplete="tel" required>
                 </label>
                 <label class="opa-form-label">Anmerkung (optional)
-                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Klingelname, Etage…" autocomplete="off"></textarea>
+                    <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Klingelname, Etage\u2026" autocomplete="off"></textarea>
                 </label>`;
         }
     }
@@ -322,18 +348,25 @@
     async function submitOrder(mode) {
         const msg       = document.getElementById('opa-checkout-msg');
         const submitBtn = document.getElementById('opa-checkout-submit');
-        if (!mode) { showMsg(msg, 'error', 'Bitte wähle einen Bestellmodus.'); return; }
+        if (!mode) { showMsg(msg, 'error', 'Bitte w\u00e4hle einen Bestellmodus.'); return; }
 
         const payload = {
             type:  mode,
-            items: cartItems.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity }))
+            items: cartItems.map(i => ({
+                id:       i.id,
+                name:     i.name,
+                number:   i.number || null,
+                price:    i.price,
+                quantity: i.quantity,
+                note:     i.note || ''
+            }))
         };
 
         if (mode === 'dine_in') {
             const table = document.getElementById('co-table')?.value.trim();
             const phone = document.getElementById('co-phone')?.value.trim();
             if (!table) { showMsg(msg, 'error', 'Bitte Tischnummer eingeben.'); return; }
-            if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer für Rückfragen angeben.'); return; }
+            if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer f\u00fcr R\u00fcckfragen angeben.'); return; }
             payload.tableNumber = table;
             payload.phone       = phone;
             payload.guestNote   = document.getElementById('co-note')?.value.trim() || null;
@@ -342,11 +375,10 @@
             const phone = document.getElementById('co-phone')?.value.trim();
             const time  = document.getElementById('co-time')?.value;
             if (!name)  { showMsg(msg, 'error', 'Bitte Name angeben.'); return; }
-            if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer für Rückfragen angeben.'); return; }
+            if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer f\u00fcr R\u00fcckfragen angeben.'); return; }
             if (!time)  { showMsg(msg, 'error', 'Bitte Abholzeit angeben.'); return; }
-            // Client-seitiger Vorab-Check (zusätzlich zur Servervalidierung)
             if (cartConfig.minPickupTime && time < cartConfig.minPickupTime) {
-                showMsg(msg, 'error', `Abholzeit zu früh. Früheste mögliche Zeit: ${cartConfig.minPickupTime} Uhr.`);
+                showMsg(msg, 'error', `Abholzeit zu fr\u00fch. Fr\u00fcheste m\u00f6gliche Zeit: ${cartConfig.minPickupTime} Uhr.`);
                 return;
             }
             payload.phone      = phone;
@@ -356,12 +388,12 @@
             const name    = document.getElementById('co-name')?.value.trim();
             const address = document.getElementById('co-address')?.value.trim();
             const phone   = document.getElementById('co-phone')?.value.trim();
-            if (!name || !address || !phone) { showMsg(msg, 'error', 'Bitte Name, Adresse und Telefon ausfüllen.'); return; }
+            if (!name || !address || !phone) { showMsg(msg, 'error', 'Bitte Name, Adresse und Telefon ausf\u00fcllen.'); return; }
             payload.delivery = { name, address, phone, note: document.getElementById('co-note')?.value.trim() || '' };
         }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = '⏳ Wird gesendet…';
+        submitBtn.textContent = '\u23f3 Wird gesendet\u2026';
 
         try {
             const res  = await fetch('/api/cart/order', {
@@ -370,19 +402,19 @@
             });
             const data = await res.json();
             if (res.ok && data.success) {
-                showMsg(msg, 'success', `✅ Bestellung übermittelt! (Nr. ${data.orderId})`);
+                showMsg(msg, 'success', `\u2705 Bestellung \u00fcbermittelt! (Nr. ${data.orderId})`);
                 clearCart();
                 closeDrawer();
                 setTimeout(() => document.getElementById('opa-checkout-modal')?.classList.remove('is-open'), 2500);
             } else {
-                showMsg(msg, 'error', '❌ ' + (data.reason || 'Fehler beim Senden.'));
+                showMsg(msg, 'error', '\u274c ' + (data.reason || 'Fehler beim Senden.'));
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Übermitteln';
+                submitBtn.textContent = '\u00dcbermitteln';
             }
         } catch (e) {
-            showMsg(msg, 'error', '❌ Netzwerkfehler. Bitte erneut versuchen.');
+            showMsg(msg, 'error', '\u274c Netzwerkfehler. Bitte erneut versuchen.');
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Übermitteln';
+            submitBtn.textContent = '\u00dcbermitteln';
         }
     }
 
@@ -400,16 +432,17 @@
         const showTile = (mode === 'tile'   || mode === 'both');
 
         document.querySelectorAll('[data-menu-item]').forEach(card => {
-            const id    = card.dataset.menuItem;
-            const name  = card.dataset.itemName || card.querySelector('[data-item-name]')?.textContent || 'Artikel';
-            const price = card.dataset.itemPrice || '0';
+            const id     = card.dataset.menuItem;
+            const name   = card.dataset.itemName || card.querySelector('[data-item-name]')?.textContent || 'Artikel';
+            const price  = card.dataset.itemPrice || '0';
+            const number = card.dataset.itemNumber || '';
 
             if (showBtn && !card.querySelector('.opa-add-to-cart')) {
                 const btn = document.createElement('button');
                 btn.className = 'opa-add-to-cart';
                 btn.setAttribute('aria-label', `${name} in den Warenkorb`);
                 btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-                btn.addEventListener('click', (e) => { e.stopPropagation(); addItem({ id, name, price }); });
+                btn.addEventListener('click', (e) => { e.stopPropagation(); addItem({ id, name, price, number }); });
                 card.appendChild(btn);
             }
 
@@ -418,7 +451,7 @@
                 card.style.cursor = 'pointer';
                 card.addEventListener('click', (e) => {
                     if (e.target.closest('.opa-add-to-cart')) return;
-                    addItem({ id, name, price });
+                    addItem({ id, name, price, number });
                     card.classList.add('opa-tile-added');
                     setTimeout(() => card.classList.remove('opa-tile-added'), 600);
                 });
