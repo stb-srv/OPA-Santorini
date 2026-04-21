@@ -146,18 +146,42 @@
             return;
         }
 
-        body.innerHTML = cartItems.map(item => `
+        body.innerHTML = cartItems.map(item => {
+            const savedNote = item.note || '';
+            const price = parseFloat(item.price);
+            return `
             <div class="opa-cart-item" data-id="${escHtml(String(item.id))}">
                 <div class="opa-cart-item-info">
                     <span class="opa-cart-item-name">${escHtml(item.name)}</span>
-                    <span class="opa-cart-item-price">${fmt(parseFloat(item.price) * item.quantity)}</span>
+                    <span class="opa-cart-item-price">${fmt(price)} <small style="opacity:.5; font-size:.75rem;">/ Stk.</small></span>
+                </div>
+                <div class="opa-cart-item-note-wrap">
+                    <input
+                        class="opa-cart-item-note"
+                        type="text"
+                        data-id="${escHtml(String(item.id))}"
+                        placeholder="📝 Extrawunsch (z.B. ohne Zwiebeln)"
+                        maxlength="120"
+                        value="${escHtml(savedNote)}">
                 </div>
                 <div class="opa-cart-item-controls">
                     <button class="opa-cart-qty-btn" data-action="remove" data-id="${escHtml(String(item.id))}" aria-label="Weniger">&#8722;</button>
                     <span class="opa-cart-qty">${item.quantity}</span>
                     <button class="opa-cart-qty-btn" data-action="add" data-id="${escHtml(String(item.id))}" aria-label="Mehr">&#43;</button>
                 </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
+
+        body.querySelectorAll('.opa-cart-item-note').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const id = input.dataset.id;
+                const item = cartItems.find(i => String(i.id) === id);
+                if (item) {
+                    item.note = e.target.value;
+                    saveCart();
+                }
+            });
+        });
 
         body.querySelectorAll('.opa-cart-qty-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -326,7 +350,7 @@
 
         const payload = {
             type:  mode,
-            items: cartItems.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity }))
+            items: cartItems.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, note: i.note || null }))
         };
 
         if (mode === 'dine_in') {
