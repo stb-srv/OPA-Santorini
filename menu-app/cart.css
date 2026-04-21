@@ -343,3 +343,34 @@
 .opa-cart-hint--disabled strong {
     font-size: .95rem;
 }
+
+.opa-cart-item-note-wrap {
+    margin-top: 6px;
+    padding: 0 2px;
+}
+.opa-cart-item-note {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: .78rem;
+    color: inherit;
+    outline: none;
+    transition: border-color .2s;
+    font-family: inherit;
+}
+.opa-cart-item-note::placeholder {
+    opacity: .45;
+}
+.opa-cart-item-note:focus {
+    border-color: var(--primary, #C8A96E);
+    background: rgba(255,255,255,0.09);
+}
+.opa-cart-item-number {
+    font-weight: 700;
+    opacity: .6;
+    font-size: .85em;
+    margin-right: 2px;
+}
