@@ -244,9 +244,9 @@ const getCurrentLicense = async (DB, host = null) => {
                     const plan = getPlan(decoded.type);
                     const now  = new Date();
                     const expiresAt = decoded.exp ? new Date(decoded.exp * 1000) : null;
-                    const tooOld = expiresAt ? (now - expiresAt) > (7 * 24 * 60 * 60 * 1000) : false;
+                    const tooOld = expiresAt ? (now - expiresAt) > (24 * 60 * 60 * 1000) : false;
                     if (!tooOld) {
-                        console.warn(`⚠️  [Decode-Fallback] Token nicht verifizierbar – nutze dekodiertes Token (Plan: ${decoded.type})`);
+                        console.warn(`⚠️  [Decode-Fallback] SICHERHEITSHINWEIS: Token nicht verifizierbar (Offline) – nutze dekodiertes Token ohne Signaturprüfung (Plan: ${decoded.type}). Max. 24h Offline-Toleranz.`);
                         return {
                             key:      decoded.license_key || lic.key,
                             status:   'active_unverified',
