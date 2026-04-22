@@ -167,6 +167,42 @@ async function switchView(view, tab = null) {
     setActiveNavItem(view, tab);
     dashboardToolbar.style.display = 'none';
 
+    // Breadcrumb aktualisieren
+    const breadcrumbMap = {
+        stats:          ['Dashboard'],
+        menu:           ['Einstellungen', 'Speisekarte'],
+        reservations:   ['Reservierungen'],
+        archive:        ['Reservierungen', 'Archiv'],
+        orders:         ['Bestellungen'],
+        'order-settings': ['Einstellungen', 'Bestelleinstellungen'],
+        opening:        ['Einstellungen', 'Restaurant', 'Öffnungszeiten'],
+        tables:         ['Einstellungen', 'Tischverwaltung'],
+        qrcodes:        ['Einstellungen', 'QR-Codes'],
+        backup:         ['Einstellungen', 'Backup & Restore'],
+        'table-planner': ['Reservierungen', 'Tischplaner'],
+        'plugins-manager': ['System', 'Erweiterungen'],
+        settings:       ['Einstellungen', tab ? {
+            license: 'Lizenz & Module',
+            restaurant: 'Grundeinstellungen',
+            smtp: 'E-Mail / SMTP',
+            ai: 'KI-Bildgenerierung',
+            users: 'Nutzerverwaltung',
+            location: 'Standort & Karte',
+            closures: 'Urlaub & Betriebssperre',
+            reservations: 'Reservierungseinstellungen',
+            'order-emails': 'E-Mail Templates',
+        }[tab] || tab : 'Einstellungen'],
+    };
+    const trail = breadcrumbMap[view];
+    const trailEl = document.getElementById('breadcrumb-trail');
+    if (trailEl && trail) {
+        trailEl.innerHTML = trail.filter(Boolean).map((crumb, i) =>
+            i < trail.length - 1
+                ? `<i class="fas fa-chevron-right" style="font-size:.6rem; opacity:.4; margin:0 6px;"></i><span class="breadcrumb-crumb">${crumb}</span>`
+                : `<i class="fas fa-chevron-right" style="font-size:.6rem; opacity:.4; margin:0 6px;"></i><span class="breadcrumb-crumb breadcrumb-crumb--active">${crumb}</span>`
+        ).join('');
+    }
+
     switch (view) {
         case 'stats':
             await renderDashboard(contentView, viewTitle, dashboardToolbar);
@@ -340,36 +376,115 @@ if (pwdChangeForm) {
 
 if (logoutBtn) logoutBtn.onclick = () => logout();
 
-// Gruppen-Header: Toggle + optional navigieren
+// ── Accordion: nur eine Gruppe gleichzeitig offen ──
 document.querySelectorAll('.nav-group-header').forEach(header => {
     header.addEventListener('click', (e) => {
         e.preventDefault();
         const group = header.closest('.nav-group');
-        if (group) group.classList.toggle('open');
+        const isOpen = group.classList.contains('open');
+        // Alle schließen
+        document.querySelectorAll('.nav-group').forEach(g => g.classList.remove('open'));
+        // Diese öffnen wenn sie vorher zu war
+        if (!isOpen) group.classList.add('open');
         const view = header.dataset.view;
         const tab  = header.dataset.tab || null;
         if (view) switchView(view, tab);
     });
 });
 
-// Sub-Items
-document.querySelectorAll('.nav-subitem').forEach(item => {
+// ── Sub-Items ──
+document.querySelectorAll('.nav-subitem:not(.nav-subitem--group-label)').forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         const view = item.dataset.view;
         const tab  = item.dataset.tab || null;
         if (view) switchView(view, tab);
+        // Mobile: Sidebar schließen nach Klick
+        document.getElementById('cms-sidebar')?.classList.remove('mobile-open');
+        document.getElementById('sidebar-overlay')?.classList.remove('visible');
     });
 });
 
-// Direkt-Links (Dashboard)
+// ── Direkt-Links ──
 document.querySelectorAll('.nav-item:not(.nav-group-header)').forEach(item => {
     item.addEventListener('click', (e) => {
         const view = item.dataset.view;
-        if (view) { e.preventDefault(); switchView(view); }
+        const tab  = item.dataset.tab || null;
+        if (view) { e.preventDefault(); switchView(view, tab); }
+        document.getElementById('cms-sidebar')?.classList.remove('mobile-open');
+        document.getElementById('sidebar-overlay')?.classList.remove('visible');
     });
 });
 
-window.switchTab = switchView;
+// ── Einstellungen-Gruppe beim Start offen halten wenn aktive View drin ist ──
+function ensureActiveGroupOpen() {
+    document.querySelectorAll('.nav-subitem.active, .nav-item.active').forEach(el => {
+        const group = el.closest('.nav-group');
+        if (group) group.classList.add('open');
+    });
+}
+
+// ── Sidebar-Suche ──
+const navSearch = document.getElementById('nav-search');
+if (navSearch) {
+    navSearch.addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase().trim();
+        document.querySelectorAll('.nav-subitem:not(.nav-subitem--group-label), .nav-item').forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = (!q || text.includes(q)) ? '' : 'none';
+        });
+        // Alle Gruppen bei Suche öffnen
+        if (q) document.querySelectorAll('.nav-group').forEach(g => g.classList.add('open'));
+        else   ensureActiveGroupOpen();
+    });
+}
+
+// ── Mobile Hamburger ──
+const sidebarToggle  = document.getElementById('sidebar-toggle');
+const sidebarClose   = document.getElementById('sidebar-close');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const sidebar        = document.getElementById('cms-sidebar');
+
+sidebarToggle?.addEventListener('click', () => {
+    sidebar?.classList.add('mobile-open');
+    sidebarOverlay?.classList.add('visible');
+});
+sidebarClose?.addEventListener('click', () => {
+    sidebar?.classList.remove('mobile-open');
+    sidebarOverlay?.classList.remove('visible');
+});
+sidebarOverlay?.addEventListener('click', () => {
+    sidebar?.classList.remove('mobile-open');
+    sidebarOverlay?.classList.remove('visible');
+});
+
+// ── Bestellungs-Badge live aktualisieren ──
+async function updateOrderBadge() {
+    try {
+        const orders = await apiGet('orders');
+        const pending = (orders || []).filter(o =>
+            o.status === 'pending' || o.status === 'new'
+        ).length;
+        const badge = document.getElementById('nav-orders-badge');
+        if (badge) {
+            badge.textContent = pending;
+            badge.style.display = pending > 0 ? 'inline-flex' : 'none';
+        }
+    } catch(e) {}
+}
+
+// Badge beim Start und alle 30s aktualisieren
+updateOrderBadge();
+setInterval(updateOrderBadge, 30000);
+
+// Auch nach switchView Badge updaten wenn orders-View verlassen
+const _origSwitchView = switchView;
+window.switchTab = (view, tab) => {
+    _origSwitchView(view, tab);
+    if (view !== 'orders') setTimeout(updateOrderBadge, 500);
+    ensureActiveGroupOpen();
+};
+
+window.switchTab = (v,t) => window.switchTab(v,t); // Fix for potential recursion if reassigned poorly
 init();

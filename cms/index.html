@@ -8,6 +8,7 @@
     <link rel="icon" href="/admin/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/table-planner.css">
+    <link rel="stylesheet" href="nav.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
@@ -90,90 +91,172 @@
     <!-- Admin Dashboard -->
     <main class="admin-dashboard" id="admin-dashboard" style="display:none;">
         <div class="glass-app-shell">
-            <aside class="sidebar">
+            <nav class="sidebar" id="cms-sidebar">
+
                 <div class="sidebar-header">
                     <h2 id="disp-res-name">OPA! CMS</h2>
                     <p id="disp-res-slogan" style="color:#4a5568; font-size:0.8rem; font-weight:600;">Restaurant Management</p>
                 </div>
 
-                <nav class="sidebar-nav">
+                <!-- Suchfeld -->
+                <div class="nav-search-wrap">
+                  <i class="fas fa-search nav-search-icon"></i>
+                  <input type="text" id="nav-search" class="nav-search-input" placeholder="Suchen...">
+                </div>
 
-                    <!-- Dashboard -->
-                    <a href="#stats" class="nav-item active" data-view="stats">
-                        <i class="fas fa-chart-line"></i> Dashboard
-                    </a>
+                <!-- Hauptnavigation -->
+                <ul class="nav-list" style="list-style:none; padding:0; margin:0;">
 
-                    <!-- Betrieb -->
-                    <div class="nav-group open" id="group-betrieb">
-                        <a href="#" class="nav-item nav-group-header" data-group="group-betrieb">
-                            <i class="fas fa-clipboard-list"></i>
-                            <span>Betrieb</span>
-                            <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.65rem; opacity:.4;"></i>
-                        </a>
-                        <div class="nav-submenu">
-                            <a class="nav-subitem" data-view="orders" href="#orders" id="nav-orders">🔔 Küchen-Monitor</a>
-                            <a class="nav-subitem" data-view="reservations" href="#reservations">Reservierungen</a>
-                            <a class="nav-subitem nav-subitem--archive" data-view="archive" href="#archive">Archiv</a>
-                        </div>
+                  <!-- Dashboard -->
+                  <li class="nav-item" data-view="stats">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                  </li>
+
+                  <!-- Speisekarte -->
+                  <li class="nav-item" data-view="menu">
+                    <i class="fas fa-utensils"></i>
+                    <span>Speisekarte</span>
+                  </li>
+
+                  <!-- Website-Designer -->
+                  <li class="nav-item" data-view="home-editor">
+                    <i class="fas fa-paint-brush"></i>
+                    <span>Website Designer</span>
+                  </li>
+
+                  <!-- Reservierungen -->
+                  <li class="nav-group">
+                    <div class="nav-group-header" data-view="reservations">
+                      <i class="fas fa-calendar-alt"></i>
+                      <span>Reservierungen</span>
+                      <i class="fas fa-chevron-right nav-chevron"></i>
                     </div>
+                    <ul class="nav-subnav" style="list-style:none; padding:0; margin:0;">
+                      <li class="nav-subitem" data-view="reservations">
+                        <i class="fas fa-list"></i><span>Übersicht</span>
+                      </li>
+                      <li class="nav-subitem" data-view="archive">
+                        <i class="fas fa-archive"></i><span>Archiv</span>
+                      </li>
+                      <li class="nav-subitem" data-view="table-planner">
+                        <i class="fas fa-border-all"></i><span>Tischplaner</span>
+                      </li>
+                    </ul>
+                  </li>
 
-                    <!-- Speisekarte -->
-                    <div class="nav-group open" id="group-menu">
-                        <a href="#menu" class="nav-item nav-group-header" data-view="menu" data-tab="dishes">
-                            <i class="fas fa-book-open"></i>
-                            <span>Speisekarte</span>
-                            <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.65rem; opacity:.4;"></i>
-                        </a>
-                        <div class="nav-submenu">
-                            <a class="nav-subitem" data-view="menu" data-tab="dishes"     href="#dishes">Gerichte</a>
-                            <a class="nav-subitem" data-view="menu" data-tab="categories" href="#categories">Kategorien</a>
-                            <a class="nav-subitem" data-view="menu" data-tab="allergens"  href="#allergens">Allergene</a>
-                            <a class="nav-subitem" data-view="menu" data-tab="additives"  href="#additives">Zusatzstoffe</a>
-                        </div>
+                  <!-- Bestellungen -->
+                  <li class="nav-item" id="nav-orders" data-view="orders">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>Bestellungen</span>
+                    <span class="nav-badge" id="nav-orders-badge" style="display:none">0</span>
+                  </li>
+
+                  <li class="nav-divider"></li>
+
+                  <!-- Nutzerverwaltung – eigener Bereich -->
+                  <li class="nav-item" data-view="settings" data-tab="users">
+                    <i class="fas fa-users-cog"></i>
+                    <span>Nutzerverwaltung</span>
+                  </li>
+
+                  <li class="nav-divider"></li>
+
+                  <!-- Einstellungen -->
+                  <li class="nav-group">
+                    <div class="nav-group-header">
+                      <i class="fas fa-cog"></i>
+                      <span>Einstellungen</span>
+                      <i class="fas fa-chevron-right nav-chevron"></i>
                     </div>
+                    <ul class="nav-subnav" style="list-style:none; padding:0; margin:0;">
 
-                    <!-- Website -->
-                    <div class="nav-group open" id="group-website">
-                        <a href="#home-editor" class="nav-item nav-group-header" data-view="home-editor">
-                            <i class="fas fa-globe"></i>
-                            <span>Website</span>
-                            <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.65rem; opacity:.4;"></i>
-                        </a>
-                        <div class="nav-submenu">
-                            <a class="nav-subitem" data-view="home-editor" data-tab="visuals"  href="#visuals">Startseite &amp; Design</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="pages"    href="#pages">Seiten verwalten</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="promo"    href="#promo">Promo-Aktion</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="legal"    href="#legal">Impressum &amp; Datenschutz</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="cookies"  href="#cookies">Cookie Banner</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="location" href="#location">Standort &amp; Karte</a>
-                            <a class="nav-subitem" data-view="home-editor" data-tab="vacation" href="#vacation">Schließzeiten</a>
-                        </div>
-                    </div>
+                      <!-- Lizenz & Module -->
+                      <li class="nav-subitem" data-view="settings" data-tab="license">
+                        <i class="fas fa-key"></i><span>Lizenz & Module</span>
+                      </li>
 
-                    <!-- Einstellungen -->
-                    <div class="nav-group open" id="group-system">
-                        <a href="#" class="nav-item nav-group-header" data-group="group-system">
-                            <i class="fas fa-cog"></i>
-                            <span>Einstellungen</span>
-                            <i class="fas fa-chevron-down toggle-icon" style="margin-left:auto; font-size:.65rem; opacity:.4;"></i>
-                        </a>
-                        <div class="nav-submenu">
-                            <a class="nav-subitem" data-view="opening"        href="#opening">Öffnungszeiten</a>
-                            <a class="nav-subitem" data-view="tables"         href="#tables">Tische &amp; QR-Codes</a>
-                            <a class="nav-subitem" data-view="order-settings" href="#order-settings" id="nav-order-settings">Online-Bestellungen</a>
-                            <a class="nav-subitem" data-view="settings"       href="#settings">Allgemeine Einstellungen</a>
-                            <a class="nav-subitem" data-view="plugins-manager" href="#plugins">Erweiterungen</a>
-                            <a class="nav-subitem" data-view="backup"         href="#backup">Backup &amp; Restore</a>
-                            <div id="plugin-nav-items"></div>
-                        </div>
-                    </div>
+                      <!-- Restaurant -->
+                      <li class="nav-subitem nav-subitem--group-label">
+                        <span style="font-size:.68rem; text-transform:uppercase; letter-spacing:1px; opacity:.45; padding-left:4px;">Restaurant</span>
+                      </li>
+                      <li class="nav-subitem" data-view="settings" data-tab="restaurant">
+                        <i class="fas fa-store"></i><span>Grundeinstellungen</span>
+                      </li>
+                      <li class="nav-subitem" data-view="opening">
+                        <i class="fas fa-clock"></i><span>Öffnungszeiten</span>
+                      </li>
+                      <li class="nav-subitem" data-view="settings" data-tab="closures">
+                        <i class="fas fa-umbrella-beach"></i><span>Urlaub & Betriebssperre</span>
+                      </li>
+                      <li class="nav-subitem" data-view="settings" data-tab="location">
+                        <i class="fas fa-map-marker-alt"></i><span>Standort & Karte</span>
+                      </li>
+                      <li class="nav-subitem" data-view="settings" data-tab="reservations">
+                        <i class="fas fa-calendar-check"></i><span>Reservierungseinstellungen</span>
+                      </li>
 
-                </nav>
+                      <!-- Tische & QR -->
+                      <li class="nav-subitem nav-subitem--group-label">
+                        <span style="font-size:.68rem; text-transform:uppercase; letter-spacing:1px; opacity:.45; padding-left:4px;">Tische & Digital</span>
+                      </li>
+                      <li class="nav-subitem" data-view="tables">
+                        <i class="fas fa-chair"></i><span>Tischverwaltung</span>
+                      </li>
+                      <li class="nav-subitem" data-view="qrcodes">
+                        <i class="fas fa-qrcode"></i><span>QR-Codes</span>
+                      </li>
+
+                      <!-- Online-Bestellungen -->
+                      <li class="nav-subitem nav-subitem--group-label">
+                        <span style="font-size:.68rem; text-transform:uppercase; letter-spacing:1px; opacity:.45; padding-left:4px;">Online-Bestellungen</span>
+                      </li>
+                      <li class="nav-subitem" data-view="order-settings">
+                        <i class="fas fa-sliders-h"></i><span>Bestelleinstellungen</span>
+                      </li>
+                      <li class="nav-subitem" data-view="settings" data-tab="order-emails">
+                        <i class="fas fa-envelope-open-text"></i><span>E-Mail Templates</span>
+                      </li>
+
+                      <!-- System -->
+                      <li class="nav-subitem nav-subitem--group-label">
+                        <span style="font-size:.68rem; text-transform:uppercase; letter-spacing:1px; opacity:.45; padding-left:4px;">System</span>
+                      </li>
+                      <li class="nav-subitem" data-view="settings" data-tab="smtp">
+                        <i class="fas fa-mail-bulk"></i><span>E-Mail / SMTP</span>
+                      </li>
+                      <li class="nav-subitem" data-view="settings" data-tab="ai">
+                        <i class="fas fa-robot"></i><span>KI-Bildgenerierung</span>
+                      </li>
+                      <li class="nav-subitem" data-view="plugins-manager">
+                        <i class="fas fa-puzzle-piece"></i><span>Erweiterungen</span>
+                      </li>
+                      <li class="nav-subitem" data-view="backup">
+                        <i class="fas fa-database"></i><span>Backup & Restore</span>
+                      </li>
+
+                    </ul>
+                  </li>
+
+                </ul>
+
+                <!-- Mobile close -->
+                <button class="sidebar-close-btn" id="sidebar-close">
+                  <i class="fas fa-times"></i>
+                </button>
 
                 <div class="sidebar-footer">
                     <div class="version-badge">v2.8.0 PRO</div>
                 </div>
-            </aside>
+            </nav>
+
+            <!-- Mobile Hamburger -->
+            <button class="hamburger-btn" id="sidebar-toggle" aria-label="Menü öffnen">
+              <i class="fas fa-bars"></i>
+            </button>
+
+            <!-- Mobile Overlay -->
+            <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
             <section class="main-content">
                 <header class="content-header">
@@ -188,6 +271,13 @@
                         </div>
                     </div>
                 </header>
+
+                <nav class="breadcrumb-bar" id="breadcrumb-bar" aria-label="Breadcrumb">
+                    <span class="breadcrumb-home" onclick="window.switchTab('stats')">
+                        <i class="fas fa-home"></i>
+                    </span>
+                    <span id="breadcrumb-trail"></span>
+                </nav>
 
                 <div class="toolbar" id="dashboard-toolbar" style="display:none; margin-bottom:30px;"></div>
 
