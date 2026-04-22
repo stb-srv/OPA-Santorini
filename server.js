@@ -13,6 +13,7 @@ const path    = require('path');
 const crypto  = require('crypto');
 const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
+const logger  = require('./server/logger.js');
 
 const CONFIG  = require('./config.js');
 const DB      = require('./server/database.js');
@@ -86,9 +87,9 @@ try {
         },
         crossOriginEmbedderPolicy: false,
     }));
-    console.log('🛡️  Helmet Security-Header aktiv.');
+    logger.info('Helmet Security-Header aktiv.');
 } catch (e) {
-    console.warn('⚠️  helmet nicht gefunden – Security-Header deaktiviert. Bitte: npm install helmet');
+    logger.warn('helmet nicht gefunden – Security-Header deaktiviert. Bitte: npm install helmet');
 }
 
 // CORS
@@ -106,6 +107,22 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json({ limit: '20mb' }));
+
+// HTTP Request Logging
+app.use((req, res, next) => {
+    const start = Date.now();
+    res.on('finish', () => {
+        const ms = Date.now() - start;
+        logger.info({
+            method: req.method,
+            url: req.originalUrl,
+            status: res.statusCode,
+            ms,
+            ip: req.ip
+        }, `${req.method} ${req.originalUrl} ${res.statusCode} (${ms}ms)`);
+    });
+    next();
+});
 
 // Setup Wizard Guard
 app.use((req, res, next) => {
@@ -209,7 +226,7 @@ app.post('/api/setup', async (req, res) => {
         await DB.addUser({ user: finalAdminUser, pass: hash, name: 'Setup', last_name: 'Admin', email: adminEmail || '', role: 'admin', require_password_change: 0, recovery_codes: hashedCodes });
         res.json({ success: true, trial: trialLicense, message: 'Setup abgeschlossen.', recovery_codes: plainRecoveryCodes });
     } catch (e) {
-        console.error(`❌ Setup error:`, e);
+        logger.error({ err: e }, 'Setup error');
         res.status(500).json({ success: false, reason: e.message });
     }
 });
@@ -231,7 +248,7 @@ app.use('/',        express.static(path.join(__dirname, 'menu-app')));
 
 // --- Error Handler ---
 app.use((err, req, res, next) => {
-    console.error(`❌ [${new Date().toISOString()}] Server Error:`, err.message || err);
+    logger.error({ err, url: req.originalUrl, method: req.method }, 'Unhandled Server Error');
     res.status(err.status || 500).json({ success: false, reason: err.message || 'Interner Serverfehler.' });
 });
 
@@ -241,11 +258,11 @@ setInterval(async () => {
         const settings = await DB.getKV('settings', {});
         const lic = settings.license;
         if (lic && lic.isTrial && lic.expiresAt && new Date(lic.expiresAt) < new Date() && lic.status !== 'expired') {
-            console.log(`⏰ Trial license expired.`);
+            logger.warn('Trial-Lizenz abgelaufen.');
             lic.status = 'expired';
             await DB.setKV('settings', settings);
         }
-    } catch (e) { console.error('Trial cleanup error:', e.message); }
+    } catch (e) { logger.error({ err: e }, 'Trial cleanup error'); }
 }, 60 * 60 * 1000);
 
 // --- Reservation Reminder Job (24h before at 10:00 AM) ---
@@ -272,12 +289,12 @@ const checkReminders = async () => {
             try {
                 await Mailer.sendReminder(r, DB);
                 await DB.updateReservation(r.id, { reminderSent: true });
-                console.log(`📧 Erinnerung gesendet: ${r.name} (${r.date})`);
+                logger.info({ reservation: r.id, name: r.name }, 'Erinnerung gesendet');
             } catch (mailErr) {
-                console.error(`❌ Fehler beim Senden der Erinnerung an ${r.name}:`, mailErr.message);
+                logger.error({ err: mailErr, name: r.name }, 'Fehler beim Senden der Erinnerung');
             }
         }
-    } catch(e) { console.error('Reminder-Check Fehler:', e.message); }
+    } catch(e) { logger.error({ err: e }, 'Reminder-Check Fehler'); }
 };
 
 setInterval(checkReminders, 60 * 60 * 1000); // Stündlich prüfen
@@ -297,22 +314,19 @@ async function start() {
                 try {
                     const plug = require(serverPath);
                     if (typeof plug === 'function') plug(app, { DB, requireAuth, requireLicense });
-                } catch(e) { console.error(`❌ Plugin load failed (${safeId}):`, e); }
+                } catch(e) { logger.error({ err: e, plugin: safeId }, 'Plugin load failed'); }
             }
         });
     } catch(e) {
-        console.warn('⚠️  Plugin-Loader Fehler (nicht kritisch):', e.message);
+        logger.warn({ err: e }, 'Plugin-Loader Fehler');
     }
 
     server.listen(PORT, () => {
-        console.log(`\n🚀 OPA-CMS v${APP_VERSION} – Port ${PORT}`);
-        console.log(`🔒 License Server: ${LICENSE_SERVER}`);
-        console.log(`🌐 CORS Origins:   ${allowedOrigins.join(', ')}`);
-        console.log(`⏰ Started at:     ${new Date().toLocaleString('de-DE')}\n`);
+        logger.info({ version: APP_VERSION, port: PORT, licenseServer: LICENSE_SERVER, cors: allowedOrigins }, 'OPA-CMS gestartet');
     });
 }
 
 start().catch(e => {
-    console.error('❌ Server-Start fehlgeschlagen:', e);
+    logger.fatal({ err: e }, 'Server-Start fehlgeschlagen');
     process.exit(1);
 });
