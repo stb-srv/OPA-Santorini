@@ -54,11 +54,7 @@ module.exports = (requireAuth, UPLOADS_DIR) => {
         }
     });
 
-    router.post('/', (req, res, next) => {
-        const token = req.headers['x-admin-token'];
-        console.log('[upload] token present:', !!token, '| length:', token?.length || 0);
-        next();
-    }, requireAuth, (req, res) => {
+    router.post('/', requireAuth, (req, res) => {
         upload.single('image')(req, res, (err) => {
             if (err) {
                 if (err.code === 'LIMIT_FILE_SIZE') {
