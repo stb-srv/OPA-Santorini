@@ -169,6 +169,11 @@ async function switchView(view, tab = null) {
 
     // Breadcrumb aktualisieren
     const breadcrumbMap = {
+        'menu-dishes':      ['Speisekarte', 'Gerichte'],
+        'menu-categories':  ['Speisekarte', 'Kategorien'],
+        'menu-allergens':   ['Speisekarte', 'Allergene'],
+        'menu-additives':   ['Speisekarte', 'Zusatzstoffe'],
+        'menu-daily':       ['Speisekarte', 'Tagesgerichte'],
         stats:          ['Dashboard'],
         menu: ['Speisekarte', tab ? {
             dishes: 'Gerichte',
