@@ -310,9 +310,6 @@ const Mailer = {
     }
 };
 
-    }
-}
-
 /**
  * Hilfsfunktion: Sendet eine E-Mail mit bis zu 3 Versuchen (Exponential Backoff)
  */
