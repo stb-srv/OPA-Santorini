@@ -377,26 +377,30 @@
             const name  = document.getElementById('co-name')?.value.trim();
             const phone = document.getElementById('co-phone')?.value.trim();
             const time  = document.getElementById('co-time')?.value;
+            const note  = document.getElementById('co-note')?.value.trim() || null;
             if (!name)  { showMsg(msg, 'error', 'Bitte Name angeben.'); return; }
-            if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer für Rückfragen angeben.'); return; }
+            if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer angeben.'); return; }
             if (!time)  { showMsg(msg, 'error', 'Bitte Abholzeit angeben.'); return; }
             if (cartConfig.minPickupTime && time < cartConfig.minPickupTime) {
-                showMsg(msg, 'error', `Abholzeit zu früh. Früheste mögliche Zeit: ${cartConfig.minPickupTime} Uhr.`);
+                showMsg(msg, 'error', `Früheste mögliche Zeit: ${cartConfig.minPickupTime} Uhr.`);
                 return;
             }
             payload.customerName  = name;
             payload.customerPhone = phone;
             payload.pickupTime    = time;
-            payload.guestNote     = document.getElementById('co-note')?.value.trim() || null;
+            payload.guestNote     = note;
         } else if (mode === 'delivery') {
             const name    = document.getElementById('co-name')?.value.trim();
             const address = document.getElementById('co-address')?.value.trim();
             const phone   = document.getElementById('co-phone')?.value.trim();
-            if (!name || !address || !phone) { showMsg(msg, 'error', 'Bitte Name, Adresse und Telefon ausfüllen.'); return; }
+            const note    = document.getElementById('co-note')?.value.trim() || null;
+            if (!name)    { showMsg(msg, 'error', 'Bitte Name angeben.'); return; }
+            if (!address) { showMsg(msg, 'error', 'Bitte Lieferadresse angeben.'); return; }
+            if (!phone)   { showMsg(msg, 'error', 'Bitte Telefonnummer angeben.'); return; }
             payload.customerName     = name;
             payload.customerPhone    = phone;
             payload.deliveryAddress  = address;
-            payload.guestNote        = document.getElementById('co-note')?.value.trim() || null;
+            payload.guestNote        = note;
         }
 
         submitBtn.disabled = true;
@@ -412,14 +416,8 @@
                 clearCart();
                 closeDrawer();
                 document.getElementById('opa-checkout-modal')?.remove();
-
-                // Bei Abholung/Lieferung → Statusseite
                 if ((mode === 'pickup' || mode === 'delivery') && data.orderToken) {
                     window.location.href = `/status?token=${data.orderToken}`;
-                } else {
-                    // Am Tisch: einfache Bestätigungsanzeige
-                    showMsg(document.getElementById('opa-checkout-msg') || document.createElement('div'),
-                        'success', `✅ Bestellung übermittelt! Die Küche wurde benachrichtigt.`);
                 }
             } else {
                 showMsg(msg, 'error', '❌ ' + (data.reason || 'Fehler beim Senden.'));
