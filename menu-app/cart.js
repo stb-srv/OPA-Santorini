@@ -325,6 +325,9 @@
                 <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(f\u00fcr R\u00fcckfragen)</small>
                     <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 \u2026" autocomplete="tel" required>
                 </label>
+                <label class="opa-form-label">E-Mail-Adresse * <small style="font-weight:normal;color:#888">(f\u00fcr Bestellbest\u00e4tigung & Status-Link)</small>
+                    <input class="opa-form-input" type="email" id="co-email" placeholder="deine@email.de" autocomplete="email" required>
+                </label>
                 <label class="opa-form-label">Gew\u00fcnschte Abholzeit *
                     <input class="opa-form-input" type="time" id="co-time" min="${escHtml(minTime)}" autocomplete="off" required>
                 </label>
@@ -341,6 +344,9 @@
                 </label>
                 <label class="opa-form-label">Telefonnummer * <small style="font-weight:normal;color:#888">(f\u00fcr R\u00fcckfragen)</small>
                     <input class="opa-form-input" type="tel" id="co-phone" placeholder="+49 \u2026" autocomplete="tel" required>
+                </label>
+                <label class="opa-form-label">E-Mail-Adresse * <small style="font-weight:normal;color:#888">(f\u00fcr Bestellbest\u00e4tigung & Status-Link)</small>
+                    <input class="opa-form-input" type="email" id="co-email" placeholder="deine@email.de" autocomplete="email" required>
                 </label>
                 <label class="opa-form-label">Anmerkung (optional)
                     <textarea class="opa-form-input" id="co-note" rows="2" placeholder="Klingelname, Etage\u2026" autocomplete="off"></textarea>
@@ -378,10 +384,12 @@
         } else if (mode === 'pickup') {
             const name  = document.getElementById('co-name')?.value.trim();
             const phone = document.getElementById('co-phone')?.value.trim();
+            const email = document.getElementById('co-email')?.value.trim();
             const time  = document.getElementById('co-time')?.value;
             const note  = document.getElementById('co-note')?.value.trim() || null;
             if (!name)  { showMsg(msg, 'error', 'Bitte Name angeben.'); return; }
             if (!phone) { showMsg(msg, 'error', 'Bitte Telefonnummer angeben.'); return; }
+            if (!email) { showMsg(msg, 'error', 'Bitte E-Mail-Adresse angeben.'); return; }
             if (!time)  { showMsg(msg, 'error', 'Bitte Abholzeit angeben.'); return; }
             if (cartConfig.minPickupTime && time < cartConfig.minPickupTime) {
                 showMsg(msg, 'error', `Früheste mögliche Zeit: ${cartConfig.minPickupTime} Uhr.`);
@@ -389,18 +397,22 @@
             }
             payload.customerName  = name;
             payload.customerPhone = phone;
+            payload.customerEmail = email;
             payload.pickupTime    = time;
             payload.guestNote     = note;
         } else if (mode === 'delivery') {
             const name    = document.getElementById('co-name')?.value.trim();
             const address = document.getElementById('co-address')?.value.trim();
             const phone   = document.getElementById('co-phone')?.value.trim();
+            const email   = document.getElementById('co-email')?.value.trim();
             const note    = document.getElementById('co-note')?.value.trim() || null;
             if (!name)    { showMsg(msg, 'error', 'Bitte Name angeben.'); return; }
             if (!address) { showMsg(msg, 'error', 'Bitte Lieferadresse angeben.'); return; }
             if (!phone)   { showMsg(msg, 'error', 'Bitte Telefonnummer angeben.'); return; }
+            if (!email)   { showMsg(msg, 'error', 'Bitte E-Mail-Adresse angeben.'); return; }
             payload.customerName     = name;
             payload.customerPhone    = phone;
+            payload.customerEmail    = email;
             payload.deliveryAddress  = address;
             payload.guestNote        = note;
         }
