@@ -245,6 +245,9 @@ app.use('/uploads', (req, res, next) => {
 
 app.use('/admin',   express.static(path.join(__dirname, 'cms')));
 app.use('/',        express.static(path.join(__dirname, 'menu-app')));
+app.use('/',        express.static(path.join(__dirname, 'public')));
+
+app.get('/status', (req, res) => res.sendFile(path.join(__dirname, 'public', 'status.html')));
 
 // --- Error Handler ---
 app.use((err, req, res, next) => {
