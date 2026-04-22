@@ -197,7 +197,8 @@ module.exports = function cartRoutes(requireLicense, io) {
     // -------------------------------------------------------------------------
     router.post('/order', requireLicense('online_orders'), async (req, res) => {
         try {
-            const { type, items, phone, tableNumber, pickupTime, delivery, guestNote } = req.body;
+            const { type, items, phone, tableNumber, pickupTime, delivery, guestNote,
+                    customerName, customerPhone, customerEmail, deliveryAddress } = req.body;
 
             const openStatus = await checkOpeningHours();
             if (!openStatus.open) {
@@ -214,7 +215,7 @@ module.exports = function cartRoutes(requireLicense, io) {
                 return res.status(400).json({ success: false, reason: `Maximale Artikelanzahl (${MAX_ITEMS_PER_ORDER}) überschritten.` });
             }
 
-            const cleanPhone = sanitizeText(phone);
+            const cleanPhone = sanitizeText(customerPhone || phone);
             if (type !== 'delivery' && !cleanPhone) {
                 return res.status(400).json({ success: false, reason: 'Bitte geben Sie eine Telefonnummer für Rückfragen an.' });
             }
@@ -253,23 +254,30 @@ module.exports = function cartRoutes(requireLicense, io) {
 
             const total   = validatedItems.reduce((s, i) => s + i.price * i.quantity, 0);
             const orderId = `ORD-${Date.now()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
-            const order   = {
-                id: orderId, type, status: 'new',
-                items: validatedItems,
-                total: parseFloat(total.toFixed(2)),
-                phone:       type !== 'delivery' ? cleanPhone : (delivery?.phone ? sanitizeText(delivery.phone) : null),
-                tableNumber: type === 'dine_in'  ? (tableNumber || null) : null,
-                pickupTime:  type === 'pickup'   ? (pickupTime  || null) : null,
-                delivery:    type === 'delivery' ? (delivery    || null) : null,
-                guestNote:   guestNote ? String(guestNote).slice(0, 500) : null,
-                createdAt:   new Date().toISOString()
+            const crypto = require('crypto');
+            const orderToken = crypto.randomBytes(16).toString('hex');
+            const order = {
+                id:              orderId,
+                orderToken,
+                type,
+                status:          'pending',
+                items:           validatedItems,
+                total:           parseFloat(total.toFixed(2)),
+                timestamp:       new Date().toISOString(),
+                customerName:    sanitizeText(customerName || '').slice(0, 80) || null,
+                customerPhone:   sanitizeText(customerPhone || phone || '').slice(0, 30) || null,
+                customerEmail:   sanitizeText(customerEmail || '').slice(0, 120) || null,
+                deliveryAddress: type === 'delivery' ? (deliveryAddress || delivery?.address || null) : null,
+                tableNumber:     type === 'dine_in'  ? (tableNumber || null) : null,
+                pickupTime:      type === 'pickup'   ? (pickupTime  || null) : null,
+                guestNote:       guestNote ? String(guestNote).slice(0, 500) : null,
             };
 
             await DB.addOrder(order);
             if (io) io.emit('new_order', order);
             console.log(`🛒 Bestellung: ${orderId} | ${type} | ${validatedItems.length} Artikel | ${total.toFixed(2)}€ | Tel: ${order.phone || 'n/a'}${type === 'pickup' ? ` | Abholung: ${pickupTime}` : ''}`);
 
-            res.status(201).json({ success: true, orderId, total: order.total, message: 'Bestellung wurde erfolgreich übermittelt.' });
+            res.status(201).json({ success: true, orderId, orderToken, total: order.total, message: 'Bestellung wurde erfolgreich übermittelt.' });
         } catch (e) {
             console.error('❌ cart/order error:', e.message);
             res.status(500).json({ success: false, reason: e.message });
