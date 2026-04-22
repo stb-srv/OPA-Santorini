@@ -184,7 +184,12 @@ async function switchView(view, tab = null) {
             await renderArchive(contentView, viewTitle);
             break;
         case 'tables':
-            await renderTableManager(contentView, viewTitle);
+            if (tab === 'qrcodes') {
+                if (window.AdminQR) window.AdminQR.render(contentView, viewTitle);
+                else contentView.innerHTML = '<p>QR-Modul wird geladen...</p>';
+            } else {
+                await renderTableManager(contentView, viewTitle);
+            }
             break;
         case 'table-planner':
             await renderTablePlanner(contentView, viewTitle);

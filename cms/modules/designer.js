@@ -15,7 +15,7 @@ export async function renderDesigner(container, titleEl, initialTab = null) {
         location: 'Standort & Karte',
         pages: 'Seiten verwalten',
         promo: 'Promo-Aktion',
-        vacation: 'Urlaub',
+        vacation: 'Schließzeiten',
         holiday: 'Feiertage',
         legal: 'Impressum & Datenschutz',
         cookies: 'Cookie Banner',
@@ -178,7 +178,9 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
 
         case 'vacation': {
             const vac = home.vacation || {};
+            const hol = home.holiday || {};
             return `
+                <h4 style="margin-bottom:20px;"><i class="fas fa-umbrella-beach"></i> Urlaub & Betriebssperre</h4>
                 <div class="form-grid">
                     <div class="form-group full">
                         <div style="display:flex; align-items:center; gap:10px;">
@@ -192,6 +194,22 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
                     <div class="form-group"><label>Start (Datum)</label><input id="ds-v-start" type="date" class="input-styled" value="${vac.start || ''}"></div>
                     <div class="form-group"><label>Ende (Datum)</label><input id="ds-v-end" type="date" class="input-styled" value="${vac.end || ''}"></div>
                 </div>
+
+                <div style="margin-top:40px; border-top:1px solid rgba(0,0,0,0.08); padding-top:30px;">
+                    <h4 style="margin-bottom:20px;"><i class="fas fa-calendar-star"></i> Feiertage & Events</h4>
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <label class="switch small"><input type="checkbox" id="ds-h-on" ${hol.enabled ? 'checked' : ''}><span class="slider round"></span></label>
+                                <label for="ds-h-on" style="margin:0; cursor:pointer; font-weight:normal;">Feiertags-Ankündigung aktiv</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Event Titel</label><input id="ds-h-title" class="input-styled" value="${hol.title || ''}"></div>
+                        <div class="form-group"><label>Ankündigungs-Text</label><textarea id="ds-h-text" class="input-styled" style="height:80px;">${hol.text || ''}</textarea></div>
+                        <div class="form-group"><label>Angebots-Start</label><input id="ds-h-start" type="date" class="input-styled" value="${hol.start || ''}"></div>
+                        <div class="form-group"><label>Angebots-Ende</label><input id="ds-h-end" type="date" class="input-styled" value="${hol.end || ''}"></div>
+                    </div>
+                </div>
             `;
         }
 
@@ -202,11 +220,11 @@ function renderDesignerTab(home, cookieConfig = null, consentLog = null) {
                     <div class="form-group full">
                         <div style="display:flex; align-items:center; gap:10px;">
                             <label class="switch small"><input type="checkbox" id="ds-h-on" ${hol.enabled ? 'checked' : ''}><span class="slider round"></span></label>
-                            <label for="ds-h-on" style="margin:0; cursor:pointer; font-weight:normal;">Feiertags-Ank\u00fcndigung aktiv</label>
+                            <label for="ds-h-on" style="margin:0; cursor:pointer; font-weight:normal;">Feiertags-Ankündigung aktiv</label>
                         </div>
                     </div>
                     <div class="form-group"><label>Event Titel</label><input id="ds-h-title" class="input-styled" value="${hol.title || ''}"></div>
-                    <div class="form-group"><label>Ank\u00fcndigungs-Text</label><textarea id="ds-h-text" class="input-styled" style="height:80px;">${hol.text || ''}</textarea></div>
+                    <div class="form-group"><label>Ankündigungs-Text</label><textarea id="ds-h-text" class="input-styled" style="height:80px;">${hol.text || ''}</textarea></div>
                     <div class="form-group"><label>Angebots-Start</label><input id="ds-h-start" type="date" class="input-styled" value="${hol.start || ''}"></div>
                     <div class="form-group"><label>Angebots-Ende</label><input id="ds-h-end" type="date" class="input-styled" value="${hol.end || ''}"></div>
                 </div>
@@ -735,8 +753,7 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
                 u.promotionText    = f('ds-p-text').value;
             } else if (designerTab === 'vacation') {
                 u.vacation = { enabled: f('ds-v-on').checked, title: f('ds-v-title').value, text: f('ds-v-text').value, start: f('ds-v-start').value, end: f('ds-v-end').value };
-            } else if (designerTab === 'holiday') {
-                u.holiday = { enabled: f('ds-h-on').checked, title: f('ds-h-title').value, text: f('ds-h-text').value, start: f('ds-h-start').value, end: f('ds-h-end').value };
+                u.holiday  = { enabled: f('ds-h-on').checked, title: f('ds-h-title').value, text: f('ds-h-text').value, start: f('ds-h-start').value, end: f('ds-h-end').value };
             } else if (designerTab === 'legal') {
                 u.legal = { impressum: f('ds-leg-imp').value, privacy: f('ds-leg-priv').value };
             }

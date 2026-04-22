@@ -205,6 +205,9 @@ function buildAreaTabs() {
     state.areas.forEach(a => {
         tabs.innerHTML += `<div class="nav-subitem ${state.currentView === a.id ? 'active' : ''}" onclick="window.switchPlannerView('${a.id}')">${a.icon || ''} ${a.name}</div>`;
     });
+    tabs.innerHTML += `<div style="margin-left:auto; border-left:1px solid rgba(0,0,0,0.05); padding-left:15px; display:flex; align-items:center;">` +
+                      `<div class="nav-subitem" onclick="window.switchTab('tables', 'qrcodes')" style="font-size:11px; opacity:.7;"><i class="fas fa-qrcode"></i> QR-Codes</div>` +
+                      `</div>`;
     window.switchPlannerView = (v) => {
         state.currentView = v;
         buildAreaTabs();
