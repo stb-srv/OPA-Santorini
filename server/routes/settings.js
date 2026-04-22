@@ -6,6 +6,7 @@ const DB = require('../database.js');
 const Mailer = require('../mailer.js');
 const { getCurrentLicense, PLAN_DEFINITIONS, getPlan } = require('../license.js');
 const { sanitizeText } = require('../helpers.js');
+const logger = require('../logger.js');
 
 function extractDomain(req) {
     const forwarded = req.headers['x-forwarded-host'];
@@ -123,7 +124,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
     router.post('/license/validate', async (req, res) => {
         try {
             const domain = extractDomain(req);
-            console.log(`\uD83D\uDD11 License validate: key=${req.body.key}, domain=${domain}`);
+            logger.info({ key: req.body.key, domain }, 'Lizenz-Validierung angefordert');
 
             const response = await fetch(`${LICENSE_SERVER}/api/v1/validate`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -133,7 +134,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
             const r = await response.json();
 
             if (!response.ok) {
-                console.warn(`\u26a0\ufe0f  License server rejected (HTTP ${response.status}):`, r);
+                logger.warn({ status: response.status, response: r }, 'Lizenzserver hat Anfrage abgelehnt');
                 return res.status(response.status).json({
                     success: false,
                     status:  r.status  || 'error',
@@ -145,7 +146,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
             if (r.status === 'active') {
                 const licenseToken = r.license_token || r.token || null;
                 if (!licenseToken) {
-                    console.error('\u274c License server returned status=active but no signed token!');
+                    logger.error('Lizenzserver gab status=active zurück, aber kein signiertes Token');
                     return res.status(500).json({
                         success: false,
                         reason: 'Lizenzserver hat kein signiertes Token zurückgegeben. Bitte sicherstellen dass RSA_PRIVATE_KEY auf dem Lizenzserver gesetzt ist.'
@@ -175,13 +176,13 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                     lastKnownAt: new Date().toISOString()
                 };
                 await DB.setKV('settings', settings);
-                console.log(`\u2705 License activated: ${req.body.key} (${r.type}) for domain ${domain}`);
+                logger.info({ key: req.body.key, type: r.type, domain }, 'Lizenz erfolgreich aktiviert');
                 return res.json({ success: true, license: settings.license });
             }
 
             res.status(403).json({ success: false, status: r.status, reason: r.message });
         } catch (e) {
-            console.error('\u274c License validate error:', e.message);
+            logger.error({ err: e }, 'Lizenz-Validierung Fehler');
             res.status(500).json({ success: false, reason: 'Lizenzserver nicht erreichbar: ' + e.message });
         }
     });

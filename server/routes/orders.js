@@ -4,6 +4,7 @@
 const router = require('express').Router();
 const DB = require('../database.js');
 const { reservationLimiter } = require('../middleware.js');
+const logger = require('../logger.js');
 
 module.exports = (requireAuth, io) => {
     router.get('/', requireAuth, async (req, res) => {

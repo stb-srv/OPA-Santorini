@@ -3,6 +3,7 @@ const DB      = require('../database.js');
 const bcrypt  = require('bcryptjs');
 const { sanitizeText } = require('../helpers.js');
 const multer = require('multer');
+const logger = require('../logger.js');
 
 const uploadMiddleware = multer({ 
     storage: multer.memoryStorage(), 
@@ -77,7 +78,7 @@ router.get('/export', async (req, res) => {
         res.json(backup);
 
     } catch (e) {
-        console.error('❌ Backup Export Fehler:', e.message);
+        logger.error({ err: e }, 'Backup Export Fehler');
         res.status(500).json({ success: false, reason: e.message });
     }
 });
@@ -181,7 +182,7 @@ router.post('/import', uploadMiddleware.single('backup'), async (req, res) => {
         });
 
     } catch (e) {
-        console.error('❌ Backup Import Fehler:', e.message);
+        logger.error({ err: e }, 'Backup Import Fehler');
         res.status(500).json({ success: false, reason: e.message });
     }
 });

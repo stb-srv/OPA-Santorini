@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const DB     = require('../database.js');
 const Mailer = require('../mailer.js');
 const { loginLimiter, forgotPasswordLimiter, requireAuth: makeRequireAuth } = require('../middleware.js');
+const logger = require('../logger.js');
 
 /** Timing-sicherer String-Vergleich (verhindert Timing-Angriffe auf Tokens) */
 function timingSafeStringEqual(a, b) {
@@ -60,7 +61,7 @@ module.exports = (ADMIN_SECRET) => {
             await Mailer.sendUserCredentials(u.email, u.name || u.user, u.user, plainPass, DB);
             res.json({ success: true, message: 'Falls ein Konto mit diesem Benutzernamen und einer hinterlegten E-Mail existiert, wird eine E-Mail versendet.' });
         } catch (e) {
-            console.error('Forgot-password mailer error:', e);
+            logger.error({ err: e }, 'Forgot-password Mailer-Fehler');
             res.status(500).json({ success: false, reason: 'E-Mail konnte nicht gesendet werden. Bitte SMTP-Konfiguration prüfen.' });
         }
     });

@@ -12,6 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const crypto = require('crypto');
+const logger = require('../logger.js');
 
 // Erlaubte Dateierweiterungen (SVG bewusst ausgeschlossen – XSS-Risiko)
 const ALLOWED_EXTENSIONS = /\.(jpg|jpeg|png|gif|webp)$/i;

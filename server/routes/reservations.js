@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const DB = require('../database.js');
 const Mailer = require('../mailer.js');
 const { reservationLimiter } = require('../middleware.js');
+const logger = require('../logger.js');
 const { sanitizeText, calculateDuration, buildEndTime, findAvailableTables, tokenResponsePage } = require('../helpers.js');
 
 /**
@@ -101,7 +102,7 @@ module.exports = (requireAuth, requireLicense) => {
             }
 
             await DB.addReservation(newRes);
-            Mailer.sendConfirmation(newRes, DB).catch(e => console.error('Mailer error:', e));
+            Mailer.sendConfirmation(newRes, DB).catch(e => logger.error({ err: e }, 'Mailer Fehler'));
             res.json({ success: true, reservation: newRes, isInquiry: !result.success });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
@@ -128,7 +129,7 @@ module.exports = (requireAuth, requireLicense) => {
             }
             const updated = await DB.updateReservation(resId, update);
             if (updated && update.status && update.status !== old.status)
-                Mailer.sendStatusChange(updated, DB).catch(e => console.error('Status mailer error:', e));
+                Mailer.sendStatusChange(updated, DB).catch(e => logger.error({ err: e }, 'Status Mailer Fehler'));
             res.json({ success: true, reservation: updated });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
@@ -157,7 +158,7 @@ module.exports = (requireAuth, requireLicense) => {
             if (!r) return res.status(404).send(await tokenResponsePage(DB, 'Link ungültig', 'Dieser Link ist ungültig oder bereits abgelaufen.', '#e53e3e', '❌'));
             if (r.status === 'Cancelled') return res.send(await tokenResponsePage(DB, 'Bereits storniert', 'Diese Reservierung wurde bereits storniert.', '#718096', 'ℹ️'));
             const updated = await DB.updateReservation(r.id, { status: 'Cancelled' });
-            if (updated) Mailer.sendStatusChange(updated, DB).catch(e => console.error(e));
+            if (updated) Mailer.sendStatusChange(updated, DB).catch(e => logger.error({ err: e }, 'Status Mailer Fehler (Stornierung)'));
             res.send(await tokenResponsePage(DB, 'Reservierung storniert', `Ihre Reservierung für den <strong>${r.date}</strong> um <strong>${r.start_time} Uhr</strong> wurde erfolgreich storniert.<br><br>Wir hoffen, Sie bald wieder begrüßen zu dürfen.`, '#e53e3e', '✅'));
         } catch(e) { res.status(500).send('Interner Fehler.'); }
     });
@@ -169,7 +170,7 @@ module.exports = (requireAuth, requireLicense) => {
             if (!r) return res.status(404).send(await tokenResponsePage(DB, 'Link ungültig', 'Dieser Link ist ungültig oder bereits abgelaufen.', '#e53e3e', '❌'));
             if (r.status === 'Confirmed') return res.send(await tokenResponsePage(DB, 'Bereits bestätigt', `Ihre Reservierung für den <strong>${r.date}</strong> um <strong>${r.start_time} Uhr</strong> ist bereits bestätigt. Wir freuen uns auf Ihren Besuch!`, '#38a169', '✅'));
             const updated = await DB.updateReservation(r.id, { status: 'Confirmed' });
-            if (updated) Mailer.sendStatusChange(updated, DB).catch(e => console.error(e));
+            if (updated) Mailer.sendStatusChange(updated, DB).catch(e => logger.error({ err: e }, 'Status Mailer Fehler (Bestätigung)'));
             res.send(await tokenResponsePage(DB, 'Reservierung bestätigt!', `Ihre Reservierung für den <strong>${r.date}</strong> um <strong>${r.start_time} Uhr</strong> für <strong>${r.guests} Person(en)</strong> ist jetzt bestätigt.<br><br>Wir freuen uns auf Ihren Besuch!`, '#38a169', '🎉'));
         } catch(e) { res.status(500).send('Interner Fehler.'); }
     });
@@ -181,7 +182,7 @@ module.exports = (requireAuth, requireLicense) => {
             if (!r) return res.status(404).json({ success: false, reason: 'Ungültiger Token.' });
             if (r.status === 'Cancelled') return res.json({ success: true, alreadyCancelled: true });
             const updated = await DB.updateReservation(r.id, { status: 'Cancelled' });
-            if (updated) Mailer.sendStatusChange(updated, DB).catch(e => console.error(e));
+            if (updated) Mailer.sendStatusChange(updated, DB).catch(e => logger.error({ err: e }, 'Status Mailer Fehler (API Stornierung)'));
             res.json({ success: true, reservation: updated });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
@@ -193,7 +194,7 @@ module.exports = (requireAuth, requireLicense) => {
             if (!r) return res.status(404).json({ success: false, reason: 'Ungültiger Token.' });
             if (r.status === 'Confirmed') return res.json({ success: true, alreadyConfirmed: true });
             const updated = await DB.updateReservation(r.id, { status: 'Confirmed' });
-            if (updated) Mailer.sendStatusChange(updated, DB).catch(e => console.error(e));
+            if (updated) Mailer.sendStatusChange(updated, DB).catch(e => logger.error({ err: e }, 'Status Mailer Fehler (API Bestätigung)'));
             res.json({ success: true, reservation: updated });
         } catch(e) { res.status(500).json({ success: false, reason: e.message }); }
     });
