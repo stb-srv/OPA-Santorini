@@ -5,6 +5,7 @@ const jwt      = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { getCurrentLicense, verifyLicenseToken } = require('./license.js');
 const DB = require('./database.js');
+const logger = require('./logger.js');
 
 const requireAuth = (ADMIN_SECRET) => (req, res, next) => {
     const token = req.headers['x-admin-token'];
@@ -67,7 +68,7 @@ const requireLicense = (module) => async (req, res, next) => {
         req.license = lic;
         next();
     } catch (e) {
-        console.error('requireLicense error:', e.message);
+        logger.error({ err: e }, 'requireLicense Fehler');
         res.status(500).json({ success: false, reason: 'Lizenzprüfung fehlgeschlagen.' });
     }
 };
@@ -91,7 +92,7 @@ const requireMenuLimit = async (req, res, next) => {
         }
         next();
     } catch (e) {
-        console.error('requireMenuLimit error:', e.message);
+        logger.error({ err: e }, 'requireMenuLimit Fehler');
         res.status(500).json({ success: false, reason: 'Lizenzprüfung fehlgeschlagen.' });
     }
 };
