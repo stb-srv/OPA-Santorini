@@ -381,21 +381,66 @@ async function sendOrderStatusMail(order, DB) {
         ? `✅ Deine ${typeLabel} wurde bestätigt – ${restaurantName}`
         : `❌ Deine Bestellung wurde abgelehnt – ${restaurantName}`;
 
+    const itemsHtml = (order.items || []).map(i =>
+        `<tr>
+            <td style="padding:6px 8px; color:#6b7280;">${i.number ? i.number + '.' : ''}</td>
+            <td style="padding:6px 8px;"><strong>${i.quantity}×</strong> ${i.name}
+                ${i.desc ? `<br><small style="color:#9ca3af;">${i.desc}</small>` : ''}
+                ${i.note ? `<br><small style="color:#C8A96E;">📝 ${i.note}</small>` : ''}
+            </td>
+            <td style="padding:6px 8px; text-align:right; white-space:nowrap;">
+                ${(parseFloat(i.price) * i.quantity).toFixed(2).replace('.',',')} €
+            </td>
+        </tr>`
+    ).join('');
+
+    const statusUrl = order.orderToken
+        ? `https://${process.env.PUBLIC_HOST || 'deine-domain.de'}/status?token=${order.orderToken}`
+        : null;
+
     const body = isConfirmed ? `
-        <h2 style="color:#22c55e;">Bestellung bestätigt! 🎉</h2>
-        <p>Hallo ${order.customerName || 'Gast'},</p>
-        <p>deine <strong>${typeLabel}</strong> wurde von uns bestätigt und wird jetzt vorbereitet.</p>
-        ${order.estimatedTime ? `<p><strong>Voraussichtliche Zeit:</strong> ${order.estimatedTime}</p>` : ''}
-        ${order.type === 'pickup' ? `<p>Du kannst deine Bestellung ab der oben genannten Zeit abholen.</p>` : `<p>Wir liefern dir deine Bestellung so schnell wie möglich.</p>`}
-        <hr>
-        <p style="font-size:0.85em; color:#6b7280;">Bestell-Referenz: #${order.id}</p>
+        <h2 style="color:#22c55e; margin-bottom:4px;">Bestellung bestätigt! 🎉</h2>
+        <p>Hallo <strong>${order.customerName || 'Gast'}</strong>,</p>
+        <p>deine <strong>${typeLabel}</strong> wurde bestätigt und wird jetzt vorbereitet.</p>
+        ${order.estimatedTime ? `
+        <div style="background:#fef9c3; border:2px solid #fbbf24; border-radius:10px; padding:14px 18px; margin:16px 0;">
+            ⏰ <strong>Voraussichtliche Zeit: ${order.estimatedTime}</strong>
+        </div>` : ''}
+        <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:0.9em;">
+            <thead>
+                <tr style="background:#f3f4f6;">
+                    <th style="padding:6px 8px; text-align:left; width:30px;">#</th>
+                    <th style="padding:6px 8px; text-align:left;">Gericht</th>
+                    <th style="padding:6px 8px; text-align:right;">Preis</th>
+                </tr>
+            </thead>
+            <tbody>${itemsHtml}</tbody>
+            <tfoot>
+                <tr style="border-top:2px solid #e5e7eb;">
+                    <td colspan="2" style="padding:8px; font-weight:800;">Gesamt</td>
+                    <td style="padding:8px; text-align:right; font-weight:800; color:#C8A96E;">
+                        ${parseFloat(order.total||0).toFixed(2).replace('.',',')} €
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+        ${statusUrl ? `
+        <div style="text-align:center; margin:24px 0;">
+            <a href="${statusUrl}" style="background:#1b3a5c; color:#fff; padding:12px 28px;
+               border-radius:10px; text-decoration:none; font-weight:700; font-size:0.95em;">
+               📦 Bestellstatus verfolgen
+            </a>
+            <p style="font-size:0.75em; color:#9ca3af; margin-top:8px;">
+                Oder öffne diesen Link: <a href="${statusUrl}">${statusUrl}</a>
+            </p>
+        </div>` : ''}
+        <p style="font-size:0.8em; color:#6b7280;">Bestell-Ref.: #${order.id}</p>
     ` : `
-        <h2 style="color:#ef4444;">Bestellung abgelehnt</h2>
-        <p>Hallo ${order.customerName || 'Gast'},</p>
+        <h2 style="color:#ef4444;">Bestellung abgelehnt ❌</h2>
+        <p>Hallo <strong>${order.customerName || 'Gast'}</strong>,</p>
         <p>leider konnten wir deine Bestellung diesmal nicht annehmen.</p>
         <p>Bitte ruf uns an oder versuche es zu einem anderen Zeitpunkt erneut.</p>
-        <hr>
-        <p style="font-size:0.85em; color:#6b7280;">Bestell-Referenz: #${order.id}</p>
+        <p style="font-size:0.8em; color:#6b7280;">Bestell-Ref.: #${order.id}</p>
     `;
 
     await sendMail({ to: order.customerEmail, subject, html: wrapHtml(restaurantName, body) }, smtp);
