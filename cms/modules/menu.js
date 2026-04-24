@@ -352,6 +352,38 @@ function renderDishesTab(menu, categories, allergens, additives) {
                 <div class="form-group"><label>Preis (&euro;)</label><input class="input-styled" id="df-price" type="number" step="0.10" placeholder="0.00"></div>
                 <div class="form-group" style="grid-column:1/-1;"><label>Beschreibung (optional)</label><textarea class="input-styled" id="df-desc" rows="2" placeholder="Zutaten, Zubereitungsart..."></textarea></div>
             </div>
+
+            <!-- Mehrsprachige Namen/Beschreibungen -->
+            <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+                <h4 style="font-size:.85rem; font-weight:800; color:var(--text); margin-bottom:12px;">
+                    <i class="fas fa-language" style="color:var(--primary);"></i>
+                    Übersetzungen (optional)
+                </h4>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    ${[
+                        { code: 'en', label: '🇬🇧 English', placeholder_name: 'Dish name', placeholder_desc: 'Description' },
+                        { code: 'tr', label: '🇹🇷 Türkçe',  placeholder_name: 'Yemek adı',  placeholder_desc: 'Açıklama' },
+                        { code: 'it', label: '🇮🇹 Italiano', placeholder_name: 'Nome piatto', placeholder_desc: 'Descrizione' },
+                        { code: 'fr', label: '🇫🇷 Français', placeholder_name: 'Nom du plat', placeholder_desc: 'Description' },
+                    ].map(lang => `
+                        <div style="background:#f9fafb; border-radius:10px; padding:12px;
+                                    border:1px solid var(--border);">
+                            <div style="font-size:.78rem; font-weight:700; margin-bottom:8px;
+                                        color:var(--text);">${lang.label}</div>
+                            <input class="trans-name" data-lang="${lang.code}"
+                                   type="text" placeholder="${lang.placeholder_name}"
+                                   style="width:100%; padding:8px 10px; border:1.5px solid var(--border);
+                                          border-radius:7px; font-size:.83rem; box-sizing:border-box;
+                                          margin-bottom:6px;">
+                            <textarea class="trans-desc" data-lang="${lang.code}"
+                                      rows="2" placeholder="${lang.placeholder_desc}"
+                                      style="width:100%; padding:8px 10px; border:1.5px solid var(--border);
+                                             border-radius:7px; font-size:.83rem; box-sizing:border-box;
+                                             resize:none;"></textarea>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
             <div style="margin-top:20px;">
                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:700; color:var(--primary);">
                     <input type="checkbox" id="df-special" style="width:18px; height:18px;">
@@ -592,6 +624,20 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
             else preview.innerHTML = `<i class="fas fa-cloud-upload-alt" style="font-size:1.4rem;opacity:.4;"></i><span>Bild hochladen</span>`;
             container.querySelectorAll('.dish-allergen-cb').forEach(cb => cb.checked = (d.allergens || []).includes(cb.value));
             container.querySelectorAll('.dish-additive-cb').forEach(cb => cb.checked = (d.additives || []).includes(cb.value));
+            
+            // Übersetzungen laden
+            try {
+                const trans = typeof d.translations === 'string'
+                    ? JSON.parse(d.translations)
+                    : (d.translations || {});
+                Object.entries(trans).forEach(([lang, val]) => {
+                    const nameEl = container.querySelector(`.trans-name[data-lang="${lang}"]`);
+                    const descEl = container.querySelector(`.trans-desc[data-lang="${lang}"]`);
+                    if (nameEl && val.name)        nameEl.value = val.name;
+                    if (descEl && val.description) descEl.value = val.description;
+                });
+            } catch(e) {}
+            
             f.scrollIntoView({ behavior: 'smooth' });
         }
     };
@@ -971,6 +1017,27 @@ function attachMenuHandlers(container, menu, categories, allergens, additives, c
                 available: editingDishIndex !== -1 ? (safeMenu[editingDishIndex].available !== false) : true,
                 updated_at: new Date().toISOString()
             };
+
+            // Übersetzungen sammeln
+            const translations = {};
+            container.querySelectorAll('.trans-name').forEach(el => {
+                const lang = el.dataset.lang;
+                const name = el.value.trim();
+                if (name) {
+                    if (!translations[lang]) translations[lang] = {};
+                    translations[lang].name = name;
+                }
+            });
+            container.querySelectorAll('.trans-desc').forEach(el => {
+                const lang = el.dataset.lang;
+                const desc = el.value.trim();
+                if (desc) {
+                    if (!translations[lang]) translations[lang] = {};
+                    translations[lang].description = desc;
+                }
+            });
+            dish.translations = JSON.stringify(translations);
+
             let res;
             if (editingDishIndex !== -1) {
                 res = await (await import('./api.js')).apiPut(`menu/${dish.id}`, dish);

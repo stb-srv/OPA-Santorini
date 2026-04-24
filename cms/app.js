@@ -19,6 +19,7 @@ import { initOrderSettings } from './modules/order-settings.js';
 import { renderBackup } from './modules/backup.js';
 import { showSetupWizard } from './modules/setup-wizard.js';
 import { initRealtime } from './modules/realtime.js';
+import { renderShiftPlanner } from './modules/shifts.js';
 
 const loginContainer    = document.getElementById('login-container');
 const adminDashboard    = document.getElementById('admin-dashboard');
@@ -348,6 +349,9 @@ async function switchView(view, tab = null) {
                     <p style="margin-top:8px; font-size:.9rem;">Plugin-Verwaltung wird in Kürze verfügbar sein.</p>
                 </div>`;
             viewTitle.innerHTML = '<i class="fas fa-puzzle-piece"></i> Erweiterungen';
+            break;
+        case 'shifts':
+            await renderShiftPlanner(contentView, viewTitle);
             break;
         default:
             contentView.innerHTML = `<div style="padding:100px; text-align:center; opacity:.5;"><h3>Ansicht "${view}" wird noch entwickelt.</h3></div>`;
