@@ -372,7 +372,17 @@ async function finishSetup() {
     }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+    // Prüfe ob Setup bereits abgeschlossen ist – dann weiterleiten
+    try {
+        const statusRes = await fetch('/api/setup/status');
+        const statusData = await statusRes.json();
+        if (statusData.setupComplete) {
+            window.location.href = '/admin';
+            return;
+        }
+    } catch (e) {}
+
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
     let secret = '';
     for (let i = 0; i < 32; i++) secret += chars[Math.floor(Math.random() * chars.length)];

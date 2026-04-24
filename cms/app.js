@@ -84,6 +84,27 @@ function applyUserFromToken() {
 async function init() {
     const savedKey = localStorage.getItem('opa_license_key');
     if (!savedKey) {
+        // Prüfe beim Server ob das Setup bereits abgeschlossen ist
+        // (localStorage ist geräte-lokal, daher nicht ausreichend)
+        try {
+            const statusRes = await fetch('/api/setup/status');
+            const statusData = await statusRes.json();
+            if (statusData.setupComplete) {
+                // Setup ist bereits auf einem anderen Gerät abgeschlossen worden.
+                // License-Key vom Server holen und lokal speichern.
+                const serverKey = statusData.licenseKey || 'SETUP_DONE';
+                localStorage.setItem('opa_license_key', serverKey);
+                // Direkt zum Login weiterleiten
+                loginContainer.style.display = 'flex';
+                adminDashboard.style.display = 'none';
+                const pwdContainer = document.getElementById('password-change-container');
+                if (pwdContainer) pwdContainer.style.display = 'none';
+                return;
+            }
+        } catch (e) {
+            // Server nicht erreichbar – Wizard trotzdem zeigen
+        }
+
         loginContainer.style.display = 'none';
         adminDashboard.style.display = 'none';
         const pwdContainer = document.getElementById('password-change-container');

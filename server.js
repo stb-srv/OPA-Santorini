@@ -127,7 +127,7 @@ app.use((req, res, next) => {
 
 // Setup Wizard Guard
 app.use((req, res, next) => {
-    if (CONFIG.SETUP_COMPLETE || req.path === '/api/setup' || req.path === '/setup' || req.path.startsWith('/setup-assets')) return next();
+    if (CONFIG.SETUP_COMPLETE || req.path === '/api/setup' || req.path === '/api/setup/status' || req.path === '/setup' || req.path.startsWith('/setup-assets')) return next();
     if (req.path.startsWith('/api/')) return res.status(403).json({ success: false, reason: 'SETUP_REQUIRED', message: 'System must be configured first.' });
     res.redirect('/setup');
 });
@@ -230,6 +230,20 @@ app.post('/api/setup', async (req, res) => {
     } catch (e) {
         logger.error({ err: e }, 'Setup error');
         res.status(500).json({ success: false, reason: e.message });
+    }
+});
+app.get('/api/setup/status', async (req, res) => {
+    try {
+        let licenseKey = null;
+        if (CONFIG.SETUP_COMPLETE) {
+            const settings = await DB.getKV('settings', {});
+            if (settings.license && settings.license.key) {
+                licenseKey = settings.license.key;
+            }
+        }
+        res.json({ setupComplete: CONFIG.SETUP_COMPLETE, licenseKey });
+    } catch (e) {
+        res.json({ setupComplete: CONFIG.SETUP_COMPLETE, licenseKey: null });
     }
 });
 app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, 'cms', 'setup.html')));
