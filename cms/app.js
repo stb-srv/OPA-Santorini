@@ -17,6 +17,7 @@ import { renderOpeningHours } from './modules/opening.js';
 import { renderOrders } from './modules/orders.js';
 import { initOrderSettings } from './modules/order-settings.js';
 import { renderBackup } from './modules/backup.js';
+import { showSetupWizard } from './modules/setup-wizard.js';
 
 const loginContainer    = document.getElementById('login-container');
 const adminDashboard    = document.getElementById('admin-dashboard');
@@ -79,17 +80,14 @@ function applyUserFromToken() {
 }
 
 async function init() {
-    // Fix #6: License-Key prüfen BEVOR Auth gecheckt wird
     const savedKey = localStorage.getItem('opa_license_key');
     if (!savedKey) {
         loginContainer.style.display = 'none';
         adminDashboard.style.display = 'none';
         const pwdContainer = document.getElementById('password-change-container');
         if (pwdContainer) pwdContainer.style.display = 'none';
-        await initTrialOnboarding(document.body, (key) => {
-            localStorage.setItem('opa_license_key', key);
-            window.location.reload();
-        });
+        // Wizard zeigen statt einfachem Trial-Formular
+        await showSetupWizard(document.body, () => window.location.reload());
         return;
     }
 
@@ -165,6 +163,32 @@ async function init() {
         }
     } catch(e) {}
     initUpgradeModal();
+
+    // Lizenz-Badge im Header aktualisieren
+    try {
+        const licInfo = await apiGet('license/info');
+        if (licInfo && licInfo.type) {
+            const badge    = document.getElementById('license-badge');
+            const badgeTxt = document.getElementById('license-badge-text');
+            if (badge && badgeTxt) {
+                const isTrial = licInfo.type === 'TRIAL';
+                const daysLeft = licInfo.expires_at
+                    ? Math.ceil((new Date(licInfo.expires_at) - Date.now()) / 86400000)
+                    : null;
+
+                badgeTxt.textContent = isTrial
+                    ? `TRIAL · ${daysLeft != null ? daysLeft + ' Tage' : 'aktiv'}`
+                    : licInfo.plan_label || licInfo.type;
+
+                badge.style.display      = 'flex';
+                badge.style.alignItems   = 'center';
+                badge.style.background   = isTrial ? '#fef3c7' : '#f0fdf4';
+                badge.style.color        = isTrial ? '#92400e' : '#166534';
+                badge.style.borderColor  = isTrial ? '#fcd34d' : '#86efac';
+                badge.title = `Plan: ${licInfo.plan_label || licInfo.type} – Klicken für Details`;
+            }
+        }
+    } catch(e) {}
 }
 
 export function updateSidebarVisibility(settings) {
