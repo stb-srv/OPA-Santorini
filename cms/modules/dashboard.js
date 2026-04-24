@@ -4,6 +4,7 @@
 
 import { apiGet, apiPost } from './api.js';
 import { renderOnboardingWidget } from './onboarding.js';
+import { onRealtime } from './realtime.js';
 import { showToast } from './utils.js';
 
 const DEFAULT_WIDGETS = [
@@ -494,6 +495,10 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
         document.removeEventListener('mousemove', handleResizing);
         document.removeEventListener('mouseup', handleResizeEnd);
     }
+
+    // Live-Badge aktualisieren bei neuer Bestellung/Reservierung
+    onRealtime('order:new',       () => updateDashboardBadges());
+    onRealtime('reservation:new', () => updateDashboardBadges());
 }
 
 async function toggleSortMode() {

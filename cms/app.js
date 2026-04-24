@@ -18,6 +18,7 @@ import { renderOrders } from './modules/orders.js';
 import { initOrderSettings } from './modules/order-settings.js';
 import { renderBackup } from './modules/backup.js';
 import { showSetupWizard } from './modules/setup-wizard.js';
+import { initRealtime } from './modules/realtime.js';
 
 const loginContainer    = document.getElementById('login-container');
 const adminDashboard    = document.getElementById('admin-dashboard');
@@ -189,6 +190,11 @@ async function init() {
             }
         }
     } catch(e) {}
+
+    initRealtime();
+    // showToast für Realtime-Modul verfügbar machen
+    window.__opaShowToast = showToast;
+    window.updateDashboardBadges = updateOrderBadge;
 }
 
 export function updateSidebarVisibility(settings) {

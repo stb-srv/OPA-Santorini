@@ -3,6 +3,7 @@
  */
 
 import { apiGet, apiPost, apiPut, apiDelete } from './api.js';
+import { onRealtime } from './realtime.js';
 import { showToast, showConfirm, showPrompt } from './utils.js';
 
 let resFilterText = '';
@@ -220,6 +221,11 @@ export async function renderReservations(container, titleEl) {
             if (activeItem) activeItem.click();
         }
     };
+
+    // Live-Updates für Reservierungen
+    onRealtime('reservation:new',       () => renderReservations(container, titleEl));
+    onRealtime('reservation:updated',   () => renderReservations(container, titleEl));
+    onRealtime('reservation:cancelled', () => renderReservations(container, titleEl));
 }
 
 let archiveSearch = '';
