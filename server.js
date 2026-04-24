@@ -76,7 +76,8 @@ try {
                                   'https://cdnjs.cloudflare.com',
                                   'https://api.unsplash.com',
                                   'https://api.pexels.com',
-                                  'https://generativelanguage.googleapis.com'],
+                                  'https://generativelanguage.googleapis.com',
+                                  'https://licens-prod.stb-srv.de'],
                 // Google Maps iFrame
                 frameSrc:        ["'self'",
                                   'https://maps.google.com',
