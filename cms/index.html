@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OPA! Santorini CMS</title>
+    <!-- Config: muss vor allen anderen Scripts stehen -->
+    <script>
+        window.OPA_LICENSE_SERVER = 'https://license.opa-santorini.de';
+        window.OPA_CONFIG = {
+            licenseServer: window.OPA_LICENSE_SERVER,
+            version: '2.x'
+        };
+    </script>
     <link rel="icon" href="/admin/assets/favicon.ico" sizes="any">
     <link rel="icon" href="/admin/assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="assets/css/style.css">
@@ -248,8 +256,6 @@
                   </li>
                 
                 </ul>
-
-
 
                 <!-- Mobile close -->
                 <button class="sidebar-close-btn" id="sidebar-close">
