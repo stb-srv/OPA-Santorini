@@ -151,46 +151,38 @@ async function init() {
     const settings = await apiGet('settings') || {};
     updateSidebarVisibility(settings);
 
-    // Fix #7: Kein doppelter dynamischer Import – showTrialBanner direkt nutzen
+    // Lizenz-Badge & Trial-Status konsolidiert
     try {
         const licInfo = await apiGet('license/info');
-        if (licInfo && licInfo.type === 'TRIAL' && licInfo.expires_at) {
+        if (licInfo?.type === 'TRIAL' && licInfo.expires_at) {
             const daysLeft = Math.ceil((new Date(licInfo.expires_at) - Date.now()) / 86400000);
             if (daysLeft <= 0) {
-                // Soft-Lock: Trial abgelaufen
                 showTrialExpiredLock(localStorage.getItem('opa_license_key'));
             } else {
                 showTrialBanner(daysLeft);
             }
         }
-    } catch(e) {}
-    initUpgradeModal();
-
-    // Lizenz-Badge im Header aktualisieren
-    try {
-        const licInfo = await apiGet('license/info');
-        if (licInfo && licInfo.type) {
+        if (licInfo?.type) {
             const badge    = document.getElementById('license-badge');
             const badgeTxt = document.getElementById('license-badge-text');
             if (badge && badgeTxt) {
-                const isTrial = licInfo.type === 'TRIAL';
+                const isTrial  = licInfo.type === 'TRIAL';
                 const daysLeft = licInfo.expires_at
                     ? Math.ceil((new Date(licInfo.expires_at) - Date.now()) / 86400000)
                     : null;
-
                 badgeTxt.textContent = isTrial
                     ? `TRIAL · ${daysLeft != null ? daysLeft + ' Tage' : 'aktiv'}`
                     : licInfo.plan_label || licInfo.type;
-
-                badge.style.display      = 'flex';
-                badge.style.alignItems   = 'center';
-                badge.style.background   = isTrial ? '#fef3c7' : '#f0fdf4';
-                badge.style.color        = isTrial ? '#92400e' : '#166534';
-                badge.style.borderColor  = isTrial ? '#fcd34d' : '#86efac';
-                badge.title = `Plan: ${licInfo.plan_label || licInfo.type} – Klicken für Details`;
+                badge.style.display     = 'flex';
+                badge.style.alignItems  = 'center';
+                badge.style.background  = isTrial ? '#fef3c7' : '#f0fdf4';
+                badge.style.color       = isTrial ? '#92400e' : '#166534';
+                badge.style.borderColor = isTrial ? '#fcd34d' : '#86efac';
+                badge.title = `Plan: ${licInfo.plan_label || licInfo.type}`;
             }
         }
     } catch(e) {}
+    initUpgradeModal();
 
     initRealtime();
     // showToast für Realtime-Modul verfügbar machen
@@ -249,6 +241,7 @@ async function switchView(view, tab = null) {
         tables:         ['Einstellungen', 'Tische & Digital', 'Tischverwaltung'],
         qrcodes:        ['Einstellungen', 'Tische & Digital', 'QR-Codes'],
         backup:         ['Einstellungen', 'System', 'Backup & Restore'],
+        shifts:         ['Einstellungen', 'Schichtplan'],
         'plugins-manager': ['System', 'Erweiterungen'],
         settings:       ['Einstellungen', tab ? {
             license: 'Lizenz & Module',

@@ -188,7 +188,6 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
     titleEl.innerHTML = '<i class="fas fa-th-large"></i> Dashboard';
 
     renderOnboardingWidget(container);
-    await renderFeedbackWidget(container);
 
     window.toggleSortMode      = toggleSortMode;
     window.customizeDashboard  = customizeDashboard;
@@ -501,6 +500,8 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
     // Live-Badge aktualisieren bei neuer Bestellung/Reservierung
     onRealtime('order:new',       () => updateDashboardBadges());
     onRealtime('reservation:new', () => updateDashboardBadges());
+
+    await renderFeedbackWidget(container).catch(() => {});
 }
 
 async function toggleSortMode() {

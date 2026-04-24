@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPA! Küchen-Display</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        * { box-sizing:border-box; margin:0; padding:0; }
+        body {
+            background:#111; color:#fff; font-family:'Arial Black', sans-serif;
+            min-height:100vh; padding:16px;
+        }
+        .kds-header {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:12px 20px; background:#1a1a1a; border-radius:12px;
+            margin-bottom:20px; border:1px solid #333;
+        }
+        .kds-header h1 { font-size:1.2rem; color:#fff; }
+        .kds-clock { font-size:1.4rem; font-weight:900; color:#facc15; font-variant-numeric:tabular-nums; }
+        .kds-status { display:flex; align-items:center; gap:8px; font-size:.85rem; }
+        .kds-dot { width:10px; height:10px; border-radius:50%; background:#22c55e; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+        .kds-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fill, minmax(300px, 1fr));
+            gap:16px;
+        }
+        .kds-ticket {
+            background:#1a1a1a; border-radius:16px; padding:20px;
+            border:2px solid #333; transition:border-color .3s;
+            position:relative; overflow:hidden;
+        }
+        .kds-ticket.urgent  { border-color:#ef4444; }
+        .kds-ticket.warning { border-color:#f97316; }
+        .kds-ticket.new     { border-color:#22c55e; animation:newTicket .5s ease; }
+        @keyframes newTicket { 0%{transform:scale(1.03)} 100%{transform:scale(1)} }
+
+        .ticket-header {
+            display:flex; justify-content:space-between; align-items:flex-start;
+            margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #333;
+        }
+        .ticket-table { font-size:1.8rem; font-weight:900; color:#facc15; }
+        .ticket-time  { font-size:.8rem; color:#9ca3af; text-align:right; }
+        .ticket-timer {
+            font-size:1.4rem; font-weight:900; margin-top:2px;
+            color:#22c55e;
+        }
+        .ticket-timer.warning { color:#f97316; }
+        .ticket-timer.urgent  { color:#ef4444; }
+
+        .ticket-items { list-style:none; margin-bottom:16px; }
+        .ticket-item {
+            display:flex; justify-content:space-between; align-items:baseline;
+            padding:8px 0; border-bottom:1px solid #222; font-size:1rem;
+        }
+        .ticket-item:last-child { border:none; }
+        .item-qty  { font-size:1.1rem; font-weight:900; color:#facc15; margin-right:10px; }
+        .item-name { flex:1; color:#f3f4f6; }
+        .item-note { font-size:.78rem; color:#f97316; margin-top:2px; display:block; }
+
+        .ticket-done {
+            width:100%; padding:12px; background:#16a34a; color:#fff;
+            border:none; border-radius:10px; font-size:1rem; font-weight:900;
+            cursor:pointer; transition:background .2s; letter-spacing:.5px;
+        }
+        .ticket-done:hover { background:#15803d; }
+        .ticket-done:active { transform:scale(.97); }
+
+        .kds-empty {
+            grid-column:1/-1; text-align:center; padding:80px 20px;
+            color:#4b5563; font-size:1.2rem;
+        }
+        .kds-empty i { font-size:3rem; display:block; margin-bottom:16px; }
+
+        .kds-summary {
+            position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
+            background:#1a1a1a; border:1px solid #333; border-radius:20px;
+            padding:10px 24px; display:flex; gap:24px; font-size:.85rem;
+        }
+        .summary-item { text-align:center; }
+        .summary-val  { font-size:1.2rem; font-weight:900; color:#facc15; display:block; }
+    </style>
+</head>
+<body>
+<script>
+(function() {
+    const token = sessionStorage.getItem('opa_admin_token');
+    if (!token) {
+        document.body.innerHTML =
+            '<div style="display:flex;align-items:center;justify-content:center;' +
+            'min-height:100vh;background:#111;color:#fff;font-family:sans-serif;' +
+            'flex-direction:column;gap:16px;">' +
+            '<div style="font-size:2rem;">🔒</div>' +
+            '<p>Bitte zuerst im CMS anmelden.</p>' +
+            '<a href="index.html" style="color:#facc15;font-weight:700;">→ Zum Login</a>' +
+            '</div>';
+    }
+})();
+</script>
+
+<div class="kds-header">
+    <h1>🍽️ Küchen-Display</h1>
+    <div class="kds-status">
+        <div class="kds-dot" id="kds-dot"></div>
+        <span id="kds-status-text">Verbinde...</span>
+    </div>
+    <div class="kds-clock" id="kds-clock">00:00:00</div>
+</div>
+
+<div class="kds-grid" id="kds-grid">
+    <div class="kds-empty">
+        <i class="fas fa-concierge-bell"></i>
+        Keine offenen Bestellungen
+    </div>
+</div>
+
+<div class="kds-summary">
+    <div class="summary-item">
+        <span class="summary-val" id="kds-count-open">0</span>
+        Offen
+    </div>
+    <div class="summary-item">
+        <span class="summary-val" id="kds-count-done" style="color:#22c55e;">0</span>
+        Fertig heute
+    </div>
+    <div class="summary-item">
+        <span class="summary-val" id="kds-avg-time" style="color:#60a5fa;">–</span>
+        ⌀ Zeit
+    </div>
+</div>
+
+<script>
+    // ── Clock ──────────────────────────────────────────────────────────────────
+    setInterval(() => {
+        document.getElementById('kds-clock').textContent =
+            new Date().toLocaleTimeString('de-DE');
+    }, 1000);
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let orders = new Map(); // id → order
+    let doneCount = 0;
+    let doneTimes = [];
+
+    // ── Socket.io ──────────────────────────────────────────────────────────────
+    const socket = io({ transports: ['websocket', 'polling'] });
+
+    socket.on('connect', () => {
+        document.getElementById('kds-dot').style.background = '#22c55e';
+        document.getElementById('kds-status-text').textContent = 'Live';
+    });
+    socket.on('disconnect', () => {
+        document.getElementById('kds-dot').style.background = '#ef4444';
+        document.getElementById('kds-status-text').textContent = 'Getrennt';
+    });
+
+    socket.on('order:new', order => {
+        order._receivedAt = Date.now();
+        order._isNew = true;
+        orders.set(String(order.id), order);
+        renderGrid();
+        playBeep();
+    });
+    socket.on('order:updated', order => {
+        if (orders.has(String(order.id))) {
+            const existing = orders.get(String(order.id));
+            orders.set(String(order.id), { ...existing, ...order });
+            renderGrid();
+        }
+    });
+
+    // ── Initiale Bestellungen laden ────────────────────────────────────────────
+    fetch('/api/orders', {
+        headers: { 'x-admin-token': sessionStorage.getItem('opa_admin_token') || '' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        (data || [])
+            .filter(o => o.status === 'pending' || o.status === 'new' || o.status === 'preparing')
+            .forEach(o => {
+                o._receivedAt = new Date(o.created_at).getTime();
+                orders.set(String(o.id), o);
+            });
+        renderGrid();
+    })
+    .catch(() => {});
+
+    // ── Render ─────────────────────────────────────────────────────────────────
+    function renderGrid() {
+        const grid = document.getElementById('kds-grid');
+        if (orders.size === 0) {
+            grid.innerHTML = '<div class="kds-empty"><i class="fas fa-concierge-bell"></i>Keine offenen Bestellungen</div>';
+            updateSummary();
+            return;
+        }
+
+        grid.innerHTML = '';
+        const sorted = [...orders.values()].sort((a,b) => a._receivedAt - b._receivedAt);
+        sorted.forEach(order => {
+            const ticket = buildTicket(order);
+            grid.appendChild(ticket);
+            if (order._isNew) {
+                ticket.classList.add('new');
+                order._isNew = false;
+                setTimeout(() => ticket.classList.remove('new'), 600);
+            }
+        });
+        updateSummary();
+    }
+
+    function buildTicket(order) {
+        const el = document.createElement('div');
+        el.className = 'kds-ticket';
+        el.id = `ticket-${order.id}`;
+
+        const items = Array.isArray(order.items) ? order.items : [];
+        const note  = order.note || order.notes || '';
+
+        el.innerHTML = `
+            <div class="ticket-header">
+                <div>
+                    <div class="ticket-table">Tisch ${order.table_number || order.table || '?'}</div>
+                    <div style="font-size:.78rem; color:#9ca3af; margin-top:2px;">
+                        ${new Date(order.created_at || order._receivedAt).toLocaleTimeString('de-DE')}
+                    </div>
+                </div>
+                <div class="ticket-time">
+                    <div style="color:#9ca3af;">Wartezeit</div>
+                    <div class="ticket-timer" id="timer-${order.id}">0:00</div>
+                </div>
+            </div>
+            <ul class="ticket-items">
+                ${items.map(item => `
+                    <li class="ticket-item">
+                        <span class="item-qty">×${item.quantity || item.qty || 1}</span>
+                        <span class="item-name">
+                            ${item.name || item.title || 'Unbekannt'}
+                            ${item.note ? `<span class="item-note">⚠️ ${item.note}</span>` : ''}
+                        </span>
+                    </li>
+                `).join('') || '<li class="ticket-item" style="color:#6b7280;">Keine Artikel</li>'}
+            </ul>
+            ${note ? `<div style="background:#1c1410;border:1px solid #854d0e;border-radius:8px;
+                          padding:8px 12px;font-size:.82rem;color:#fcd34d;margin-bottom:12px;">
+                          📝 ${note}</div>` : ''}
+            <button class="ticket-done" onclick="markDone('${order.id}')">
+                <i class="fas fa-check"></i> Fertig
+            </button>
+        `;
+
+        // Timer starten
+        startTimer(order.id, order._receivedAt);
+        return el;
+    }
+
+    const timers = new Map();
+    function startTimer(id, receivedAt) {
+        if (timers.has(id)) clearInterval(timers.get(id));
+        const update = () => {
+            const el = document.getElementById(`timer-${id}`);
+            if (!el) { clearInterval(timers.get(id)); return; }
+            const secs = Math.floor((Date.now() - receivedAt) / 1000);
+            const m = Math.floor(secs / 60);
+            const s = secs % 60;
+            el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+            el.className = 'ticket-timer' + (secs > 900 ? ' urgent' : secs > 600 ? ' warning' : '');
+            const ticket = document.getElementById(`ticket-${id}`);
+            if (ticket) {
+                ticket.className = 'kds-ticket' + (secs > 900 ? ' urgent' : secs > 600 ? ' warning' : '');
+            }
+        };
+        update();
+        timers.set(id, setInterval(update, 1000));
+    }
+
+    function markDone(id) {
+        const order = orders.get(String(id));
+        if (!order) return;
+        const elapsed = Math.floor((Date.now() - order._receivedAt) / 1000);
+        doneTimes.push(elapsed);
+        doneCount++;
+        orders.delete(String(id));
+        if (timers.has(id)) { clearInterval(timers.get(id)); timers.delete(id); }
+
+        // API-Update
+        fetch(`/api/orders/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type':'application/json',
+                       'x-admin-token': sessionStorage.getItem('opa_admin_token') || '' },
+            body: JSON.stringify({ status: 'done' })
+        }).catch(() => {});
+
+        socket.emit('order:done', { id, elapsed });
+        renderGrid();
+    }
+
+    function updateSummary() {
+        document.getElementById('kds-count-open').textContent = orders.size;
+        document.getElementById('kds-count-done').textContent = doneCount;
+        if (doneTimes.length) {
+            const avg = Math.floor(doneTimes.reduce((a,b)=>a+b,0) / doneTimes.length);
+            document.getElementById('kds-avg-time').textContent =
+                `${Math.floor(avg/60)}:${(avg%60).toString().padStart(2,'0')} min`;
+        }
+    }
+
+    function playBeep() {
+        try {
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+            osc.start(); osc.stop(ctx.currentTime + 0.4);
+        } catch(e) {}
+    }
+
+    // Timer-Update alle Sekunde
+    setInterval(renderGrid, 60000);
+</script>
+</body>
+</html>
