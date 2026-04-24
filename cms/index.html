@@ -105,22 +105,27 @@
                 </div>
 
                 <!-- Hauptnavigation -->
-                <ul class="nav-list" style="list-style:none; padding:0; margin:0;">
-
-                  <!-- Dashboard -->
+                <ul class="nav-list">
+                
+                  <!-- 1. DASHBOARD (kein Sub-Menü) -->
                   <li class="nav-item" data-view="stats">
                     <i class="fas fa-chart-line"></i>
                     <span>Dashboard</span>
                   </li>
-
-                  <!-- Speisekarte -->
+                
+                  <li class="nav-divider"></li>
+                
+                  <!-- 2. INHALTE (Gruppe) -->
                   <li class="nav-group">
                     <div class="nav-group-header" data-view="menu">
-                      <i class="fas fa-utensils"></i>
-                      <span>Speisekarte</span>
+                      <i class="fas fa-layer-group"></i>
+                      <span>Inhalte</span>
                       <i class="fas fa-chevron-right nav-chevron"></i>
                     </div>
-                    <ul class="nav-subnav" style="list-style:none; padding:0; margin:0;">
+                    <ul class="nav-subnav">
+                      <li class="nav-subitem nav-subitem--group-label">
+                        <span>Speisekarte</span>
+                      </li>
                       <li class="nav-subitem" data-view="menu" data-tab="dishes">
                         <i class="fas fa-hamburger"></i><span>Gerichte</span>
                       </li>
@@ -136,23 +141,23 @@
                       <li class="nav-subitem" data-view="menu" data-tab="daily">
                         <i class="fas fa-star"></i><span>Tagesgerichte</span>
                       </li>
+                      <li class="nav-subitem nav-subitem--group-label">
+                        <span>Website</span>
+                      </li>
+                      <li class="nav-subitem" data-view="home-editor">
+                        <i class="fas fa-paint-brush"></i><span>Website Designer</span>
+                      </li>
                     </ul>
                   </li>
-
-                  <!-- Website-Designer -->
-                  <li class="nav-item" data-view="home-editor">
-                    <i class="fas fa-paint-brush"></i>
-                    <span>Website Designer</span>
-                  </li>
-
-                  <!-- Reservierungen -->
+                
+                  <!-- 3. RESERVIERUNGEN (Gruppe) -->
                   <li class="nav-group">
                     <div class="nav-group-header" data-view="reservations">
                       <i class="fas fa-calendar-alt"></i>
                       <span>Reservierungen</span>
                       <i class="fas fa-chevron-right nav-chevron"></i>
                     </div>
-                    <ul class="nav-subnav" style="list-style:none; padding:0; margin:0;">
+                    <ul class="nav-subnav">
                       <li class="nav-subitem" data-view="reservations">
                         <i class="fas fa-list"></i><span>Übersicht</span>
                       </li>
@@ -164,47 +169,40 @@
                       </li>
                     </ul>
                   </li>
-
-                  <!-- Bestellungen -->
-                  <li class="nav-item" id="nav-orders" data-view="orders">
-                    <i class="fas fa-shopping-bag"></i>
-                    <span>Bestellungen</span>
-                    <span class="nav-badge" id="nav-orders-badge" style="display:none">0</span>
+                
+                  <!-- 4. BESTELLUNGEN (Gruppe – alles an einem Ort) -->
+                  <li class="nav-group" id="nav-orders-group">
+                    <div class="nav-group-header" data-view="orders">
+                      <i class="fas fa-shopping-bag"></i>
+                      <span>Bestellungen</span>
+                      <span class="nav-badge" id="nav-orders-badge" style="display:none">0</span>
+                      <i class="fas fa-chevron-right nav-chevron"></i>
+                    </div>
+                    <ul class="nav-subnav">
+                      <li class="nav-subitem" data-view="orders" id="nav-orders">
+                        <i class="fas fa-concierge-bell"></i><span>Live-Monitor</span>
+                      </li>
+                      <li class="nav-subitem" data-view="order-settings" id="nav-order-settings">
+                        <i class="fas fa-sliders-h"></i><span>Einstellungen</span>
+                      </li>
+                    </ul>
                   </li>
-
+                
                   <li class="nav-divider"></li>
-
-                  <!-- Nutzerverwaltung – eigener Bereich -->
-                  <li class="nav-item" data-view="settings" data-tab="users">
-                    <i class="fas fa-users-cog"></i>
-                    <span>Nutzerverwaltung</span>
-                  </li>
-
-                  <li class="nav-divider"></li>
-
-                  <!-- Einstellungen -->
+                
+                  <!-- 5. EINSTELLUNGEN (Gruppe – 3 Unter-Sektionen) -->
                   <li class="nav-group">
                     <div class="nav-group-header">
                       <i class="fas fa-cog"></i>
                       <span>Einstellungen</span>
                       <i class="fas fa-chevron-right nav-chevron"></i>
                     </div>
-                    <ul class="nav-subnav" style="list-style:none; padding:0; margin:0;">
-
-                      <!-- Lizenz & Module -->
-                      <li class="nav-subitem" data-view="settings" data-tab="license">
-                        <i class="fas fa-key"></i><span>Lizenz & Module</span>
-                      </li>
+                    <ul class="nav-subnav">
+                
+                      <!-- Restaurant -->
+                      <li class="nav-subitem nav-subitem--group-label"><span>Restaurant</span></li>
                       <li class="nav-subitem" data-view="settings" data-tab="branding">
                         <i class="fas fa-palette"></i><span>Branding & Design</span>
-                      </li>
-
-                      <!-- Restaurant -->
-                      <li class="nav-subitem nav-subitem--group-label">
-                        <span style="font-size:.68rem; text-transform:uppercase; letter-spacing:1px; opacity:.45; padding-left:4px;">Restaurant</span>
-                      </li>
-                      <li class="nav-subitem" data-view="settings" data-tab="restaurant">
-                        <i class="fas fa-store"></i><span>Grundeinstellungen</span>
                       </li>
                       <li class="nav-subitem" data-view="opening">
                         <i class="fas fa-clock"></i><span>Öffnungszeiten</span>
@@ -216,37 +214,22 @@
                         <i class="fas fa-map-marker-alt"></i><span>Standort & Karte</span>
                       </li>
                       <li class="nav-subitem" data-view="settings" data-tab="reservations">
-                        <i class="fas fa-calendar-check"></i><span>Reservierungseinstellungen</span>
+                        <i class="fas fa-calendar-check"></i><span>Reservierungen</span>
                       </li>
-                      <li class="nav-subitem" data-view="settings" data-tab="email-templates">
-                        <i class="fas fa-envelope"></i><span>E-Mail Templates (Reservierung)</span>
-                      </li>
-
-                      <!-- Tische & QR -->
-                      <li class="nav-subitem nav-subitem--group-label">
-                        <span style="font-size:.68rem; text-transform:uppercase; letter-spacing:1px; opacity:.45; padding-left:4px;">Tische & Digital</span>
-                      </li>
+                
+                      <!-- Tische & Digital -->
+                      <li class="nav-subitem nav-subitem--group-label"><span>Tische & Digital</span></li>
                       <li class="nav-subitem" data-view="tables">
                         <i class="fas fa-chair"></i><span>Tischverwaltung</span>
                       </li>
                       <li class="nav-subitem" data-view="qrcodes">
                         <i class="fas fa-qrcode"></i><span>QR-Codes</span>
                       </li>
-
-                      <!-- Online-Bestellungen -->
-                      <li class="nav-subitem nav-subitem--group-label">
-                        <span style="font-size:.68rem; text-transform:uppercase; letter-spacing:1px; opacity:.45; padding-left:4px;">Online-Bestellungen</span>
-                      </li>
-                      <li class="nav-subitem" data-view="order-settings">
-                        <i class="fas fa-sliders-h"></i><span>Bestelleinstellungen</span>
-                      </li>
-                      <li class="nav-subitem" data-view="settings" data-tab="order-emails">
-                        <i class="fas fa-envelope-open-text"></i><span>E-Mail Templates</span>
-                      </li>
-
+                
                       <!-- System -->
-                      <li class="nav-subitem nav-subitem--group-label">
-                        <span style="font-size:.68rem; text-transform:uppercase; letter-spacing:1px; opacity:.45; padding-left:4px;">System</span>
+                      <li class="nav-subitem nav-subitem--group-label"><span>System</span></li>
+                      <li class="nav-subitem" data-view="settings" data-tab="license">
+                        <i class="fas fa-key"></i><span>Lizenz & Module</span>
                       </li>
                       <li class="nav-subitem" data-view="settings" data-tab="smtp">
                         <i class="fas fa-mail-bulk"></i><span>E-Mail / SMTP</span>
@@ -254,17 +237,19 @@
                       <li class="nav-subitem" data-view="settings" data-tab="ai">
                         <i class="fas fa-robot"></i><span>KI-Bildgenerierung</span>
                       </li>
-                      <li class="nav-subitem" data-view="plugins-manager">
-                        <i class="fas fa-puzzle-piece"></i><span>Erweiterungen</span>
+                      <li class="nav-subitem" data-view="settings" data-tab="users">
+                        <i class="fas fa-users-cog"></i><span>Nutzerverwaltung</span>
                       </li>
                       <li class="nav-subitem" data-view="backup">
                         <i class="fas fa-database"></i><span>Backup & Restore</span>
                       </li>
-
+                
                     </ul>
                   </li>
-
+                
                 </ul>
+
+
 
                 <!-- Mobile close -->
                 <button class="sidebar-close-btn" id="sidebar-close">
@@ -292,7 +277,8 @@
                     <div class="header-right">
                         <div class="user-profile">
                             <span>Willkommen, <strong id="disp-user-name">–</strong></span>
-                            <img id="disp-user-avatar" src="https://ui-avatars.com/api/?name=Admin&background=2b6cb0&color=fff" alt="Avatar" class="avatar">
+                            <img id="disp-user-avatar" src="" alt="Avatar" class="avatar"
+                                 style="background:var(--primary);">
                             <button id="btn-logout" style="background:none; border:none; cursor:pointer; color:var(--primary); font-weight:800; margin-left:15px;">Logout</button>
                         </div>
                     </div>

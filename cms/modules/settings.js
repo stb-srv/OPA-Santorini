@@ -559,6 +559,26 @@ function renderSettingsTab(settings, branding, users, licInfo) {
         `;
     }
 
+    if (settingsTab === 'order-emails') {
+        // Redirect: Diese Sektion ist jetzt in order-settings.js
+        // Trigger switchView zu order-settings statt leeren Content zeigen
+        return `
+          <div style="text-align:center; padding:60px 40px; opacity:.7;">
+            <i class="fas fa-envelope-open-text" style="font-size:2.5rem;
+               margin-bottom:16px; display:block; color:var(--accent);"></i>
+            <h3 style="margin-bottom:8px;">E-Mail Templates (Bestellungen)</h3>
+            <p style="color:var(--text-muted); font-size:.88rem; margin-bottom:20px;">
+              Die Bestellungs-E-Mail-Templates findest du unter
+              Bestellungen → Bestelleinstellungen.
+            </p>
+            <button class="btn-primary"
+              onclick="window.switchTab('order-settings')">
+              <i class="fas fa-arrow-right"></i> Zu den Bestelleinstellungen
+            </button>
+          </div>
+        `;
+    }
+
     return '';
 }
 

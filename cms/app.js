@@ -138,9 +138,10 @@ async function init() {
 }
 
 export function updateSidebarVisibility(settings) {
-    const ordersItem = document.getElementById('nav-orders');
-    if (ordersItem) {
-        ordersItem.style.display = settings.activeModules?.orders !== false ? 'flex' : 'none';
+    const ordersGroup = document.getElementById('nav-orders-group');
+    if (ordersGroup) {
+        ordersGroup.style.display =
+            settings.activeModules?.orders !== false ? '' : 'none';
     }
 }
 
@@ -169,11 +170,6 @@ async function switchView(view, tab = null) {
 
     // Breadcrumb aktualisieren
     const breadcrumbMap = {
-        'menu-dishes':      ['Speisekarte', 'Gerichte'],
-        'menu-categories':  ['Speisekarte', 'Kategorien'],
-        'menu-allergens':   ['Speisekarte', 'Allergene'],
-        'menu-additives':   ['Speisekarte', 'Zusatzstoffe'],
-        'menu-daily':       ['Speisekarte', 'Tagesgerichte'],
         stats:          ['Dashboard'],
         menu: ['Speisekarte', tab ? {
             dishes: 'Gerichte',
@@ -182,15 +178,16 @@ async function switchView(view, tab = null) {
             additives: 'Zusatzstoffe',
             daily: 'Tagesgerichte',
         }[tab] || 'Gerichte' : 'Gerichte'],
-        reservations:   ['Reservierungen'],
+        'home-editor':  ['Inhalte', 'Website Designer'],
+        reservations:   ['Reservierungen', 'Übersicht'],
         archive:        ['Reservierungen', 'Archiv'],
-        orders:         ['Bestellungen'],
-        'order-settings': ['Einstellungen', 'Bestelleinstellungen'],
-        opening:        ['Einstellungen', 'Restaurant', 'Öffnungszeiten'],
-        tables:         ['Einstellungen', 'Tischverwaltung'],
-        qrcodes:        ['Einstellungen', 'QR-Codes'],
-        backup:         ['Einstellungen', 'Backup & Restore'],
         'table-planner': ['Reservierungen', 'Tischplaner'],
+        orders:         ['Bestellungen', 'Live-Monitor'],
+        'order-settings': ['Bestellungen', 'Einstellungen'],
+        opening:        ['Einstellungen', 'Restaurant', 'Öffnungszeiten'],
+        tables:         ['Einstellungen', 'Tische & Digital', 'Tischverwaltung'],
+        qrcodes:        ['Einstellungen', 'Tische & Digital', 'QR-Codes'],
+        backup:         ['Einstellungen', 'System', 'Backup & Restore'],
         'plugins-manager': ['System', 'Erweiterungen'],
         settings:       ['Einstellungen', tab ? {
             license: 'Lizenz & Module',
@@ -234,8 +231,15 @@ async function switchView(view, tab = null) {
             break;
         case 'tables':
             if (tab === 'qrcodes') {
-                if (window.AdminQR) window.AdminQR.render(contentView, viewTitle);
-                else contentView.innerHTML = '<p>QR-Modul wird geladen...</p>';
+                viewTitle.innerHTML = '<i class="fas fa-qrcode"></i> QR-Codes';
+                contentView.innerHTML = '<div style="padding:40px;text-align:center;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary);"></i><p style="margin-top:12px;color:var(--text-muted);">QR-Modul wird geladen...</p></div>';
+                let attempts = 0;
+                const tryRender = () => {
+                    if (window.AdminQR) window.AdminQR.render(contentView, viewTitle);
+                    else if (attempts++ < 10) setTimeout(tryRender, 300);
+                    else contentView.innerHTML = '<div class="glass-panel" style="padding:40px;text-align:center;"><p style="color:#ef4444;">QR-Modul konnte nicht geladen werden. Bitte Seite neu laden.</p></div>';
+                };
+                tryRender();
             } else {
                 await renderTableManager(contentView, viewTitle);
             }
@@ -264,13 +268,18 @@ async function switchView(view, tab = null) {
         case 'backup':
             await renderBackup(contentView, viewTitle);
             break;
-        case 'qrcodes':
-            if (window.AdminQR) {
-                window.AdminQR.render(contentView, viewTitle);
-            } else {
-                contentView.innerHTML = '<p>QR-Modul wird geladen...</p>';
-            }
+        case 'qrcodes': {
+            viewTitle.innerHTML = '<i class="fas fa-qrcode"></i> QR-Codes';
+            contentView.innerHTML = '<div style="padding:40px;text-align:center;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary);"></i><p style="margin-top:12px;color:var(--text-muted);">QR-Modul wird geladen...</p></div>';
+            let attempts = 0;
+            const tryRender = () => {
+                if (window.AdminQR) window.AdminQR.render(contentView, viewTitle);
+                else if (attempts++ < 10) setTimeout(tryRender, 300);
+                else contentView.innerHTML = '<div class="glass-panel" style="padding:40px;text-align:center;"><p style="color:#ef4444;">QR-Modul konnte nicht geladen werden. Bitte Seite neu laden.</p></div>';
+            };
+            tryRender();
             break;
+        }
         case 'plugins-manager':
             contentView.innerHTML = `
                 <div class="glass-panel" style="padding:60px; text-align:center; opacity:.6;">
@@ -499,5 +508,4 @@ window.switchTab = (view, tab) => {
     ensureActiveGroupOpen();
 };
 
-window.switchTab = (v,t) => window.switchTab(v,t); // Fix for potential recursion if reassigned poorly
 init();
