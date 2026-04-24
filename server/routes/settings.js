@@ -126,7 +126,10 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
             const domain = extractDomain(req);
             logger.info({ key: req.body.key, domain }, 'Lizenz-Validierung angefordert');
 
-            const response = await fetch(`${LICENSE_SERVER}/api/v1/validate`, {
+            const ENFORCED_LICENSE_SERVER = 'https://licens-prod.stb-srv.de';
+            // Nutze ab hier ausschließlich ENFORCED_LICENSE_SERVER statt LICENSE_SERVER
+
+            const response = await fetch(`${ENFORCED_LICENSE_SERVER}/api/v1/validate`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ license_key: req.body.key, domain })
             });
@@ -139,7 +142,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                     success: false,
                     status:  r.status  || 'error',
                     reason:  r.message || 'Lizenzserver hat die Anfrage abgelehnt.',
-                    debug:   { domain, licenseServer: LICENSE_SERVER }
+                    debug:   { domain, licenseServer: ENFORCED_LICENSE_SERVER }
                 });
             }
 
@@ -156,6 +159,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                 const plan = getPlan(r.type);
                 settings.license = {
                     key:          req.body.key,
+                    isTrial:      false,
                     licenseToken: licenseToken,
                     status:       'active',
                     customer:     r.customer_name,

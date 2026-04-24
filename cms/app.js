@@ -252,7 +252,10 @@ async function switchView(view, tab = null) {
             additives: 'Zusatzstoffe',
             daily: 'Tagesgerichte',
         }[tab] || 'Gerichte' : 'Gerichte'],
-        'home-editor':  ['Inhalte', 'Website Designer'],
+        'home-editor':  ['Inhalte', tab ? {
+            holiday: 'Urlaub & Betriebssperre',
+            location: 'Standort & Karte',
+        }[tab] || 'Website Designer' : 'Website Designer'],
         reservations:   ['Reservierungen', 'Übersicht'],
         archive:        ['Reservierungen', 'Archiv'],
         'table-planner': ['Reservierungen', 'Tischplaner'],
@@ -269,13 +272,12 @@ async function switchView(view, tab = null) {
             branding: 'Branding & Design',
             restaurant: 'Grundeinstellungen',
             smtp: 'E-Mail / SMTP',
-            ai: 'KI-Bildgenerierung',
+            'image-ai': 'KI-Bildgenerierung',
             users: 'Nutzerverwaltung',
-            location: 'Standort & Karte',
-            closures: 'Urlaub & Betriebssperre',
             reservations: 'Reservierungseinstellungen',
             'email-templates': 'E-Mail Templates',
             'order-emails': 'E-Mail Templates',
+            plan_modules: 'Plan-Module',
         }[tab] || tab : 'Einstellungen'],
     };
     const trail = breadcrumbMap[view];
@@ -323,7 +325,7 @@ async function switchView(view, tab = null) {
             await renderTablePlanner(contentView, viewTitle);
             break;
         case 'settings':
-            await renderSettings(contentView, viewTitle);
+            await renderSettings(contentView, viewTitle, tab);
             break;
         case 'opening':
             await renderOpeningHours(contentView, viewTitle);

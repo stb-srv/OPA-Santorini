@@ -754,6 +754,8 @@ function attachDesignerHandlers(container, home, titleEl, cookieConfig) {
             } else if (designerTab === 'vacation') {
                 u.vacation = { enabled: f('ds-v-on').checked, title: f('ds-v-title').value, text: f('ds-v-text').value, start: f('ds-v-start').value, end: f('ds-v-end').value };
                 u.holiday  = { enabled: f('ds-h-on').checked, title: f('ds-h-title').value, text: f('ds-h-text').value, start: f('ds-h-start').value, end: f('ds-h-end').value };
+            } else if (designerTab === 'holiday') {
+                u.holiday  = { enabled: f('ds-h-on').checked, title: f('ds-h-title').value, text: f('ds-h-text').value, start: f('ds-h-start').value, end: f('ds-h-end').value };
             } else if (designerTab === 'legal') {
                 u.legal = { impressum: f('ds-leg-imp').value, privacy: f('ds-leg-priv').value };
             }

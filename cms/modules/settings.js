@@ -41,7 +41,8 @@ const MAIL_TYPES = [
 
 let settingsTab = 'license';
 
-export async function renderSettings(container, titleEl) {
+export async function renderSettings(container, titleEl, tab) {
+    if (tab) settingsTab = tab;
     titleEl.innerHTML = '<i class="fas fa-cog"></i> Einstellungen';
     const settings = await apiGet('settings') || {};
     const branding = await apiGet('branding') || {};

@@ -179,6 +179,12 @@ const getCurrentLicense = async (DB, host = null) => {
     const settings = await DB.getKV('settings', {});
     const lic      = settings.license || {};
 
+    // Gesperrtes CMS: Wenn locked=true, immer FREE zurückgeben
+    if (lic.locked) {
+        console.error(`🔒 [LOCKED] CMS ist gesperrt (Grund: ${lic.lockedReason || 'unbekannt'}) – Lizenz deaktiviert.`);
+        return FREE_RESULT({ status: 'locked', isExpired: true });
+    }
+
     if (lic.isTrial) {
         const plan      = getPlan(lic.type);
         const now       = new Date();
