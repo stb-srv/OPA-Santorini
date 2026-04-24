@@ -4,6 +4,7 @@
 
 import { checkAuth, login, logout } from './modules/auth.js';
 import { apiGet } from './modules/api.js';
+import { initTrialOnboarding, showTrialBanner } from './modules/trial.js';
 import { showToast } from './modules/utils.js';
 import { renderDashboard } from './modules/dashboard.js';
 import { renderMenu } from './modules/menu.js';
@@ -79,6 +80,17 @@ function applyUserFromToken() {
 
 async function init() {
     if (!checkAuth()) {
+        // Prüfen ob Lizenz-Key gesetzt ist — wenn nicht → Trial-Onboarding
+        const savedKey = localStorage.getItem('opa_license_key');
+        if (!savedKey) {
+            loginContainer.style.display = 'none';
+            adminDashboard.style.display = 'none';
+            await initTrialOnboarding(document.body, (key) => {
+                localStorage.setItem('opa_license_key', key);
+                window.location.reload();
+            });
+            return;
+        }
         loginContainer.style.display = 'flex';
         adminDashboard.style.display = 'none';
         const pwdContainer = document.getElementById('password-change-container');
@@ -135,6 +147,16 @@ async function init() {
 
     const settings = await apiGet('settings') || {};
     updateSidebarVisibility(settings);
+
+    // Trial-Ablauf-Banner prüfen
+    try {
+        const licInfo = await apiGet('license/info');
+        if (licInfo && licInfo.type === 'TRIAL' && licInfo.expires_at) {
+            const daysLeft = Math.ceil((new Date(licInfo.expires_at) - Date.now()) / 86400000);
+            const { showTrialBanner } = await import('./modules/trial.js');
+            showTrialBanner(daysLeft);
+        }
+    } catch(e) {}
 }
 
 export function updateSidebarVisibility(settings) {
