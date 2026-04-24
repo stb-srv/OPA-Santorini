@@ -4,6 +4,7 @@
 
 import { apiGet, apiPost } from './api.js';
 import { renderOnboardingWidget } from './onboarding.js';
+import { renderFeedbackWidget } from './feedback.js';
 import { onRealtime } from './realtime.js';
 import { showToast } from './utils.js';
 
@@ -187,6 +188,7 @@ export async function renderDashboard(container, titleEl, toolbarEl) {
     titleEl.innerHTML = '<i class="fas fa-th-large"></i> Dashboard';
 
     renderOnboardingWidget(container);
+    await renderFeedbackWidget(container);
 
     window.toggleSortMode      = toggleSortMode;
     window.customizeDashboard  = customizeDashboard;

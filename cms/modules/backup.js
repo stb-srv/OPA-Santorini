@@ -100,6 +100,74 @@ export async function renderBackup(container, titleEl) {
                 </button>
             </div>
 
+            <!-- Cloud-Backup (Hetzner) -->
+            <div class="glass-panel" style="padding:24px; margin-top:20px; border:1px solid rgba(0,0,0,0.06); background:rgba(255,255,255,0.1);">
+                <h3 style="font-size:1rem; font-weight:800; color:var(--text); margin-bottom:6px;">
+                    <i class="fas fa-cloud-upload-alt" style="color:var(--primary);"></i>
+                    Cloud-Backup (Hetzner Object Storage)
+                </h3>
+                <p style="font-size:.85rem; color:var(--text-muted); margin-bottom:18px;">
+                    Automatisches tägliches Backup in S3-kompatiblen Speicher.
+                </p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                    <div>
+                        <label style="font-size:.78rem; font-weight:700; display:block; margin-bottom:4px;">
+                            S3 Endpoint
+                        </label>
+                        <input id="s3-endpoint" type="text" placeholder="fsn1.your-objectstorage.com"
+                               style="width:100%; padding:9px 12px; border:1.5px solid var(--border);
+                                      border-radius:8px; font-size:.85rem; box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size:.78rem; font-weight:700; display:block; margin-bottom:4px;">
+                            Bucket-Name
+                        </label>
+                        <input id="s3-bucket" type="text" placeholder="opa-backups"
+                               style="width:100%; padding:9px 12px; border:1.5px solid var(--border);
+                                      border-radius:8px; font-size:.85rem; box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size:.78rem; font-weight:700; display:block; margin-bottom:4px;">
+                            Access Key
+                        </label>
+                        <input id="s3-access-key" type="text" placeholder="Hetzner Access Key"
+                               style="width:100%; padding:9px 12px; border:1.5px solid var(--border);
+                                      border-radius:8px; font-size:.85rem; box-sizing:border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size:.78rem; font-weight:700; display:block; margin-bottom:4px;">
+                            Secret Key
+                        </label>
+                        <input id="s3-secret-key" type="password" placeholder="••••••••"
+                               style="width:100%; padding:9px 12px; border:1.5px solid var(--border);
+                                      border-radius:8px; font-size:.85rem; box-sizing:border-box;">
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+                    <label style="font-size:.82rem; font-weight:700;">Auto-Backup täglich:</label>
+                    <input id="s3-auto" type="checkbox" style="width:16px; height:16px; cursor:pointer;">
+                    <input id="s3-time" type="time" value="03:00"
+                           style="padding:6px 10px; border:1.5px solid var(--border);
+                                  border-radius:8px; font-size:.85rem;">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button id="btn-s3-save"
+                            style="padding:10px 20px; background:var(--primary); color:#fff;
+                                   border:none; border-radius:10px; font-size:.88rem;
+                                   font-weight:700; cursor:pointer;">
+                        <i class="fas fa-save"></i> Einstellungen speichern
+                    </button>
+                    <button id="btn-s3-now"
+                            style="padding:10px 20px; background:#f3f4f6; color:var(--text);
+                                   border:1.5px solid var(--border); border-radius:10px;
+                                   font-size:.88rem; font-weight:700; cursor:pointer;">
+                        <i class="fas fa-cloud-upload-alt"></i> Jetzt sichern
+                    </button>
+                </div>
+                <div id="s3-feedback" style="display:none; margin-top:12px; padding:10px 14px;
+                     border-radius:8px; font-size:.85rem;"></div>
+            </div>
+
             <!-- Log -->
             <div id="backup-log" style="display:none; margin-top:20px; padding:16px; 
                  background:rgba(0,0,0,0.4); color:#fff; border-radius:12px; font-family:monospace; 
@@ -213,4 +281,51 @@ export async function renderBackup(container, titleEl) {
             showToast('Restore fehlgeschlagen.', 'error');
         }
     };
+
+    // Cloud-Backup Events
+    document.getElementById('btn-s3-save')?.addEventListener('click', async () => {
+        const config = {
+            s3_endpoint:   document.getElementById('s3-endpoint').value.trim(),
+            s3_bucket:     document.getElementById('s3-bucket').value.trim(),
+            s3_access_key: document.getElementById('s3-access-key').value.trim(),
+            s3_secret_key: document.getElementById('s3-secret-key').value.trim(),
+            s3_auto:       document.getElementById('s3-auto').checked,
+            s3_time:       document.getElementById('s3-time').value
+        };
+        try {
+            const { apiPost } = await import('./api.js');
+            await apiPost('settings/backup-cloud', config);
+            const fb = document.getElementById('s3-feedback');
+            fb.style.display='block'; fb.style.background='#f0fdf4';
+            fb.style.color='#16a34a'; fb.style.border='1px solid #bbf7d0';
+            fb.textContent='✅ Einstellungen gespeichert.';
+        } catch(e) { console.error(e); }
+    });
+
+    document.getElementById('btn-s3-now')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btn-s3-now');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sichern...';
+        try {
+            const { apiPost } = await import('./api.js');
+            const res = await apiPost('backup/cloud', {});
+            const fb = document.getElementById('s3-feedback');
+            fb.style.display='block';
+            if (res?.success) {
+                fb.style.background='#f0fdf4'; fb.style.color='#16a34a';
+                fb.style.border='1px solid #bbf7d0';
+                fb.textContent=`✅ Backup erfolgreich: ${res.filename || 'backup.sql.gz'}`;
+            } else {
+                fb.style.background='#fef2f2'; fb.style.color='#dc2626';
+                fb.style.border='1px solid #fecaca';
+                fb.textContent=`❌ ${res?.message || 'Backup fehlgeschlagen.'}`;
+            }
+        } catch(e) {
+            const fb = document.getElementById('s3-feedback');
+            fb.style.display='block'; fb.style.background='#fef2f2';
+            fb.style.color='#dc2626'; fb.textContent='❌ Verbindungsfehler.';
+        }
+        btn.disabled=false;
+        btn.innerHTML='<i class="fas fa-cloud-upload-alt"></i> Jetzt sichern';
+    });
 }

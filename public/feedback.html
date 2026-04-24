@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bewertung – OPA! Santorini</title>
+    <style>
+        body { font-family:sans-serif; background:#f9fafb; display:flex;
+               align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+        .card { background:#fff; border-radius:24px; padding:40px; max-width:440px;
+                width:100%; box-shadow:0 8px 32px rgba(0,0,0,.1); text-align:center; }
+        h1 { font-size:1.3rem; color:#1b3a5c; margin-bottom:8px; }
+        .stars { display:flex; justify-content:center; gap:12px; margin:24px 0; }
+        .star { font-size:2.5rem; cursor:pointer; transition:transform .15s; color:#d1d5db; }
+        .star.active, .star:hover { color:#facc15; transform:scale(1.2); }
+        textarea { width:100%; padding:12px; border:1.5px solid #e5e7eb; border-radius:10px;
+                   font-size:.9rem; resize:none; margin-bottom:16px; box-sizing:border-box; }
+        button { width:100%; padding:13px; background:#1b3a5c; color:#fff; border:none;
+                 border-radius:12px; font-size:1rem; font-weight:700; cursor:pointer; }
+        .success { display:none; color:#16a34a; font-size:1.1rem; margin-top:20px; font-weight:700; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div style="font-size:2.5rem; margin-bottom:8px;">🍽️</div>
+    <h1>Wie war Ihr Besuch?</h1>
+    <p style="color:#6b7280; font-size:.9rem; margin-bottom:4px;">
+        Ihr Feedback hilft uns, besser zu werden.
+    </p>
+    <div class="stars" id="stars">
+        <span class="star" data-v="1" onclick="setRating(1)">★</span>
+        <span class="star" data-v="2" onclick="setRating(2)">★</span>
+        <span class="star" data-v="3" onclick="setRating(3)">★</span>
+        <span class="star" data-v="4" onclick="setRating(4)">★</span>
+        <span class="star" data-v="5" onclick="setRating(5)">★</span>
+    </div>
+    <input id="name" type="text" placeholder="Ihr Name (optional)"
+           style="width:100%; padding:11px 14px; border:1.5px solid #e5e7eb;
+                  border-radius:10px; font-size:.9rem; margin-bottom:12px; box-sizing:border-box;">
+    <textarea id="comment" rows="3" placeholder="Ihr Kommentar (optional)"></textarea>
+    <button onclick="submit()">Bewertung absenden</button>
+    <div class="success" id="success">✅ Vielen Dank für Ihr Feedback!</div>
+</div>
+<script>
+    const params = new URLSearchParams(location.search);
+    const token  = params.get('t');
+    let rating   = 0;
+
+    function setRating(v) {
+        rating = v;
+        document.querySelectorAll('.star').forEach(s => {
+            s.classList.toggle('active', parseInt(s.dataset.v) <= v);
+        });
+    }
+
+    async function submit() {
+        if (!rating) return alert('Bitte eine Bewertung wählen.');
+        const res = await fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                token,
+                rating,
+                guest_name: document.getElementById('name').value.trim(),
+                comment:    document.getElementById('comment').value.trim()
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.querySelector('button').style.display = 'none';
+            document.getElementById('success').style.display = 'block';
+        }
+    }
+</script>
+</body>
+</html>
