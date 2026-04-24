@@ -4,7 +4,7 @@
 
 import { checkAuth, login, logout } from './modules/auth.js';
 import { apiGet } from './modules/api.js';
-import { initTrialOnboarding, showTrialBanner } from './modules/trial.js';
+import { initTrialOnboarding, showTrialBanner, initUpgradeModal, showTrialExpiredLock } from './modules/trial.js';
 import { showToast } from './modules/utils.js';
 import { renderDashboard } from './modules/dashboard.js';
 import { renderMenu } from './modules/menu.js';
@@ -156,9 +156,15 @@ async function init() {
         const licInfo = await apiGet('license/info');
         if (licInfo && licInfo.type === 'TRIAL' && licInfo.expires_at) {
             const daysLeft = Math.ceil((new Date(licInfo.expires_at) - Date.now()) / 86400000);
-            showTrialBanner(daysLeft);
+            if (daysLeft <= 0) {
+                // Soft-Lock: Trial abgelaufen
+                showTrialExpiredLock(localStorage.getItem('opa_license_key'));
+            } else {
+                showTrialBanner(daysLeft);
+            }
         }
     } catch(e) {}
+    initUpgradeModal();
 }
 
 export function updateSidebarVisibility(settings) {
