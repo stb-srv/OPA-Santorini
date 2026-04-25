@@ -76,8 +76,18 @@ module.exports = (requireAuth, requireLicense) => {
             const duration = calculateDuration(guests, settings.reservationConfig);
             const result   = await findAvailableTables(date, time, duration, guests, areaId);
             if (!result.success && !rc.allowInquiry) return res.status(400).json({ success: false, reason: result.reason });
-            const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-            if (email && !emailRegex.test(email)) return res.status(400).json({ success: false, reason: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' });
+            // Länge begrenzen + einfache Struktur-Prüfung (kein catastrophic backtracking)
+            const emailValid = (e) => {
+                if (!e || e.length > 254) return false;
+                const at = e.lastIndexOf('@');
+                if (at < 1 || at === e.length - 1) return false;
+                const domain = e.slice(at + 1);
+                return domain.includes('.') && domain.length <= 253;
+            };
+
+            if (email && !emailValid(email)) {
+                return res.status(400).json({ success: false, reason: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' });
+            }
             const status = result.success ? 'Pending' : 'Inquiry';
             const newRes = {
                 id: crypto.randomUUID(), token: crypto.randomBytes(32).toString('hex'),
