@@ -88,13 +88,12 @@ module.exports = (requireAuth, requireLicense) => {
                 submittedAt: new Date().toISOString(),
                 ip: (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split('.').slice(0,2).join('.') + '.x.x'
             };
-            const payload = { date, time, areaId };
             // Race Condition Guard: nochmalige Prüfung direkt vor dem Speichern
             const doubleCheck = await DB.getReservations();
             const slotTaken = doubleCheck.some(r =>
-                r.date === payload.date &&
-                r.start_time === payload.time &&
-                r.areaId === payload.areaId &&
+                r.date === date &&
+                r.start_time === time &&
+                r.areaId === areaId &&
                 r.status.toLowerCase() !== 'cancelled'
             );
             if (slotTaken) {
