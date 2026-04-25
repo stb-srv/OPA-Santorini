@@ -332,41 +332,36 @@ checkReminders(); // Einmal beim Start
 async function start() {
     try {
         const enabledPlugins = await DB.getKV('plugins', []);
-        const resolvedPluginsDir = path.resolve(PLUGINS_DIR);
-
         enabledPlugins.filter(p => p.enabled).forEach(p => {
-            const safeId     = path.basename(p.id);
-            const pluginDir  = path.join(PLUGINS_DIR, safeId);
-            const serverPath = path.join(pluginDir, 'server.js');
-            const resolvedPath = path.resolve(serverPath);
+            const safeId = path.basename(p.id);
+            const resolvedPath = path.resolve(PLUGINS_DIR, safeId, 'server.js');
 
             // 1. Path-Traversal-Schutz
-            if (!resolvedPath.startsWith(resolvedPluginsDir)) {
-                logger.error({ plugin: safeId, path: resolvedPath }, 'Sicherheitswarnung: Plugin-Pfad liegt außerhalb des Plugin-Verzeichnisses!');
+            if (!resolvedPath.startsWith(path.resolve(PLUGINS_DIR))) {
+                logger.warn({ plugin: safeId }, 'Plugin abgelehnt: Path Traversal erkannt');
                 return;
             }
 
-            if (fs.existsSync(serverPath)) {
+            if (fs.existsSync(resolvedPath)) {
                 try {
-                    // 2. Integritätsprüfung (plugin.json + checksum)
+                    // 2. Checksum-Warnung
+                    const pluginDir = path.dirname(resolvedPath);
                     const manifestPath = path.join(pluginDir, 'plugin.json');
                     if (fs.existsSync(manifestPath)) {
                         try {
                             const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
                             if (!manifest.checksum) {
-                                logger.warn({ plugin: safeId }, `Plugin "${safeId}" hat keine Checksumme in der plugin.json.`);
+                                logger.warn({ plugin: safeId }, 'Plugin hat keine Checksum – Integrität nicht verifizierbar');
                             }
-                        } catch (jsonErr) {
-                            logger.warn({ plugin: safeId, err: jsonErr.message }, 'plugin.json konnte nicht gelesen werden.');
+                        } catch (e) {
+                            logger.warn({ plugin: safeId }, 'plugin.json konnte nicht gelesen werden');
                         }
-                    } else {
-                        logger.warn({ plugin: safeId }, 'Keine plugin.json für Plugin gefunden.');
                     }
 
-                    // 3. Detailliertes Logging
-                    logger.info({ plugin: safeId, path: serverPath }, `Lade Plugin: ${safeId} (${serverPath})`);
+                    // 3. Logging
+                    logger.info({ plugin: safeId, path: resolvedPath }, 'Plugin geladen');
 
-                    const plug = require(serverPath);
+                    const plug = require(resolvedPath);
                     if (typeof plug === 'function') plug(app, { DB, requireAuth, requireLicense });
                 } catch(e) { 
                     logger.error({ err: e, plugin: safeId }, 'Plugin load failed'); 
