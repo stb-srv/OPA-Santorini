@@ -146,6 +146,16 @@ function minToHHMM(min) {
     return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 }
 
+/**
+ * DSGVO-konforme Maskierung von Telefonnummern.
+ */
+function maskPhone(phone) {
+    if (!phone) return 'n/a';
+    const s = String(phone).replace(/\s/g, '');
+    if (s.length <= 4) return '***';
+    return s.slice(0, 2) + '***' + s.slice(-2);
+}
+
 module.exports = function cartRoutes(requireLicense, io) {
     const router = express.Router();
 
@@ -290,7 +300,7 @@ module.exports = function cartRoutes(requireLicense, io) {
 
             await DB.addOrder(order);
             if (io) io.emit('new_order', order);
-            console.log(`🛒 Bestellung: ${orderId} | ${type} | ${validatedItems.length} Artikel | ${total.toFixed(2)}€ | Tel: ${order.phone || 'n/a'}${type === 'pickup' ? ` | Abholung: ${pickupTime}` : ''}`);
+            console.log(`🛒 Bestellung: ${orderId} | ${type} | ${validatedItems.length} Artikel | ${total.toFixed(2)}€ | Tel: ${maskPhone(order.customerPhone)}${type === 'pickup' ? ` | Abholung: ${pickupTime}` : ''}`);
 
             res.status(201).json({
                 success: true,
