@@ -152,7 +152,7 @@ app.use('/api/cart',         require('./server/routes/cart.js')(requireLicense, 
 app.use('/api/image-ai',     requireAuth, require('./server/routes/image-ai.js')(requireAuth, DB));
 
 // Global Backup & Restore
-app.use('/api/backup', requireAuth, require('./server/routes/backup.js'));
+app.use('/api/backup', require('./server/routes/backup.js')(requireAuth));
 
 // --- Plugins ---
 const getInstalledPlugins = () => {
