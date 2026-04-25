@@ -242,38 +242,6 @@ const getCurrentLicense = async (DB, host = null) => {
     if (lic.key) {
         const offline = getLastKnownLicense(lic);
         if (offline) return offline;
-
-        if (token) {
-            try {
-                const decoded = jwt.decode(token);
-                if (decoded && decoded.type && decoded.type !== 'FREE') {
-                    const plan = getPlan(decoded.type);
-                    const now  = new Date();
-                    const expiresAt = decoded.exp ? new Date(decoded.exp * 1000) : null;
-                    const tooOld = expiresAt ? (now - expiresAt) > (24 * 60 * 60 * 1000) : false;
-                    if (!tooOld) {
-                        console.warn(`⚠️  [Decode-Fallback] SICHERHEITSHINWEIS: Token nicht verifizierbar (Offline) – nutze dekodiertes Token ohne Signaturprüfung (Plan: ${decoded.type}). Max. 24h Offline-Toleranz.`);
-                        return {
-                            key:      decoded.license_key || lic.key,
-                            status:   'active_unverified',
-                            customer: decoded.customer_name || lic.customer || 'Unbekannt',
-                            type:     decoded.type,
-                            label:    plan.label + ' (nicht verifiziert)',
-                            expiresAt: expiresAt?.toISOString() || null,
-                            modules:  decoded.allowed_modules || plan.modules,
-                            limits: {
-                                max_dishes: decoded.limits?.max_dishes ?? plan.menu_items,
-                                max_tables: decoded.limits?.max_tables ?? plan.max_tables
-                            },
-                            isTrial: false, isExpired: false, trialDaysLeft: 0, plan,
-                            domain: decoded.domain || null,
-                            offline: true
-                        };
-                    }
-                }
-            } catch (_) { /* ignore */ }
-        }
-
         console.warn('⚠️  License key present but no valid fallback available – falling back to FREE.');
     }
 
