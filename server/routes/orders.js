@@ -7,6 +7,18 @@
 const router = require('express').Router();
 const DB     = require('../database.js');
 const Mailer = require('../mailer.js');
+const { getCurrentLicense } = require('../license.js');
+
+function extractDomain(req) {
+    const forwarded = req.headers['x-forwarded-host'];
+    if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
+    const origin = req.headers['origin'];
+    if (origin) {
+        try { return new URL(origin).hostname; } catch (_) { /* ignore */ }
+    }
+    const host = req.headers.host || 'localhost';
+    return host.split(':')[0];
+}
 const { reservationLimiter } = require('../middleware.js');
 const logger = require('../logger.js');
 
@@ -49,6 +61,12 @@ module.exports = (requireAuth, io) => {
     // Für dine_in: Status startet als 'pending' und geht direkt in Küche
     router.post('/', reservationLimiter, async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.orders_kitchen !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             const crypto = require('crypto');
             const orderToken = crypto.randomBytes(16).toString('hex');
             const newOrder = {
@@ -73,6 +91,12 @@ module.exports = (requireAuth, io) => {
     // PUT Status-Update (Admin)
     router.put('/:id/status', requireAuth, async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.orders_kitchen !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             const { status, estimatedTime } = req.body;
             if (!VALID_STATUSES.includes(status))
                 return res.status(400).json({ success: false, reason: `Ungültiger Status. Erlaubt: ${VALID_STATUSES.join(', ')}` });

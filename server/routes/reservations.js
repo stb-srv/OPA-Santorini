@@ -8,6 +8,18 @@ const router = require('express').Router();
 const crypto = require('crypto');
 const DB = require('../database.js');
 const Mailer = require('../mailer.js');
+const { getCurrentLicense } = require('../license.js');
+
+function extractDomain(req) {
+    const forwarded = req.headers['x-forwarded-host'];
+    if (forwarded) return forwarded.split(',')[0].trim().split(':')[0];
+    const origin = req.headers['origin'];
+    if (origin) {
+        try { return new URL(origin).hostname; } catch (_) { /* ignore */ }
+    }
+    const host = req.headers.host || 'localhost';
+    return host.split(':')[0];
+}
 const { reservationLimiter } = require('../middleware.js');
 const logger = require('../logger.js');
 const { sanitizeText, calculateDuration, buildEndTime, findAvailableTables, tokenResponsePage } = require('../helpers.js');
@@ -40,6 +52,12 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.post('/check', reservationLimiter, async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.reservations !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             const settings = await DB.getKV('settings', {});
             const { date, time, guests, areaId } = req.body;
             const duration = calculateDuration(guests, settings.reservationConfig);
@@ -49,6 +67,12 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.post('/availability-grid', reservationLimiter, async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.reservations !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             const settings = await DB.getKV('settings', {});
             const { date, guests, areaId, times } = req.body;
             const duration = calculateDuration(guests, settings.reservationConfig);
@@ -63,6 +87,12 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.post('/submit', reservationLimiter, requireLicense('reservations'), async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.reservations !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             const settings = await DB.getKV('settings', {});
             const rc = settings.reservationConfig || { allowInquiry: true };
             const name   = sanitizeText(req.body.name),
@@ -118,6 +148,12 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.put('/:id', requireAuth, async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.reservations !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             const settings = await DB.getKV('settings', {});
             const resId = req.params.id;
             const dbRes = await DB.getReservations();
@@ -150,6 +186,12 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.post('/', requireAuth, async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.reservations !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             if (!Array.isArray(req.body)) 
                 return res.status(400).json({ success: false, reason: 'Array erwartet.' });
             if (req.body.length === 0) 
@@ -186,6 +228,12 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.post('/cancel/:token', reservationLimiter, async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.reservations !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             const reservations = await DB.getReservations();
             const r = findReservationByToken(reservations, req.params.token);
             if (!r) return res.status(404).json({ success: false, reason: 'Ungültiger Token.' });
@@ -198,6 +246,12 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.post('/confirm/:token', reservationLimiter, async (req, res) => {
         try {
+            const host = extractDomain(req);
+            let license = null;
+            try { license = await getCurrentLicense(DB, host); } catch (_) {}
+            if (!license || !license.modules || license.modules.reservations !== true) {
+                return res.status(403).json({ success: false, message: "Ihr aktueller Plan unterstützt dieses Feature nicht." });
+            }
             const reservations = await DB.getReservations();
             const r = findReservationByToken(reservations, req.params.token);
             if (!r) return res.status(404).json({ success: false, reason: 'Ungültiger Token.' });

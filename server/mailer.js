@@ -95,6 +95,38 @@ const replacePlaceholders = (text, data) => {
     return result;
 };
 
+/**
+ * Hilfsfunktion: Umhüllt den Content mit einem Standard-HTML-Rahmen.
+ */
+function wrapHtml(restaurantName, content) {
+    return `
+        <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
+            ${content}
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
+            <p style="font-size: 12px; color: #718096;">Herzliche Grüße, ${restaurantName}</p>
+        </div>
+    `;
+}
+
+/**
+ * Hilfsfunktion: Sendet eine E-Mail mit bis zu 3 Versuchen (Exponential Backoff)
+ */
+async function sendWithRetry(transporter, mailOptions, maxAttempts = 3) {
+    let attempts = 0;
+    while (attempts < maxAttempts) {
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log(`✉️ Email sent to ${mailOptions.to}`);
+            return;
+        } catch (e) {
+            attempts++;
+            console.error(`❌ Mail attempt ${attempts} failed:`, e.message);
+            if (attempts >= maxAttempts) throw e;
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+        }
+    }
+}
+
 const Mailer = {
     /**
      * Bestätigungs-E-Mail an den Gast senden
@@ -143,14 +175,7 @@ const Mailer = {
                <p>Wir freuen uns auf Ihren Besuch!</p>`;
 
         const bodyContent = replacePlaceholders(tpl.body || defaultBody, data);
-
-        const html = `
-            <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                ${bodyContent}
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-                <p style="font-size: 12px; color: #718096;">Herzliche Grüße, ${restaurantName}</p>
-            </div>
-        `;
+        const html = wrapHtml(restaurantName, bodyContent);
 
         await sendWithRetry(transporter, { from, to: email, subject, html });
     },
@@ -177,7 +202,7 @@ const Mailer = {
 
         const data = { name, date, start_time, restaurantName };
 
-        let defaultSubject = '', defaultBody = '', color = '#2b6cb0';
+        let defaultSubject = '', defaultBody = '';
 
         if (isConfirmed) {
             defaultSubject = 'BESTÄTIGT: Ihr Tisch am {{date}}';
@@ -188,7 +213,6 @@ const Mailer = {
                                <p><strong>Termin:</strong> {{date}} um {{start_time}}</p>
                                <p><strong>Status:</strong> Bestätigt</p>
                            </div>`;
-            color = '#38a169';
         } else if (status === 'Cancelled') {
             defaultSubject = 'ABSAGE: Ihre Reservierung am {{date}}';
             defaultBody = `<h2 style="color: #e53e3e;">ABSAGE: Ihre Reservierung</h2>
@@ -198,18 +222,11 @@ const Mailer = {
                                <p><strong>Termin:</strong> {{date}} um {{start_time}}</p>
                                <p><strong>Status:</strong> Storniert</p>
                            </div>`;
-            color = '#e53e3e';
         } else { return; }
 
         const subject = replacePlaceholders(tpl.subject || defaultSubject, data);
         const bodyContent = replacePlaceholders(tpl.body || defaultBody, data);
-
-        const html = `
-            <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                ${bodyContent}
-                <p>Herzliche Grüße,<br>${restaurantName}</p>
-            </div>
-        `;
+        const html = wrapHtml(restaurantName, bodyContent);
 
         await sendWithRetry(transporter, { from, to: email, subject, html });
     },
@@ -245,13 +262,7 @@ const Mailer = {
 
         const subject = replacePlaceholders(tpl.subject || defaultSubject, data);
         const bodyContent = replacePlaceholders(tpl.body || defaultBody, data);
-
-        const html = `
-            <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                ${bodyContent}
-                <p>Herzliche Grüße,<br>${restaurantName}</p>
-            </div>
-        `;
+        const html = wrapHtml(restaurantName, bodyContent);
 
         await sendWithRetry(transporter, { from, to: email, subject, html });
     },
@@ -263,18 +274,20 @@ const Mailer = {
         const transporter = await createTransporter(DB);
         if (!transporter) throw new Error('Kein SMTP-Host konfiguriert.');
         const from = await getSenderName(DB);
+        const restaurantName = await getRestaurantName(DB);
+
+        const bodyContent = `
+            <h2 style="color: #38a169;">✅ SMTP-Konfiguration funktioniert!</h2>
+            <p>Wenn du diese E-Mail siehst, ist die E-Mail-Konfiguration deines OPA! CMS korrekt eingerichtet.</p>
+            <p style="color: #718096; font-size: 13px;">Gesendet am: ${new Date().toLocaleString('de-DE')}</p>
+        `;
+        const html = wrapHtml(restaurantName, bodyContent);
 
         await sendWithRetry(transporter, {
             from,
             to: toEmail,
             subject: 'OPA! CMS - SMTP Test erfolgreich ✅',
-            html: `
-                <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                    <h2 style="color: #38a169;">✅ SMTP-Konfiguration funktioniert!</h2>
-                    <p>Wenn du diese E-Mail siehst, ist die E-Mail-Konfiguration deines OPA! CMS korrekt eingerichtet.</p>
-                    <p style="color: #718096; font-size: 13px;">Gesendet am: ${new Date().toLocaleString('de-DE')}</p>
-                </div>
-            `
+            html
         });
     },
 
@@ -292,77 +305,22 @@ const Mailer = {
         const restaurantName = await getRestaurantName(DB);
         const subject = `Erinnerung: Ihre Reservierung morgen – ${restaurantName}`;
         
-        const html = `
-            <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                <p>Hallo ${name},</p>
-                <p>wir möchten Sie an Ihre Reservierung erinnern:</p>
-                <ul style="list-style: none; padding: 0;">
-                    <li><strong>Datum:</strong> ${date}</li>
-                    <li><strong>Uhrzeit:</strong> ${start_time} Uhr</li>
-                    <li><strong>Personen:</strong> ${guests}</li>
-                </ul>
-                <p>Bei Fragen oder falls Sie stornieren möchten, antworten Sie einfach auf diese E-Mail.</p>
-                <p>Wir freuen uns auf Ihren Besuch!<br>${restaurantName}</p>
-            </div>
+        const bodyContent = `
+            <p>Hallo ${name},</p>
+            <p>wir möchten Sie an Ihre Reservierung erinnern:</p>
+            <ul style="list-style: none; padding: 0;">
+                <li><strong>Datum:</strong> ${date}</li>
+                <li><strong>Uhrzeit:</strong> ${start_time} Uhr</li>
+                <li><strong>Personen:</strong> ${guests}</li>
+            </ul>
+            <p>Bei Fragen oder falls Sie stornieren möchten, antworten Sie einfach auf diese E-Mail.</p>
+            <p>Wir freuen uns auf Ihren Besuch!</p>
         `;
+        const html = wrapHtml(restaurantName, bodyContent);
 
         await sendWithRetry(transporter, { from, to: email, subject, html });
     }
 };
-
-/**
- * Hilfsfunktion: Sendet eine E-Mail mit bis zu 3 Versuchen (Exponential Backoff)
- */
-async function sendWithRetry(transporter, mailOptions, maxAttempts = 3) {
-    let attempts = 0;
-    while (attempts < maxAttempts) {
-        try {
-            await transporter.sendMail(mailOptions);
-            console.log(`✉️ Email sent to ${mailOptions.to}`);
-            return;
-        } catch (e) {
-            attempts++;
-            console.error(`❌ Mail attempt ${attempts} failed:`, e.message);
-            if (attempts >= maxAttempts) throw e;
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-        }
-    }
-}
-
-/**
- * Hilfsfunktion: Umhüllt den Content mit einem Standard-HTML-Rahmen.
- */
-function wrapHtml(restaurantName, content) {
-    return `
-        <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-            ${content}
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="font-size: 12px; color: #718096;">Herzliche Grüße, ${restaurantName}</p>
-        </div>
-    `;
-}
-
-/**
- * Basale Mail-Send-Funktion.
- */
-async function sendMail({ to, subject, html }, smtp) {
-    const transporter = nodemailer.createTransport({
-        host: smtp.host,
-        port: smtp.port || 465,
-        secure: smtp.secure !== false,
-        auth: {
-            user: smtp.user,
-            pass: smtp.pass
-        },
-        tls: { rejectUnauthorized: false }
-    });
-    await transporter.sendMail({
-        from: smtp.from || smtp.user,
-        to,
-        subject,
-        html
-    });
-}
 
 /**
  * Sendet dem Kunden eine E-Mail wenn eine Bestellung bestätigt oder abgelehnt wird.
@@ -437,15 +395,19 @@ async function sendOrderStatusMail(order, DB) {
                 Bitte ruf uns an oder versuche es zu einem anderen Zeitpunkt erneut.
             </p>`;
     } else if (isReady) {
-        subject     = tpl.subject || `🎉 Deine Bestellung ist abholbereit – ${restaurantName}`;
-        headerColor = '#22c55e';
-        headerIcon  = '✅';
-        headerTitle = 'Deine Bestellung ist fertig!';
+        subject     = tpl.subject || `🍽️ Deine Bestellung ist fertig – ${restaurantName}`;
+        headerColor = '#f59e0b';
+        headerIcon  = '🛎️';
+        headerTitle = 'Deine Bestellung ist abholbereit!';
         bodyContent = tpl.body || `
             <p style="font-size:1rem; color:#374151;">
                 Hallo <strong>${order.customerName || 'Gast'}</strong>,<br><br>
-                deine Bestellung ist jetzt abholbereit. Wir freuen uns auf dich!
-            </p>`;
+                deine Bestellung wurde frisch zubereitet und steht ab jetzt zur Abholung bereit. Wir freuen uns auf dich!
+            </p>
+            <div style="background:#fff7ed; border-left:4px solid #f97316; border-radius:8px; padding:14px 18px; margin:20px 0;">
+                <p style="margin:0; font-size:.85rem; color:#c2410c; font-weight:700;">📍 Abholung</p>
+                <p style="margin:4px 0 0; font-size:1rem; color:#9a3412;">Du kannst deine Bestellung jetzt bei uns im Restaurant abholen.</p>
+            </div>`;
     } else { return; }
 
     const html = `<!DOCTYPE html>
@@ -458,7 +420,7 @@ async function sendOrderStatusMail(order, DB) {
 
   <!-- Header -->
   <tr>
-    <td style="background:${primaryColor}; padding:32px 40px; text-align:center;">
+    <td style="background:${headerColor}; padding:32px 40px; text-align:center;">
       <p style="margin:0; font-size:2.5rem;">${headerIcon}</p>
       <h1 style="margin:8px 0 0; color:#ffffff; font-size:1.3rem; font-weight:800;">${headerTitle}</h1>
       <p style="margin:6px 0 0; color:rgba(255,255,255,.7); font-size:.82rem;">
@@ -530,7 +492,11 @@ async function sendOrderStatusMail(order, DB) {
 </body>
 </html>`;
 
-    await sendMail({ to: order.customerEmail, subject, html }, smtp);
+    const from = await getSenderName(DB);
+    const transporter = await createTransporter(DB);
+    if (!transporter) return;
+
+    await sendWithRetry(transporter, { from, to: order.customerEmail, subject, html });
 }
 
 Mailer.sendOrderStatusMail = sendOrderStatusMail;

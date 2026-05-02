@@ -23,6 +23,7 @@ const { version: APP_VERSION } = require('./package.json');
 
 const { requireAuth: makeRequireAuth, requireLicense, requireMenuLimit,
         loginLimiter, forgotPasswordLimiter, reservationLimiter } = require('./server/middleware.js');
+const { startCron } = require('./server/cron.js');
 
 const app    = express();
 const server = require('http').createServer(app);
@@ -154,6 +155,9 @@ app.use('/api/image-ai',     requireAuth, require('./server/routes/image-ai.js')
 // Global Backup & Restore
 app.use('/api/backup', require('./server/routes/backup.js')(requireAuth));
 
+// TODO: analytics gate
+
+
 // --- Plugins ---
 const getInstalledPlugins = () => {
     if (!fs.existsSync(PLUGINS_DIR)) return [];
@@ -277,53 +281,9 @@ app.use((err, req, res, next) => {
     res.status(err.status || 500).json({ success: false, reason: err.message || 'Interner Serverfehler.' });
 });
 
-// --- Trial Expiry Job ---
-setInterval(async () => {
-    try {
-        const settings = await DB.getKV('settings', {});
-        const lic = settings.license;
-        if (lic && lic.isTrial && lic.expiresAt && new Date(lic.expiresAt) < new Date() && lic.status !== 'expired') {
-            logger.warn('Trial-Lizenz abgelaufen.');
-            lic.status = 'expired';
-            await DB.setKV('settings', settings);
-        }
-    } catch (e) { logger.error({ err: e }, 'Trial cleanup error'); }
-}, 60 * 60 * 1000);
+// --- Background Cron Jobs ---
+startCron();
 
-// --- Reservation Reminder Job (24h before at 10:00 AM) ---
-const checkReminders = async () => {
-    try {
-        const now = new Date();
-        // Nur um 10 Uhr morgens prüfen
-        const nowHour = parseInt(new Intl.DateTimeFormat('de-DE', { hour: 'numeric', hour12: false, timeZone: 'Europe/Berlin' }).format(now), 10);
-        if (nowHour !== 10) return;
-        
-        const reservations = await DB.getReservations();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = `${String(tomorrow.getDate()).padStart(2,'0')}.${String(tomorrow.getMonth()+1).padStart(2,'0')}.${tomorrow.getFullYear()}`;
-        
-        const toRemind = reservations.filter(r => 
-            r.date === tomorrowStr && 
-            r.status === 'Confirmed' && 
-            r.email &&
-            !r.reminderSent
-        );
-        
-        for (const r of toRemind) {
-            try {
-                await Mailer.sendReminder(r, DB);
-                await DB.updateReservation(r.id, { reminderSent: true });
-                logger.info({ reservation: r.id, name: r.name }, 'Erinnerung gesendet');
-            } catch (mailErr) {
-                logger.error({ err: mailErr, name: r.name }, 'Fehler beim Senden der Erinnerung');
-            }
-        }
-    } catch(e) { logger.error({ err: e }, 'Reminder-Check Fehler'); }
-};
-
-setInterval(checkReminders, 60 * 60 * 1000); // Stündlich prüfen
-checkReminders(); // Einmal beim Start
 
 
 // =============================================================================
