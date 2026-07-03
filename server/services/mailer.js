@@ -30,6 +30,11 @@ const createTransporter = async (DB = null) => {
         return null;
     }
 
+    // SEC: TLS-Zertifikatsprüfung standardmäßig aktiv. Nur wenn explizit
+    // SMTP_ALLOW_INSECURE_TLS=true gesetzt ist (z.B. interner Mailserver mit
+    // selbstsigniertem Zertifikat), wird die Prüfung deaktiviert.
+    const allowInsecureTls = process.env.SMTP_ALLOW_INSECURE_TLS === 'true';
+
     return nodemailer.createTransport({
         host: smtp.host,
         port: smtp.port || 465,
@@ -38,7 +43,7 @@ const createTransporter = async (DB = null) => {
             user: smtp.user,
             pass: smtp.pass,
         },
-        tls: { rejectUnauthorized: false },
+        tls: { rejectUnauthorized: !allowInsecureTls },
     });
 };
 
