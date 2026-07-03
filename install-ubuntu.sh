@@ -62,6 +62,11 @@ CMS_PORT=${CMS_PORT:-5000}
 
 read -rp "  Domain/IP (z.B. meinrestaurant.de oder 1.2.3.4): " SERVER_DOMAIN
 SERVER_DOMAIN=${SERVER_DOMAIN:-localhost}
+# SEC: Domain/IP strikt validieren – verhindert Injection in nginx-Config & .env
+if ! [[ "$SERVER_DOMAIN" =~ ^[A-Za-z0-9.-]+$ ]]; then
+    log_warn "Ungültige Domain/IP '${SERVER_DOMAIN}' – Fallback auf localhost"
+    SERVER_DOMAIN="localhost"
+fi
 
 # --- SSL vorab fragen (WICHTIG: bestimmt CORS_ORIGINS http vs https) ---
 echo
@@ -231,6 +236,11 @@ EOF
     if [[ "${WILL_USE_SSL,,}" == "j" || "${WILL_USE_SSL,,}" == "y" ]]; then
         log_step "SSL/HTTPS via Let's Encrypt einrichten"
         read -rp "  E-Mail für Let's Encrypt Benachrichtigungen: " LE_EMAIL
+        # SEC: E-Mail validieren, bevor sie an certbot übergeben wird
+        if [ -n "${LE_EMAIL}" ] && ! [[ "${LE_EMAIL}" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+            log_warn "Ungültige E-Mail-Adresse – SSL übersprungen"
+            LE_EMAIL=""
+        fi
         if [ -n "${LE_EMAIL}" ]; then
             apt-get install -yq certbot python3-certbot-nginx
             certbot --nginx -d "${SERVER_DOMAIN}" --non-interactive --agree-tos -m "${LE_EMAIL}" || \
