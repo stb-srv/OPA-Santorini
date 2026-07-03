@@ -42,10 +42,12 @@ module.exports = function (CONFIG, io) {
                 contentSecurityPolicy: {
                     directives: {
                         defaultSrc: ["'self'"],
+                        // SEC: 'unsafe-eval' entfernt – weder das Vite-Produktions-Bundle
+                        // noch die statischen Setup/Status-Seiten benötigen eval(). Das
+                        // schließt die gefährlichste CSP-Lücke (dynamische Code-Ausführung).
                         scriptSrc: [
                             "'self'",
                             "'unsafe-inline'",
-                            "'unsafe-eval'",
                             'https://cdnjs.cloudflare.com',
                             'https://cdn.jsdelivr.net',
                             'https://js.puter.com',
@@ -113,11 +115,26 @@ module.exports = function (CONFIG, io) {
               .map((o) => o.trim())
               .filter(Boolean)
         : ['http://localhost:3000', 'http://localhost:5000'];
+    // SEC: Auch vor abgeschlossenem Setup keine Wildcard-CORS mehr. Die
+    // Setup-Phase ist besonders sensibel (Admin-Anlage), daher werden auch
+    // hier nur same-origin (kein Origin-Header) und localhost zugelassen.
+    const PRE_SETUP_ORIGINS = [
+        'http://localhost:5000',
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:5000',
+        'http://127.0.0.1:5173',
+    ];
     app.use(
         cors({
             origin: (origin, callback) => {
-                if (!CONFIG.SETUP_COMPLETE) return callback(null, true);
-                if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+                if (!origin) return callback(null, true); // same-origin / Server-zu-Server
+                if (!CONFIG.SETUP_COMPLETE) {
+                    return PRE_SETUP_ORIGINS.includes(origin)
+                        ? callback(null, true)
+                        : callback(new Error(`CORS: Origin '${origin}' nicht erlaubt.`));
+                }
+                if (allowedOrigins.includes(origin)) return callback(null, true);
                 return callback(new Error(`CORS: Origin '${origin}' nicht erlaubt.`));
             },
             credentials: true,
@@ -387,7 +404,9 @@ module.exports = function (CONFIG, io) {
         }
     });
 
-    app.get('/setup', (req, res) => res.sendFile(path.join(__dirname, '..', 'web', 'public', 'setup.html')));
+    app.get('/setup', (req, res) =>
+        res.sendFile(path.join(__dirname, '..', 'web', 'public', 'setup.html'))
+    );
 
     app.use('/plugins', express.static(PLUGINS_DIR));
     app.use(
@@ -416,12 +435,14 @@ module.exports = function (CONFIG, io) {
             res.sendFile(path.join(__dirname, '..', 'public', 'status.html'))
         );
         // Admin-SPA: alle /admin-Routen liefern admin.html
-        app.get(['/admin', '/admin/*'], (req, res) =>
-            res.sendFile(path.join(DIST, 'admin.html'))
-        );
+        app.get(['/admin', '/admin/*'], (req, res) => res.sendFile(path.join(DIST, 'admin.html')));
         // Gäste-SPA: Fallback für alle übrigen Nicht-API-Routen
         app.get('*', (req, res, next) => {
-            if (req.path.startsWith('/api/') || req.path.startsWith('/uploads') || req.path.startsWith('/plugins')) {
+            if (
+                req.path.startsWith('/api/') ||
+                req.path.startsWith('/uploads') ||
+                req.path.startsWith('/plugins')
+            ) {
                 return next();
             }
             res.sendFile(path.join(DIST, 'index.html'));
@@ -432,12 +453,18 @@ module.exports = function (CONFIG, io) {
         logger.error('web/dist nicht gefunden – bitte `npm run build:web` ausführen.');
         app.use('/', express.static(path.join(__dirname, '..', 'public')));
         app.get('*', (req, res, next) => {
-            if (req.path.startsWith('/api/') || req.path.startsWith('/uploads') || req.path.startsWith('/plugins')) {
+            if (
+                req.path.startsWith('/api/') ||
+                req.path.startsWith('/uploads') ||
+                req.path.startsWith('/plugins')
+            ) {
                 return next();
             }
-            res.status(503).type('html').send(
-                '<h1>Frontend nicht gebaut</h1><p>Bitte <code>npm run build:web</code> ausführen.</p>'
-            );
+            res.status(503)
+                .type('html')
+                .send(
+                    '<h1>Frontend nicht gebaut</h1><p>Bitte <code>npm run build:web</code> ausführen.</p>'
+                );
         });
     }
 

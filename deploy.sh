@@ -66,6 +66,11 @@ if [ ! -f "$APP_DIR/.env" ]; then
     SECRET=$(openssl rand -hex 32)
     read -rp "  Domain/IP (z.B. meinrestaurant.de oder 1.2.3.4): " APP_DOMAIN
     APP_DOMAIN=${APP_DOMAIN:-localhost}
+    # SEC: Domain/IP strikt validieren – verhindert Injection in nginx-Config & .env
+    if ! [[ "$APP_DOMAIN" =~ ^[A-Za-z0-9.-]+$ ]]; then
+        log_warn "Ungültige Domain/IP '${APP_DOMAIN}' – Fallback auf localhost"
+        APP_DOMAIN="localhost"
+    fi
 
     cp "$APP_DIR/.env.example" "$APP_DIR/.env"
     sed -i "s|^PORT=.*|PORT=${PORT}|" "$APP_DIR/.env"
@@ -161,6 +166,11 @@ EOF
     INSTALL_SSL=${INSTALL_SSL:-J}
     if [[ "${INSTALL_SSL,,}" == "j" || "${INSTALL_SSL,,}" == "y" ]]; then
         read -rp "  E-Mail für Let's Encrypt Benachrichtigungen: " LE_EMAIL
+        # SEC: E-Mail validieren, bevor sie an certbot übergeben wird
+        if [ -n "${LE_EMAIL}" ] && ! [[ "${LE_EMAIL}" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+            log_warn "Ungültige E-Mail-Adresse – Certbot übersprungen"
+            LE_EMAIL=""
+        fi
         if [ -n "${LE_EMAIL}" ]; then
             apt-get install -yq certbot python3-certbot-nginx
             certbot --nginx -d "${APP_DOMAIN}" --non-interactive --agree-tos -m "${LE_EMAIL}" || \

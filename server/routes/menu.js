@@ -272,33 +272,25 @@ module.exports = (requireAuth, requireLicense) => {
                 safeCats.map((c) => (c.label || '').trim().toLowerCase())
             );
 
+            // READ-ONLY: fehlende Kategorien nur für die Antwort ableiten, NICHT
+            // persistieren. Ein GET darf keine Seiteneffekte/DB-Writes auslösen
+            // (race-anfällig bei parallelen Gäste-Requests). Die persistente
+            // Anlage erfolgt bei Menü-Schreibvorgängen via ensureCategoryExists().
             for (const label of menuCatLabels) {
                 if (!existingLabels.has(label.toLowerCase())) {
-                    try {
-                        const id =
-                            label
-                                .toLowerCase()
-                                .replace(/[^a-z0-9]/g, '_')
-                                .replace(/_+/g, '_') || Date.now().toString();
-                        await DB.addCategory({
-                            id,
-                            label,
-                            icon: 'utensils',
-                            active: true,
-                            sort_order: safeCats.length,
-                        });
-                        safeCats.push({
-                            id,
-                            label,
-                            icon: 'utensils',
-                            active: 1,
-                            sort_order: safeCats.length,
-                        });
-                        existingLabels.add(label.toLowerCase());
-                        logger.info({ label }, '[categories] Migriert aus Gerichten');
-                    } catch (e) {
-                        /* doppelter insert – ignorieren */
-                    }
+                    const id =
+                        label
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]/g, '_')
+                            .replace(/_+/g, '_') || Date.now().toString();
+                    safeCats.push({
+                        id,
+                        label,
+                        icon: 'utensils',
+                        active: 1,
+                        sort_order: safeCats.length,
+                    });
+                    existingLabels.add(label.toLowerCase());
                 }
             }
 
@@ -446,7 +438,8 @@ module.exports = (requireAuth, requireLicense) => {
                     const fp = path.join(UPLOADS_DIR, path.basename(dish.image));
                     if (fs.existsSync(fp)) {
                         const ext = path.extname(fp).slice(1) || 'jpeg';
-                        imageData[dish.image] = `data:image/${ext};base64,${fs.readFileSync(fp).toString('base64')}`;
+                        imageData[dish.image] =
+                            `data:image/${ext};base64,${fs.readFileSync(fp).toString('base64')}`;
                     }
                 }
             }
@@ -602,7 +595,10 @@ module.exports = (requireAuth, requireLicense) => {
                             const filename = path.basename(urlPath);
                             // Nur erlaubte Dateinamen (alphanumeric, -, _, .)
                             if (/^[\w.\-]+$/.test(filename)) {
-                                fs.writeFileSync(path.join(UPLOADS_DIR, filename), Buffer.from(b64, 'base64'));
+                                fs.writeFileSync(
+                                    path.join(UPLOADS_DIR, filename),
+                                    Buffer.from(b64, 'base64')
+                                );
                             }
                         }
                     }

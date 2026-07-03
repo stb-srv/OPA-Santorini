@@ -48,7 +48,7 @@ module.exports = (requireAuth, io) => {
             let csv = 'ID,Datum,Tisch,Status,Gesamtpreis,Artikel\n';
             for (const o of orders) {
                 const date = new Date(o.timestamp || o.createdAt).toLocaleString('de-DE');
-                const table = o.tableNumber || o.table || '';
+                const table = o.table_name || o.table_id || o.tableNumber || '';
                 const total = o.total ? parseFloat(o.total).toFixed(2) : '0.00';
                 const items = o.items
                     ? o.items.map((i) => `${i.quantity}x ${i.name}`).join(' | ')
@@ -102,7 +102,7 @@ module.exports = (requireAuth, io) => {
                 }
                 const y = doc.y;
                 const date = new Date(o.timestamp || o.createdAt).toLocaleString('de-DE');
-                const table = o.tableNumber || o.table || o.type;
+                const table = o.table_name || o.table_id || o.tableNumber || o.type;
                 const total = parseFloat(o.total || 0);
                 totalSum += total;
 
