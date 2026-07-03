@@ -9,6 +9,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { DEFAULT_WIDGETS, WIDGET_META, type WidgetConfig } from './dashboard-data';
 import { cn } from '@/lib/utils';
 
@@ -77,23 +78,7 @@ export function VisibilityDialog({
                                     <i className={cn('fas', meta.icon, 'w-5 opacity-55')} />
                                     {meta.label}
                                 </span>
-                                <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={on}
-                                    onClick={() => setState((s) => ({ ...s, [id]: !s[id] }))}
-                                    className={cn(
-                                        'relative h-6 w-11 shrink-0 rounded-full transition-colors',
-                                        on ? 'bg-primary' : 'bg-muted-foreground/40'
-                                    )}
-                                >
-                                    <span
-                                        className={cn(
-                                            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform',
-                                            on ? 'translate-x-[22px]' : 'translate-x-0.5'
-                                        )}
-                                    />
-                                </button>
+                                <Switch checked={on} onCheckedChange={(val) => setState((s) => ({ ...s, [id]: val }))} />
                             </div>
                         );
                     })}
