@@ -21,9 +21,17 @@ const { requireRole } = require('../core/middleware.js');
  * Tiefes Merge zweier Objekte (nur plain objects, keine Arrays).
  * Arrays werden direkt ersetzt (nicht konkateniert).
  */
+// SEC: Keys die eine Prototype-Pollution ermöglichen würden, werden im
+// rekursiven Merge grundsätzlich übersprungen. Da /settings & /branding
+// mit .passthrough() beliebige Body-Keys durchlassen, könnte sonst ein
+// Body mit "__proto__"/"constructor"/"prototype" den Object-Prototyp
+// verändern.
+const FORBIDDEN_MERGE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function deepMerge(target, source) {
     const result = { ...target };
     for (const key of Object.keys(source)) {
+        if (FORBIDDEN_MERGE_KEYS.has(key)) continue;
         if (
             source[key] !== null &&
             typeof source[key] === 'object' &&

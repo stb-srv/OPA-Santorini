@@ -53,10 +53,26 @@ const checkOverlap = (date, start1, end1, start2, end2, buffer = 15) => {
     return s1 < e2 && s2 < e1;
 };
 
-const findAvailableTables = async (date, startTime, duration, guestCount, areaId = null) => {
-    const settings = await DB.getKV('settings', {});
+/**
+ * Ermittelt verfügbare Tische für einen Slot.
+ *
+ * PERFORMANCE: Über den optionalen `preloaded`-Parameter können die
+ * benötigten Datensätze (settings, homepage, tables, reservations, plan)
+ * EINMAL vom Aufrufer geladen und wiederverwendet werden. Ohne diesen
+ * Parameter lädt die Funktion alles selbst (rückwärtskompatibel).
+ * Beim Availability-Grid (bis zu 96 Slots) vermeidet das ~96× volle Scans.
+ */
+const findAvailableTables = async (
+    date,
+    startTime,
+    duration,
+    guestCount,
+    areaId = null,
+    preloaded = null
+) => {
+    const settings = preloaded?.settings ?? (await DB.getKV('settings', {}));
     const rc = settings.reservationConfig || { buffer: 15 };
-    const homepage = await DB.getKV('homepage', {});
+    const homepage = preloaded?.homepage ?? (await DB.getKV('homepage', {}));
     const oh = homepage.openingHours || {};
     const d = new Date(date.split('.').reverse().join('-'));
     const dayKey = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][d.getDay()];
@@ -74,9 +90,9 @@ const findAvailableTables = async (date, startTime, duration, guestCount, areaId
             };
     }
     const endTime = buildEndTime(startTime, duration);
-    const tables = (await DB.getTables()) || [];
+    const tables = (preloaded?.tables ?? (await DB.getTables())) || [];
     let activeTables = tables.filter((t) => t.active);
-    const plan = await DB.getKV('table_plan', { combined: {} });
+    const plan = preloaded?.plan ?? (await DB.getKV('table_plan', { combined: {} }));
     const combinedMapping = {},
         parentMapping = {};
     Object.values(plan.combined || {}).forEach((areaCombos) => {
@@ -92,7 +108,8 @@ const findAvailableTables = async (date, startTime, duration, guestCount, areaId
     });
     if (areaId) activeTables = activeTables.filter((t) => t.area_id === areaId);
     const blockedStatuses = ['Confirmed', 'Pending', 'Blocked', 'Inquiry'];
-    const existingReservations = ((await DB.getReservations()) || []).filter(
+    const allReservations = preloaded?.reservations ?? (await DB.getReservations()) ?? [];
+    const existingReservations = allReservations.filter(
         (r) => r.date === date && blockedStatuses.includes(r.status) && r.start_time && r.end_time
     );
     const unavailableTableIds = new Set();
@@ -180,6 +197,7 @@ const tokenResponsePage = async (DB, title, message, color, emoji) => {
 
 module.exports = {
     sanitizeText,
+    escapeHtml: _escHtml,
     calculateDuration,
     parseTime,
     buildEndTime,

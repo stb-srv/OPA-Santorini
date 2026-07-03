@@ -1,19 +1,37 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const DB = require('../db');
+const CONFIG = require('../../config.js');
 const logger = require('../core/logger.js');
 
 const router = express.Router();
 
 const _isLocalIp = (ip) => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(ip);
 
+// SEC: Mindest-Passwortlänge – identisch zum Haupt-Setup-Flow in server/app.js
+const MIN_ADMIN_PASSWORD_LENGTH = 12;
+
 /**
  * POST /api/v1/setup
  * Einmalige Ersteinrichtung: Admin-Account + Restaurant-Name speichern.
  * Nur von localhost erlaubt. Danach wird Setup deaktiviert.
+ *
+ * SECURITY: Dieser Legacy-Endpunkt wird hart gegen CONFIG.SETUP_COMPLETE
+ * gesperrt. Der Haupt-Setup-Flow (POST /api/setup in server/app.js) setzt
+ * CONFIG.SETUP_COMPLETE=true, ohne settings.isSetupDone zu setzen – daher
+ * war dieser Endpunkt zuvor auch NACH abgeschlossenem Setup noch aktiv und
+ * konnte (nur IP-geschützt) einen zusätzlichen Admin-Account anlegen.
  */
 router.post('/', async (req, res) => {
     try {
+        // Harte Sperre: sobald das System eingerichtet ist, ist dieser
+        // Endpunkt vollständig deaktiviert (kein zweiter Setup-Pfad).
+        if (CONFIG.SETUP_COMPLETE) {
+            return res
+                .status(403)
+                .json({ success: false, message: 'Setup wurde bereits abgeschlossen.' });
+        }
+
         const clientIp = req.ip || req.socket?.remoteAddress || '';
         if (!_isLocalIp(clientIp)) {
             return res
@@ -34,6 +52,14 @@ router.post('/', async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'adminEmail, adminPassword und restaurantName sind erforderlich.',
+            });
+        }
+
+        // SEC: Passwort-Mindestlänge erzwingen (analog zum Haupt-Setup-Flow)
+        if (String(adminPassword).length < MIN_ADMIN_PASSWORD_LENGTH) {
+            return res.status(400).json({
+                success: false,
+                message: `Admin-Passwort muss mindestens ${MIN_ADMIN_PASSWORD_LENGTH} Zeichen lang sein.`,
             });
         }
 

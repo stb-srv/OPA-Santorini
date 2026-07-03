@@ -144,6 +144,19 @@ const feedbackLimiter = rateLimit({
     message: { success: false, reason: 'Zu viele Bewertungen. Bitte später erneut versuchen.' },
 });
 
+// Bild-KI: externe, teils kostenpflichtige Provider (Google Imagen/Gemini).
+// Strenges Limit gegen Kostenmissbrauch pro authentifiziertem Client/IP.
+const imageAiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        reason: 'Zu viele Bild-KI-Anfragen. Bitte kurz warten.',
+    },
+});
+
 module.exports = {
     requireAuth,
     requireRole,
@@ -154,4 +167,5 @@ module.exports = {
     reservationLimiter,
     generalLimiter,
     feedbackLimiter,
+    imageAiLimiter,
 };

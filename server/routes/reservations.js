@@ -14,6 +14,7 @@ const { reservationLimiter } = require('../core/middleware.js');
 const logger = require('../core/logger.js');
 const {
     sanitizeText,
+    escapeHtml,
     calculateDuration,
     buildEndTime,
     findAvailableTables,
@@ -130,9 +131,25 @@ module.exports = (requireAuth, requireLicense) => {
                 const settings = await DB.getKV('settings', {});
                 const { date, guests, areaId, times } = req.body;
                 const duration = calculateDuration(guests, settings.reservationConfig);
+                // PERFORMANCE: benötigte Datensätze EINMAL laden statt pro Zeitslot
+                // (zuvor bis zu 96× voller Reservierungs-/Tisch-Scan).
+                const preloaded = {
+                    settings,
+                    homepage: await DB.getKV('homepage', {}),
+                    tables: (await DB.getTables()) || [],
+                    reservations: (await DB.getReservations()) || [],
+                    plan: await DB.getKV('table_plan', { combined: {} }),
+                };
                 const grid = {};
                 for (const time of times) {
-                    const result = await findAvailableTables(date, time, duration, guests, areaId);
+                    const result = await findAvailableTables(
+                        date,
+                        time,
+                        duration,
+                        guests,
+                        areaId,
+                        preloaded
+                    );
                     grid[time] = {
                         available: result.success,
                         reason: result.success ? null : result.reason,
@@ -268,11 +285,28 @@ module.exports = (requireAuth, requireLicense) => {
                 const dbRes = await DB.getReservations();
                 const old = dbRes.find((r) => r.id === resId);
                 if (!old) return res.status(404).json({ success: false });
-                const update = req.body;
+                const update = { ...req.body };
+                // SEC: Freitext-Felder serverseitig bereinigen. Diese Werte werden
+                // u.a. auf den ÖFFENTLICHEN /confirm|/cancel-Token-Seiten ausgegeben –
+                // ohne Sanitisierung wäre hier ein Stored-XSS über Staff-Eingaben möglich.
+                for (const f of [
+                    'name',
+                    'email',
+                    'phone',
+                    'note',
+                    'date',
+                    'time',
+                    'start_time',
+                    'end_time',
+                    'status',
+                ]) {
+                    if (typeof update[f] === 'string') update[f] = sanitizeText(update[f]);
+                }
+                // Typ-normalisierter Vergleich (Body liefert Strings, DB teils Zahlen)
                 const criticalChanged =
-                    (update.date && old.date !== update.date) ||
-                    (update.start_time && old.start_time !== update.start_time) ||
-                    (update.guests && old.guests !== update.guests);
+                    (update.date && String(old.date) !== String(update.date)) ||
+                    (update.start_time && String(old.start_time) !== String(update.start_time)) ||
+                    (update.guests !== undefined && Number(old.guests) !== Number(update.guests));
                 if (criticalChanged) {
                     const d = update.date || old.date,
                         t = update.start_time || old.start_time,
@@ -394,7 +428,7 @@ module.exports = (requireAuth, requireLicense) => {
                 await tokenResponsePage(
                     DB,
                     'Reservierung storniert',
-                    `Ihre Reservierung für den <strong>${r.date}</strong> um <strong>${r.start_time} Uhr</strong> wurde erfolgreich storniert.<br><br>Wir hoffen, Sie bald wieder begrüßen zu dürfen.`,
+                    `Ihre Reservierung für den <strong>${escapeHtml(r.date)}</strong> um <strong>${escapeHtml(r.start_time)} Uhr</strong> wurde erfolgreich storniert.<br><br>Wir hoffen, Sie bald wieder begrüßen zu dürfen.`,
                     '#e53e3e',
                     '✅'
                 )
@@ -425,7 +459,7 @@ module.exports = (requireAuth, requireLicense) => {
                     await tokenResponsePage(
                         DB,
                         'Bereits bestätigt',
-                        `Ihre Reservierung für den <strong>${r.date}</strong> um <strong>${r.start_time} Uhr</strong> ist bereits bestätigt. Wir freuen uns auf Ihren Besuch!`,
+                        `Ihre Reservierung für den <strong>${escapeHtml(r.date)}</strong> um <strong>${escapeHtml(r.start_time)} Uhr</strong> ist bereits bestätigt. Wir freuen uns auf Ihren Besuch!`,
                         '#38a169',
                         '✅'
                     )
@@ -439,7 +473,7 @@ module.exports = (requireAuth, requireLicense) => {
                 await tokenResponsePage(
                     DB,
                     'Reservierung bestätigt!',
-                    `Ihre Reservierung für den <strong>${r.date}</strong> um <strong>${r.start_time} Uhr</strong> für <strong>${r.guests} Person(en)</strong> ist jetzt bestätigt.<br><br>Wir freuen uns auf Ihren Besuch!`,
+                    `Ihre Reservierung für den <strong>${escapeHtml(r.date)}</strong> um <strong>${escapeHtml(r.start_time)} Uhr</strong> für <strong>${escapeHtml(r.guests)} Person(en)</strong> ist jetzt bestätigt.<br><br>Wir freuen uns auf Ihren Besuch!`,
                     '#38a169',
                     '🎉'
                 )
