@@ -22,6 +22,8 @@ import { AuditLogPage } from '@/modules/audit-log/AuditLogPage';
 import { FeedbackPage } from '@/modules/feedback/FeedbackPage';
 import { BackupPage } from '@/modules/backup/BackupPage';
 import { PluginsPage } from '@/modules/plugins/PluginsPage';
+import { LegalCookiesPage } from '@/modules/legal/LegalCookiesPage';
+import { LegalTextsPage } from '@/modules/legal/LegalTextsPage';
 import { QrCodesPage } from '@/modules/qrcodes/QrCodesPage';
 import { ShiftsPage } from '@/modules/shifts/ShiftsPage';
 import { ReservationsPage } from '@/modules/reservations/ReservationsPage';
@@ -57,6 +59,8 @@ const PAGES: Record<string, React.ComponentType> = {
     feedback: FeedbackPage,
     backup: BackupPage,
     plugins: PluginsPage,
+    'legal-cookies': LegalCookiesPage,
+    'legal-texts': LegalTextsPage,
     qrcodes: QrCodesPage,
     shifts: ShiftsPage,
     reservations: ReservationsPage,

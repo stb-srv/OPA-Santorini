@@ -247,6 +247,29 @@ export const NAV_CONFIG: NavGroup[] = [
         ],
     },
     {
+        id: 'legal-group',
+        label: 'Rechtliches',
+        icon: 'fa-scale-balanced',
+        items: [
+            {
+                id: 'legal-cookies',
+                label: 'Cookies',
+                icon: 'fa-cookie-bite',
+                path: '/legal/cookies',
+                module: 'custom_design',
+                description: 'Cookie-Kategorien und Einwilligungs-Nachweis verwalten',
+            },
+            {
+                id: 'legal-texts',
+                label: 'Impressum & Datenschutz',
+                icon: 'fa-file-contract',
+                path: '/legal/texts',
+                module: 'custom_design',
+                description: 'Impressum und Datenschutzerklärung bearbeiten',
+            },
+        ],
+    },
+    {
         id: 'settings-group',
         label: 'Verwaltung',
         icon: 'fa-cog',
