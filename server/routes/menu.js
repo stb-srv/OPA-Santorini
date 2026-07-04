@@ -75,7 +75,12 @@ async function ensureCategoryExists(catLabel) {
         const existing = await DB.getCategories();
         const alreadyExists =
             Array.isArray(existing) &&
-            existing.some((c) => (c.label || '').trim().toLowerCase() === label.toLowerCase());
+            existing.some(
+                (c) =>
+                    c.id === label ||
+                    normalizeCatId(label) === c.id ||
+                    (c.label || '').trim().toLowerCase() === label.toLowerCase()
+            );
         if (!alreadyExists) {
             const id =
                 label
@@ -298,21 +303,21 @@ module.exports = (requireAuth, requireLicense) => {
             // persistieren. Ein GET darf keine Seiteneffekte/DB-Writes auslösen
             // (race-anfällig bei parallelen Gäste-Requests). Die persistente
             // Anlage erfolgt bei Menü-Schreibvorgängen via ensureCategoryExists().
-            for (const label of menuCatLabels) {
-                if (!existingLabels.has(label.toLowerCase())) {
-                    const id =
-                        label
-                            .toLowerCase()
-                            .replace(/[^a-z0-9]/g, '_')
-                            .replace(/_+/g, '_') || Date.now().toString();
+            for (const rawCat of menuCatLabels) {
+                const matchesRealCategory = safeCats.some((c) =>
+                    dishMatchesCategory(rawCat, c.id, c.label)
+                );
+                if (matchesRealCategory) continue;
+                if (!existingLabels.has(rawCat.toLowerCase())) {
+                    const id = normalizeCatId(rawCat) || Date.now().toString();
                     safeCats.push({
                         id,
-                        label,
+                        label: rawCat,
                         icon: 'utensils',
                         active: 1,
                         sort_order: safeCats.length,
                     });
-                    existingLabels.add(label.toLowerCase());
+                    existingLabels.add(rawCat.toLowerCase());
                 }
             }
 
