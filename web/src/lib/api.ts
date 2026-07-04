@@ -146,6 +146,39 @@ export async function apiDelete<T extends ApiResult = ApiResult>(route: string):
     }
 }
 
+/**
+ * Lädt eine Datei-Download-Route per Header-Auth statt Token-Query-Param
+ * (verhindert JWT-Leak über Access-Logs/Browser-History/Referer) und
+ * stößt den Browser-Download über einen temporären Object-URL-Link an.
+ */
+export async function apiDownload(route: string, filenameFallback: string): Promise<void> {
+    try {
+        const r = await fetch(`${API_URL}/${route}`, { headers: authHeaders() });
+        if (r.status === 401) return void handleAuthFailure();
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            toast.error(err.reason || `Download fehlgeschlagen (${r.status}).`);
+            return;
+        }
+        const disposition = r.headers.get('Content-Disposition') || '';
+        const match = /filename="?([^"]+)"?/.exec(disposition);
+        const filename = match?.[1] || filenameFallback;
+        const blob = await r.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        checkTokenExpiry();
+    } catch (e) {
+        console.error(`API Download (${route}):`, e);
+        toast.error('Verbindungsfehler beim Download.');
+    }
+}
+
 export async function apiUpload<T extends ApiResult = ApiResult>(file: File): Promise<T> {
     try {
         const fd = new FormData();

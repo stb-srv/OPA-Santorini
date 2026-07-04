@@ -2,7 +2,7 @@ import * as React from 'react';
 import { toast } from 'sonner';
 import { FileText, Sheet } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPut, getAuthToken } from '@/lib/api';
+import { apiGet, apiPut, apiDownload } from '@/lib/api';
 import { getSocket } from '@/lib/socket';
 import { useViewTitle } from '@/hooks/useViewTitle';
 import { Button } from '@/components/ui/button';
@@ -115,9 +115,11 @@ export function OrdersPage() {
         } else toast.error('Fehler.');
     }
 
-    function exportUrl(format: 'csv' | 'pdf') {
-        const token = getAuthToken() || '';
-        return `/api/orders/export/${format}?von=${von}&bis=${bis}&token=${token}`;
+    function downloadExport(format: 'csv' | 'pdf') {
+        void apiDownload(
+            `orders/export/${format}?von=${von}&bis=${bis}`,
+            `bestellungen.${format}`
+        );
     }
 
     const filtered = filterOrders(orders, filter);
@@ -148,15 +150,11 @@ export function OrdersPage() {
                             onChange={(e) => setBis(e.target.value)}
                             className="h-8 w-auto text-xs"
                         />
-                        <Button size="sm" variant="outline" asChild>
-                            <a href={exportUrl('csv')}>
-                                <Sheet /> CSV
-                            </a>
+                        <Button size="sm" variant="outline" onClick={() => downloadExport('csv')}>
+                            <Sheet /> CSV
                         </Button>
-                        <Button size="sm" variant="outline" asChild>
-                            <a href={exportUrl('pdf')}>
-                                <FileText /> PDF
-                            </a>
+                        <Button size="sm" variant="outline" onClick={() => downloadExport('pdf')}>
+                            <FileText /> PDF
                         </Button>
                     </div>
                     <div className="flex gap-1.5">
