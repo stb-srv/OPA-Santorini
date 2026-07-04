@@ -384,11 +384,6 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                     });
                 }
 
-                // orders_kitchen und online_orders sind immer synchron
-                if (enabledModules.orders_kitchen !== undefined) {
-                    enabledModules.online_orders = enabledModules.orders_kitchen;
-                }
-
                 const settings = await DB.getKV('settings', {});
                 settings.enabledModules = enabledModules;
 
