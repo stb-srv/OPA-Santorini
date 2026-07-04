@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '@/lib/api';
 import type { LicenseInfo } from '@/hooks/useLicense';
+import { SETTINGS_REGISTRY } from '@/config/settings-registry';
 
 export interface SmtpConfig {
     host?: string;
@@ -122,22 +123,49 @@ export interface ModuleMeta {
     settingsPath?: string;
 }
 
-export const MODULE_LABELS: Record<string, ModuleMeta> = {
-    menu_edit:        { label: 'Speisekarte bearbeiten',     icon: 'utensils',         desc: 'Gerichte hinzufügen, bearbeiten & löschen',                group: 'Speisekarte',    alwaysAvailable: true,  settingsPath: '/menu' },
-    orders_kitchen:   { label: 'Online-Bestellungen',        icon: 'shopping-bag',     desc: 'Kunden können online bestellen',                           group: 'Bestellungen',   licenseKey: 'orders_kitchen', settingsPath: '/order-settings' },
-    reservations:     { label: 'Online-Reservierung',        icon: 'calendar-check',   desc: 'Gäste können online reservieren',                          group: 'Reservierungen', licenseKey: 'reservations',   settingsPath: '/reservations' },
-    custom_design:    { label: 'Design anpassen',            icon: 'paint-brush',      desc: 'Farben, Logo & Homepage bearbeiten',                       group: 'Auftritt',       licenseKey: 'custom_design',  settingsPath: '/designer' },
-    analytics:        { label: 'Statistiken',                icon: 'chart-bar',        desc: 'Umsatz- und Bestellstatistiken',                           group: 'Dashboard',      licenseKey: 'analytics',      settingsPath: '/analytics' },
-    qr_pay:           { label: 'QR-Pay am Tisch',            icon: 'qrcode',           desc: 'Bezahlung per QR-Code am Tisch (Premium)',                 group: 'Bestellungen',   licenseKey: 'qr_pay' },
-    kitchen_display:  { label: 'Küchen-Display',             icon: 'fire-burner',      desc: 'Bestellungen in Echtzeit im Küchen-Monitor anzeigen',      group: 'Bestellungen',   licenseKey: 'orders_kitchen', settingsPath: '/order-settings' },
-    table_planner:    { label: 'Tischplaner',                icon: 'project-diagram',  desc: 'Visueller Saalplan und Tischzuweisung',                    group: 'Reservierungen', licenseKey: 'reservations',   settingsPath: '/tables' },
-    daily_specials:   { label: 'Tagesspecials',              icon: 'star',             desc: 'Goldene Heute-Badges und Special-Filter',                  group: 'Speisekarte',    alwaysAvailable: true,  settingsPath: '/menu/daily' },
-    menu_translate:   { label: 'Menü-Übersetzung',           icon: 'language',         desc: 'Speisekarte automatisch übersetzen lassen',                group: 'Speisekarte',    licenseKey: 'multilanguage' },
-    menu_import_export: { label: 'Import / Export',          icon: 'file-export',      desc: 'Speisekarte als CSV/JSON importieren/exportieren',          group: 'Speisekarte',    alwaysAvailable: true,  settingsPath: '/menu' },
-    qrcodes:          { label: 'QR-Code Generator',          icon: 'qrcode',           desc: 'QR-Codes für Tische und Speisekarte generieren',           group: 'Tools',          alwaysAvailable: true },
-    shifts:           { label: 'Schichtplan',                icon: 'calendar-week',    desc: 'Mitarbeiter-Schichten planen',                             group: 'Tools',          alwaysAvailable: true },
-    backup:           { label: 'Backup & Wiederherstellung', icon: 'database',         desc: 'Datenbank sichern und wiederherstellen',                   group: 'Tools',          licenseKey: 'backup',   settingsPath: '/backup' },
+// Historische Gruppen-Zuordnung fuer das Modul-Center-Grid. Unabhaengig von der
+// groben SettingCategory('module-license') der Registry, damit die bestehende
+// PlanModulesTab-Gruppierung (Speisekarte/Bestellungen/... statt nur "Module")
+// unveraendert bleibt.
+const MODULE_CENTER_GROUP: Record<string, string> = {
+    menu_edit: 'Speisekarte',
+    online_orders: 'Bestellungen',
+    reservations: 'Reservierungen',
+    custom_design: 'Auftritt',
+    analytics: 'Dashboard',
+    qr_pay: 'Bestellungen',
+    kitchen_display: 'Bestellungen',
+    table_planner: 'Reservierungen',
+    daily_specials: 'Speisekarte',
+    menu_translate: 'Speisekarte',
+    menu_import_export: 'Speisekarte',
+    qrcodes: 'Tools',
+    shifts: 'Tools',
+    backup: 'Tools',
 };
+
+// 'settings.enabledModules.orders_kitchen' -> 'orders_kitchen'. Der historische
+// Feldname im kv_store (nicht der neue kanonische Registry-Key) bleibt der
+// Record-Key, damit bestehende gespeicherte enabledModules-Werte unveraendert
+// gelesen/geschrieben werden (keine Datenmigration noetig).
+function storageFieldName(storageKey: string): string {
+    return storageKey.split('.').pop() as string;
+}
+
+export const MODULE_LABELS: Record<string, ModuleMeta> = Object.fromEntries(
+    SETTINGS_REGISTRY.filter((e) => e.category === 'module-license').map((e) => [
+        storageFieldName(e.storageKey),
+        {
+            label: e.label,
+            icon: e.icon || 'toggle-on',
+            desc: e.description || '',
+            group: MODULE_CENTER_GROUP[e.key] || 'Tools',
+            licenseKey: e.licenseModule,
+            alwaysAvailable: e.alwaysAvailable,
+            settingsPath: e.settingsPath,
+        },
+    ])
+);
 
 export const MODULE_GROUPS = [
     { name: 'Speisekarte', icon: 'utensils' },
