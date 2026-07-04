@@ -24,8 +24,12 @@ const pool = mysql.createPool({
     // Stabilitäts-Fix: ECONNRESET vermeiden
     enableKeepAlive: true,
     keepAliveInitialDelay: 10000,
-    // Netcup / Remote-Server: SSL optional
-    ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
+    // Netcup / Remote-Server: SSL optional. Zertifikatsprüfung standardmäßig
+    // aktiv; nur mit explizitem DB_SSL_ALLOW_INSECURE=true abschaltbar (z.B.
+    // interner DB-Server mit selbstsigniertem Zertifikat).
+    ...(process.env.DB_SSL === 'true'
+        ? { ssl: { rejectUnauthorized: process.env.DB_SSL_ALLOW_INSECURE !== 'true' } }
+        : {}),
 });
 
 // Fehlerbehandlung am Pool
@@ -161,6 +165,11 @@ async function initSchema() {
                 rating     INT DEFAULT 5,
                 comment    LONGTEXT,
                 created_at VARCHAR(50)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+            CREATE TABLE IF NOT EXISTS reservation_locks (
+                slot_key   VARCHAR(255) PRIMARY KEY,
+                locked_at  BIGINT NOT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
 
@@ -879,6 +888,30 @@ const DB = {
             ]
         ),
     deleteFeedback: async (id) => q('DELETE FROM feedback WHERE id = ?', [id]),
+
+    // Atomarer, prozessübergreifender Lock für Reservierungs-Slots (Race-Schutz
+    // bei mehreren CMS-Instanzen / PM2-Cluster).
+    acquireSlotLock: async (key, ttlMs = 10000) => {
+        const now = Date.now();
+        try {
+            await q('INSERT INTO reservation_locks (slot_key, locked_at) VALUES (?, ?)', [
+                key,
+                now,
+            ]);
+            return true;
+        } catch (e) {
+            if (e.code !== 'ER_DUP_ENTRY') throw e;
+            // Bestehender Lock: nur übernehmen wenn abgelaufen.
+            const [result] = await pool.query(
+                'UPDATE reservation_locks SET locked_at = ? WHERE slot_key = ? AND locked_at < ?',
+                [now, key, now - ttlMs]
+            );
+            return result.affectedRows === 1;
+        }
+    },
+    releaseSlotLock: async (key) => {
+        await q('DELETE FROM reservation_locks WHERE slot_key = ?', [key]);
+    },
 };
 
 // Schema beim Import initialisieren
