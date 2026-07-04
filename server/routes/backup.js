@@ -48,7 +48,8 @@ module.exports = (requireAuth) => {
 
             res.json(files);
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'Backup List Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
@@ -126,7 +127,7 @@ module.exports = (requireAuth) => {
             res.json(backup);
         } catch (e) {
             logger.error({ err: e }, 'Backup Export Fehler');
-            res.status(500).json({ success: false, reason: e.message });
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
@@ -300,7 +301,7 @@ module.exports = (requireAuth) => {
                 });
             } catch (e) {
                 logger.error({ err: e }, 'Backup Import Fehler');
-                res.status(500).json({ success: false, reason: e.message });
+                res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
             }
         }
     );
@@ -333,7 +334,8 @@ module.exports = (requireAuth) => {
                 },
             });
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'Backup Info Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
