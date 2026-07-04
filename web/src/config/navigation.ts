@@ -320,17 +320,10 @@ export const NAV_CONFIG: NavGroup[] = [
                     },
                     {
                         id: 'license',
-                        label: 'Lizenz & Module',
+                        label: 'Module & Lizenz',
                         icon: 'fa-key',
                         path: '/settings/license',
-                        description: 'Lizenz aktivieren und Plan-Informationen',
-                    },
-                    {
-                        id: 'plan_modules',
-                        label: 'Module aktivieren',
-                        icon: 'fa-toggle-on',
-                        path: '/settings/plan-modules',
-                        description: 'Verfügbare Module des aktuellen Plans ein-/ausschalten',
+                        description: 'Lizenz, Plan-Informationen und Modul-Verwaltung',
                     },
                     {
                         id: 'audit-log',

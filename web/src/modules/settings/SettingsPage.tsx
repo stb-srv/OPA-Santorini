@@ -1,13 +1,17 @@
+import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, MailOpen } from 'lucide-react';
 import { useViewTitle } from '@/hooks/useViewTitle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import type { LicenseInfo } from '@/hooks/useLicense';
 import {
     useBranding,
     useLicenseInfo,
     useSettings,
     useUsers,
+    type SettingsData,
 } from './settings-api';
 import { BrandingTab } from './BrandingTab';
 import { UsersTab } from './UsersTab';
@@ -22,7 +26,6 @@ type Tab =
     | 'users'
     | 'smtp'
     | 'license'
-    | 'plan_modules'
     | 'reservations'
     | 'image-ai'
     | 'order-emails';
@@ -31,12 +34,58 @@ const TITLES: Record<Tab, string> = {
     branding: 'Profil & Branding',
     users: 'Mitarbeiter & Zugänge',
     smtp: 'E-Mail & SMTP',
-    license: 'Lizenz & Module',
-    plan_modules: 'Module aktivieren',
+    license: 'Module & Lizenz',
     reservations: 'Reservierungs-Einstellungen',
     'image-ai': 'KI-Bildgenerierung',
     'order-emails': 'Bestell-E-Mail Vorlagen',
 };
+
+type LicenseSubTab = 'overview' | 'modules';
+
+/**
+ * Fuehrt die vormals getrennten Nav-Eintraege "Lizenz & Module" und
+ * "Module aktivieren" zu einer Seite mit 2 internen Tabs zusammen
+ * (Plan-Schritt #12). LicenseTab/PlanModulesTab bleiben unveraendert,
+ * nur die Nav-Struktur/Container aendert sich.
+ */
+function LicenseAndModulesPage({
+    settings,
+    licInfo,
+}: {
+    settings: SettingsData;
+    licInfo: LicenseInfo;
+}) {
+    const [subTab, setSubTab] = React.useState<LicenseSubTab>('overview');
+    const subTabs: { id: LicenseSubTab; label: string }[] = [
+        { id: 'overview', label: 'Übersicht & Lizenz' },
+        { id: 'modules', label: 'Module verwalten' },
+    ];
+    return (
+        <div className="space-y-5">
+            <div className="flex flex-wrap gap-1.5 border-b pb-3">
+                {subTabs.map((t) => (
+                    <button
+                        key={t.id}
+                        onClick={() => setSubTab(t.id)}
+                        className={cn(
+                            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                            subTab === t.id
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-accent'
+                        )}
+                    >
+                        {t.label}
+                    </button>
+                ))}
+            </div>
+            {subTab === 'overview' ? (
+                <LicenseTab settings={settings} licInfo={licInfo} />
+            ) : (
+                <PlanModulesTab settings={settings} licInfo={licInfo} />
+            )}
+        </div>
+    );
+}
 
 function Skeleton() {
     return (
@@ -89,13 +138,7 @@ function SettingsPage({ tab }: { tab: Tab }) {
             return settingsQ.data ? <ImageAiTab settings={settingsQ.data} /> : <Skeleton />;
         case 'license':
             return settingsQ.data && licInfoQ.data ? (
-                <LicenseTab settings={settingsQ.data} licInfo={licInfoQ.data} />
-            ) : (
-                <Skeleton />
-            );
-        case 'plan_modules':
-            return settingsQ.data && licInfoQ.data ? (
-                <PlanModulesTab settings={settingsQ.data} licInfo={licInfoQ.data} />
+                <LicenseAndModulesPage settings={settingsQ.data} licInfo={licInfoQ.data} />
             ) : (
                 <Skeleton />
             );
@@ -108,7 +151,6 @@ export const SettingsBrandingPage = () => <SettingsPage tab="branding" />;
 export const SettingsUsersPage = () => <SettingsPage tab="users" />;
 export const SettingsSmtpPage = () => <SettingsPage tab="smtp" />;
 export const SettingsLicensePage = () => <SettingsPage tab="license" />;
-export const SettingsPlanModulesPage = () => <SettingsPage tab="plan_modules" />;
 export const SettingsReservationsPage = () => <SettingsPage tab="reservations" />;
 export const SettingsImageAiPage = () => <SettingsPage tab="image-ai" />;
 export const SettingsOrderEmailsPage = () => <SettingsPage tab="order-emails" />;
