@@ -53,9 +53,15 @@ function findReservationByToken(reservations, token) {
     );
 }
 
-// Per-slot in-memory mutex to prevent double-booking under concurrent requests.
-// Works for single-process deployments; for multi-process use DB-level locking.
+// Per-slot Lock zur Vermeidung von Doppelbuchungen bei gleichzeitigen Requests.
+// Zweistufig: In-Memory-Mutex serialisiert Requests innerhalb desselben Prozesses
+// (schneller Fast-Path, kein DB-Roundtrip nötig), DB.acquireSlotLock/releaseSlotLock
+// sichert zusätzlich gegen mehrere Prozesse/Instanzen (PM2-Cluster) ab.
 const _slotLocks = new Map();
+const SLOT_LOCK_TTL_MS = 10000;
+const SLOT_LOCK_MAX_WAIT_MS = 5000;
+const SLOT_LOCK_POLL_MS = 100;
+
 async function withSlotLock(key, fn) {
     while (_slotLocks.has(key)) await _slotLocks.get(key);
     let release;
@@ -66,7 +72,18 @@ async function withSlotLock(key, fn) {
         })
     );
     try {
-        return await fn();
+        const start = Date.now();
+        let acquired = await DB.acquireSlotLock(key, SLOT_LOCK_TTL_MS);
+        while (!acquired && Date.now() - start < SLOT_LOCK_MAX_WAIT_MS) {
+            await new Promise((r) => setTimeout(r, SLOT_LOCK_POLL_MS));
+            acquired = await DB.acquireSlotLock(key, SLOT_LOCK_TTL_MS);
+        }
+        if (!acquired) return 'CONFLICT';
+        try {
+            return await fn();
+        } finally {
+            await DB.releaseSlotLock(key);
+        }
     } finally {
         _slotLocks.delete(key);
         release();

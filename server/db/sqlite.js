@@ -151,6 +151,11 @@ if (dbType === 'mysql' || dbType === 'mariadb') {
             keys_auth    TEXT,
             created_at   TEXT
         );
+
+        CREATE TABLE IF NOT EXISTS reservation_locks (
+            slot_key   TEXT PRIMARY KEY,
+            locked_at  INTEGER NOT NULL
+        );
     `);
 
     // --- Migrations (idempotent) ---
@@ -311,6 +316,13 @@ if (dbType === 'mysql' || dbType === 'mariadb') {
             'INSERT INTO feedback (id, guest_name, rating, comment, created_at) VALUES (?, ?, ?, ?, ?)'
         ),
         deleteFeedback: db.prepare('DELETE FROM feedback WHERE id = ?'),
+        insertSlotLock: db.prepare(
+            'INSERT INTO reservation_locks (slot_key, locked_at) VALUES (?, ?)'
+        ),
+        stealSlotLock: db.prepare(
+            'UPDATE reservation_locks SET locked_at = ? WHERE slot_key = ? AND locked_at < ?'
+        ),
+        deleteSlotLock: db.prepare('DELETE FROM reservation_locks WHERE slot_key = ?'),
     };
 
     const DB = {
@@ -757,6 +769,23 @@ if (dbType === 'mysql' || dbType === 'mariadb') {
             );
         },
         deleteFeedback: (id) => stmts.deleteFeedback.run(id),
+        // Atomarer, prozessübergreifender Lock für Reservierungs-Slots (Race-Schutz).
+        // Best-effort: better-sqlite3 ist ohnehin single-threaded pro Prozess, der
+        // Lock schützt primär gegen Mehrfachinstanzen (PM2-Cluster / mehrere Nodes).
+        acquireSlotLock: (key, ttlMs = 10000) => {
+            const now = Date.now();
+            try {
+                stmts.insertSlotLock.run(key, now);
+                return true;
+            } catch (e) {
+                // UNIQUE-Constraint verletzt: bestehender Lock. Nur übernehmen wenn abgelaufen.
+                const result = stmts.stealSlotLock.run(now, key, now - ttlMs);
+                return result.changes === 1;
+            }
+        },
+        releaseSlotLock: (key) => {
+            stmts.deleteSlotLock.run(key);
+        },
     };
 
     module.exports = DB;

@@ -5,13 +5,15 @@ const router = require('express').Router();
 const DB = require('../db');
 const validate = require('../validation/validate.js');
 const { anyObjectSchema, anyArraySchema } = require('../validation/schemas.js');
+const logger = require('../core/logger.js');
 
 module.exports = (requireAuth) => {
     router.get('/tables', async (req, res) => {
         try {
             res.json(await DB.getTables());
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'Tables route Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
     router.post('/tables', requireAuth, validate(anyArraySchema), async (req, res) => {
@@ -19,7 +21,8 @@ module.exports = (requireAuth) => {
             await DB.saveTables(req.body);
             res.json({ success: true });
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'Tables route Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
@@ -32,7 +35,8 @@ module.exports = (requireAuth) => {
                 ])
             );
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'Areas route Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
     router.post('/areas', requireAuth, validate(anyArraySchema), async (req, res) => {
@@ -40,7 +44,8 @@ module.exports = (requireAuth) => {
             await DB.setKV('areas', req.body);
             res.json({ success: true });
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'Areas route Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
@@ -80,7 +85,8 @@ module.exports = (requireAuth) => {
             }
             res.json(plan);
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'Table-Plan route Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
@@ -122,7 +128,8 @@ module.exports = (requireAuth) => {
                 );
             res.json({ success: true });
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'Table-Plan route Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 

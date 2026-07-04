@@ -192,7 +192,11 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                 await Mailer.sendTestMail(toEmail, DB);
                 res.json({ success: true, sentTo: toEmail });
             } catch (e) {
-                res.status(500).json({ success: false, reason: `SMTP Fehler: ${e.message}` });
+                logger.error({ err: e }, 'SMTP-Test Fehler');
+                res.status(500).json({
+                    success: false,
+                    reason: 'SMTP-Test fehlgeschlagen. Bitte SMTP-Einstellungen prüfen.',
+                });
             }
         }
     );
@@ -341,7 +345,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                 logger.error({ err: e }, 'Lizenz-Validierung Fehler');
                 res.status(500).json({
                     success: false,
-                    reason: 'Lizenzserver nicht erreichbar: ' + e.message,
+                    reason: 'Lizenzserver nicht erreichbar. Bitte später erneut versuchen.',
                 });
             }
         }
@@ -408,7 +412,8 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                 } catch (_) {}
                 res.json({ success: true, enabledModules: settings.enabledModules });
             } catch (e) {
-                res.status(500).json({ success: false, reason: e.message });
+                logger.error({ err: e }, 'POST /settings/modules Fehler');
+                res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
             }
         }
     );

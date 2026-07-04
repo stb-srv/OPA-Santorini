@@ -231,7 +231,8 @@ module.exports = function (CONFIG, io) {
                 })
             );
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'GET /api/plugins Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
@@ -245,7 +246,8 @@ module.exports = function (CONFIG, io) {
             await DB.setKV('plugins', dbPlugins);
             res.json({ success: true });
         } catch (e) {
-            res.status(500).json({ success: false, reason: e.message });
+            logger.error({ err: e }, 'POST /api/plugins/toggle Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
@@ -387,7 +389,10 @@ module.exports = function (CONFIG, io) {
             });
         } catch (e) {
             logger.error({ err: e }, 'Setup error');
-            res.status(500).json({ success: false, reason: e.message });
+            res.status(500).json({
+                success: false,
+                reason: 'Setup fehlgeschlagen. Bitte Serverlogs prüfen.',
+            });
         }
     });
 
@@ -472,7 +477,7 @@ module.exports = function (CONFIG, io) {
         logger.error({ err, url: req.originalUrl, method: req.method }, 'Unhandled Server Error');
         res.status(err.status || 500).json({
             success: false,
-            reason: err.message || 'Interner Serverfehler.',
+            reason: 'Interner Serverfehler.',
         });
     });
 

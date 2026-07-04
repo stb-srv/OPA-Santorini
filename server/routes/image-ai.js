@@ -24,7 +24,8 @@ module.exports = (requireAuth, DB) => {
                 defaultProvider: keys.defaultProvider || 'none',
             });
         } catch (err) {
-            res.status(500).json({ success: false, reason: err.message });
+            logger.error({ err }, 'Image-AI Config Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
@@ -104,7 +105,7 @@ module.exports = (requireAuth, DB) => {
                 }
             } catch (err) {
                 logger.error({ err }, 'Image Search Fehler');
-                res.status(500).json({ success: false, reason: err.message });
+                res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
             }
         }
     );
@@ -256,7 +257,7 @@ module.exports = (requireAuth, DB) => {
                     });
                 }
                 logger.error({ err }, 'Image Generate Fehler');
-                res.status(500).json({ success: false, reason: err.message });
+                res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
             }
         }
     );
@@ -318,7 +319,8 @@ module.exports = (requireAuth, DB) => {
 
             res.json({ success: true, results });
         } catch (err) {
-            res.status(500).json({ success: false, reason: err.message });
+            logger.error({ err }, 'Image-AI Test Fehler');
+            res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
         }
     });
 
