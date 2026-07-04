@@ -214,20 +214,10 @@ export const SETTINGS_REGISTRY: SettingRegistryEntry[] = [
         defaultValue: true,
         settingsPath: '/backup',
     },
-    {
-        key: 'daily_specials',
-        label: 'Tagesspecials',
-        description: 'Goldene Heute-Badges und Special-Filter',
-        category: 'module-license',
-        scope: 'feature',
-        icon: 'star',
-        alwaysAvailable: true,
-        storageKey: 'settings.enabledModules.daily_specials',
-        defaultValue: true,
-        settingsPath: '/menu/daily',
-        // Hinweis: Wird von keiner Seite ausgewertet (totes Toggle, siehe Audit-Fund).
-        // Entfernung erfolgt in einem eigenen Migrationsschritt, nicht hier.
-    },
+    // Hinweis: 'daily_specials' wurde entfernt (Plan-Schritt #6) – wurde von
+    // keiner Seite ausgewertet (totes Toggle, siehe docs/plans/admin-audit.md #9).
+    // Tagesspecials (menu.is_daily_special) bleiben als Content-Feature unter
+    // /menu/daily voll funktionsfähig, nur der globale Ein/Aus-Schalter entfällt.
 
     // ---- Bestellungen (Art 4 – Detailkonfiguration, abhängig von 'online_orders') ----
     {

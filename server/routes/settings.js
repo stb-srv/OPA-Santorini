@@ -392,13 +392,6 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                 const settings = await DB.getKV('settings', {});
                 settings.enabledModules = enabledModules;
 
-                // Abwärtskompatibilität für das Gast-Frontend
-                settings.activeModules = {
-                    orders: enabledModules.orders_kitchen,
-                    reservations: enabledModules.reservations,
-                };
-                settings.dailySpecialsEnabled = enabledModules.daily_specials;
-
                 await DB.setKV('settings', settings);
                 try {
                     if (DB.addAuditLog)
