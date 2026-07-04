@@ -418,44 +418,5 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
         }
     );
 
-    router.post(
-        '/license/modules',
-        requireAuth,
-        requireRole('admin'),
-        validate(anyObjectSchema),
-        async (req, res) => {
-            try {
-                const { modules } = req.body;
-                if (!modules || typeof modules !== 'object')
-                    return res
-                        .status(400)
-                        .json({ success: false, reason: 'Ungültige Module-Daten.' });
-
-                // Validate: only allow enabling modules that are in the current license plan
-                const domain = extractDomain(req);
-                const currentLic = await getCurrentLicense(DB, domain);
-                const allowedByLicense = currentLic.modules || {};
-                const invalidModules = Object.entries(modules)
-                    .filter(([key, val]) => val === true && !allowedByLicense[key])
-                    .map(([key]) => key);
-                if (invalidModules.length > 0) {
-                    return res.status(403).json({
-                        success: false,
-                        reason: `Folgende Module sind in Ihrem ${currentLic.label || currentLic.type}-Plan nicht enthalten: ${invalidModules.join(', ')}`,
-                    });
-                }
-
-                const settings = await DB.getKV('settings', {});
-                if (!settings.license) settings.license = {};
-                settings.license.modules = { ...(settings.license.modules || {}), ...modules };
-                await DB.setKV('settings', settings);
-                res.json({ success: true, modules: settings.license.modules });
-            } catch (e) {
-                logger.error({ err: e }, 'POST /license/modules Fehler');
-                res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
-            }
-        }
-    );
-
     return router;
 };
