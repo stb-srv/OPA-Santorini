@@ -41,6 +41,28 @@ async function getMaxDishes(DB, domain) {
     return 30; // FREE-Plan Default
 }
 
+function normalizeCatId(cat) {
+    if (!cat) return '';
+    return String(cat)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/_+/g, '_');
+}
+
+/**
+ * Prüft ob ein Gericht (über sein `cat`-Feld) zu einer Kategorie gehört –
+ * per ID, normalisierter ID oder Label, analog zur Frontend-Logik (dishInCat/catMatchesFilter).
+ */
+function dishMatchesCategory(dishCat, catId, catLabel) {
+    if (!dishCat) return false;
+    const d = String(dishCat).trim();
+    if (!d) return false;
+    if (d === catId) return true;
+    if (normalizeCatId(d) === catId) return true;
+    if (catLabel && d.toLowerCase() === catLabel.trim().toLowerCase()) return true;
+    return false;
+}
+
 /**
  * Stellt sicher dass eine Kategorie (label-String) in der categories-Tabelle existiert.
  * Falls nicht, wird sie automatisch angelegt.
@@ -349,8 +371,25 @@ module.exports = (requireAuth, requireLicense) => {
 
     router.delete('/categories/:id', requireAuth, requireRole('admin'), async (req, res) => {
         try {
-            await DB.deleteCategory(req.params.id);
-            res.json({ success: true });
+            const catId = req.params.id;
+            const categories = await DB.getCategories();
+            const cat = Array.isArray(categories) ? categories.find((c) => c.id === catId) : null;
+
+            // Gerichte, die noch auf die zu löschende Kategorie zeigen (per ID, normalisierter
+            // ID oder Label), müssen entkoppelt werden – sonst tauchen sie in GET /categories
+            // als abgeleitete "Phantom"-Kategorie wieder auf (siehe dortiger Kommentar).
+            const menuItems = await DB.getMenu();
+            const affectedIds = Array.isArray(menuItems)
+                ? menuItems
+                      .filter((m) => dishMatchesCategory(m.cat, catId, cat?.label))
+                      .map((m) => m.id)
+                : [];
+            if (affectedIds.length > 0) {
+                await DB.bulkUpdateMenu(affectedIds, { cat: null });
+            }
+
+            await DB.deleteCategory(catId);
+            res.json({ success: true, unassignedDishes: affectedIds.length });
         } catch (e) {
             logger.error({ err: e }, 'DELETE /categories/:id Fehler');
             res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
