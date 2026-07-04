@@ -1,12 +1,20 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Pencil, Plus, X } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiDelete, apiPost, apiPut } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { MENU_QUERY_KEY, type Category, type MenuData } from './menu-api';
 
 export function CategoriesTab({ data }: { data: MenuData }) {
@@ -116,42 +124,52 @@ export function CategoriesTab({ data }: { data: MenuData }) {
             )}
 
             <Card>
-                <CardContent className="flex flex-wrap gap-3 pt-6">
+                <CardContent className="pt-6">
                     {categories.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
                             Noch keine Kategorien vorhanden. Oben eine neue hinzufügen.
                         </p>
                     ) : (
-                        categories.map((c) => (
-                            <div
-                                key={c.id}
-                                className="flex items-center gap-3 rounded-full border bg-background px-4 py-2"
-                            >
-                                <span
-                                    className="text-xs font-bold opacity-40"
-                                    title="Sortier-Reihenfolge"
-                                >
-                                    {c.sort_order || 0}
-                                </span>
-                                <span className="font-bold text-primary">{c.label}</span>
-                                <div className="flex gap-1.5">
-                                    <button
-                                        onClick={() => openEdit(c)}
-                                        title="Bearbeiten"
-                                        className="flex size-6 items-center justify-center rounded-full bg-blue-500/10 text-blue-600"
-                                    >
-                                        <Pencil className="size-3" />
-                                    </button>
-                                    <button
-                                        onClick={() => remove(c)}
-                                        title="Löschen"
-                                        className="flex size-6 items-center justify-center rounded-full bg-destructive/10 text-destructive"
-                                    >
-                                        <X className="size-3" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-32">Reihenfolge</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead className="text-right">Aktionen</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {categories.map((c) => (
+                                    <TableRow key={c.id}>
+                                        <TableCell className="text-muted-foreground">
+                                            {c.sort_order || 0}
+                                        </TableCell>
+                                        <TableCell className="font-bold text-primary">
+                                            {c.label}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex justify-end gap-1.5">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => openEdit(c)}
+                                                >
+                                                    <Pencil /> Bearbeiten
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="text-destructive"
+                                                    onClick={() => remove(c)}
+                                                >
+                                                    <Trash2 />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     )}
                 </CardContent>
             </Card>
