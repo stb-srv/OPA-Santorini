@@ -247,6 +247,29 @@ export const NAV_CONFIG: NavGroup[] = [
         ],
     },
     {
+        id: 'legal-group',
+        label: 'Rechtliches',
+        icon: 'fa-scale-balanced',
+        items: [
+            {
+                id: 'legal-cookies',
+                label: 'Cookies',
+                icon: 'fa-cookie-bite',
+                path: '/legal/cookies',
+                module: 'custom_design',
+                description: 'Cookie-Kategorien und Einwilligungs-Nachweis verwalten',
+            },
+            {
+                id: 'legal-texts',
+                label: 'Impressum & Datenschutz',
+                icon: 'fa-file-contract',
+                path: '/legal/texts',
+                module: 'custom_design',
+                description: 'Impressum und Datenschutzerklärung bearbeiten',
+            },
+        ],
+    },
+    {
         id: 'settings-group',
         label: 'Verwaltung',
         icon: 'fa-cog',
@@ -281,13 +304,6 @@ export const NAV_CONFIG: NavGroup[] = [
                         description: 'E-Mail-Server und Versandeinstellungen',
                     },
                     {
-                        id: 'order-emails',
-                        label: 'Bestell-E-Mail Vorlagen',
-                        icon: 'fa-file-alt',
-                        path: '/settings/order-emails',
-                        description: 'E-Mail-Vorlagen für Bestellbestätigungen anpassen',
-                    },
-                    {
                         id: 'image-ai',
                         label: 'KI-Bildgenerierung',
                         icon: 'fa-robot',
@@ -297,17 +313,10 @@ export const NAV_CONFIG: NavGroup[] = [
                     },
                     {
                         id: 'license',
-                        label: 'Lizenz & Module',
+                        label: 'Module & Lizenz',
                         icon: 'fa-key',
                         path: '/settings/license',
-                        description: 'Lizenz aktivieren und Plan-Informationen',
-                    },
-                    {
-                        id: 'plan_modules',
-                        label: 'Module aktivieren',
-                        icon: 'fa-toggle-on',
-                        path: '/settings/plan-modules',
-                        description: 'Verfügbare Module des aktuellen Plans ein-/ausschalten',
+                        description: 'Lizenz, Plan-Informationen und Modul-Verwaltung',
                     },
                     {
                         id: 'audit-log',

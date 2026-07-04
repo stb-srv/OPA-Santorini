@@ -1,12 +1,8 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Lock, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiPost } from '@/lib/api';
-import { Card } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
+import { FeatureToggleCard } from '@/components/shared/FeatureToggleCard';
 import {
     MODULE_GROUPS,
     MODULE_LABELS,
@@ -75,54 +71,16 @@ export function PlanModulesTab({
                                 const licensed = m.alwaysAvailable || activeModules[licKey] === true;
                                 const on = licensed && enabled[key] !== false;
                                 return (
-                                    <Card
+                                    <FeatureToggleCard
                                         key={key}
-                                        className={cn(
-                                            'relative flex items-center gap-4 p-4',
-                                            !licensed && 'opacity-60'
-                                        )}
-                                        title={
-                                            !licensed
-                                                ? 'Nicht in Ihrem Plan enthalten – Upgrade erforderlich'
-                                                : undefined
-                                        }
-                                    >
-                                        {!licensed && (
-                                            <Lock className="absolute right-2 top-2 size-3.5 text-muted-foreground" />
-                                        )}
-                                        <div
-                                            className={cn(
-                                                'flex size-10 shrink-0 items-center justify-center rounded-lg',
-                                                on
-                                                    ? 'bg-[hsl(var(--success))]/15 text-[hsl(var(--success))]'
-                                                    : 'bg-muted text-muted-foreground'
-                                            )}
-                                        >
-                                            <i className={`fas fa-${m.icon}`} />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-sm font-bold">{m.label}</span>
-                                                {licensed && m.settingsPath && (
-                                                    <Link
-                                                        to={m.settingsPath}
-                                                        className="inline-flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
-                                                        title="Zu den Einstellungen"
-                                                    >
-                                                        <ExternalLink className="size-3" />
-                                                    </Link>
-                                                )}
-                                            </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                {m.desc}
-                                            </div>
-                                        </div>
-                                        <Switch
-                                            checked={on}
-                                            disabled={!licensed}
-                                            onCheckedChange={(c) => toggle(key, c)}
-                                        />
-                                    </Card>
+                                        icon={m.icon}
+                                        label={m.label}
+                                        description={m.desc}
+                                        checked={on}
+                                        licensed={licensed}
+                                        settingsPath={m.settingsPath}
+                                        onChange={(c) => toggle(key, c)}
+                                    />
                                 );
                             })}
                         </div>

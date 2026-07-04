@@ -10,7 +10,7 @@ const {
     getPlan,
     mergeModules,
 } = require('../services/license.js');
-const { FEATURE_MAP } = require('@meraki/plans');
+const { getLicenseKeyForFeature } = require('../registry/settings-registry.js');
 const { sanitizeText, extractDomain } = require('../helpers.js');
 const logger = require('../core/logger.js');
 const validate = require('../validation/validate.js');
@@ -372,7 +372,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                 const blockedModules = Object.entries(enabledModules)
                     .filter(([featureId, val]) => {
                         if (val !== true) return false;
-                        const licenseKey = FEATURE_MAP[featureId];
+                        const licenseKey = getLicenseKeyForFeature(featureId);
                         if (licenseKey === null || licenseKey === undefined) return false;
                         return !licModules[licenseKey];
                     })
@@ -384,20 +384,8 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                     });
                 }
 
-                // orders_kitchen und online_orders sind immer synchron
-                if (enabledModules.orders_kitchen !== undefined) {
-                    enabledModules.online_orders = enabledModules.orders_kitchen;
-                }
-
                 const settings = await DB.getKV('settings', {});
                 settings.enabledModules = enabledModules;
-
-                // Abwärtskompatibilität für das Gast-Frontend
-                settings.activeModules = {
-                    orders: enabledModules.orders_kitchen,
-                    reservations: enabledModules.reservations,
-                };
-                settings.dailySpecialsEnabled = enabledModules.daily_specials;
 
                 await DB.setKV('settings', settings);
                 try {
@@ -413,45 +401,6 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                 res.json({ success: true, enabledModules: settings.enabledModules });
             } catch (e) {
                 logger.error({ err: e }, 'POST /settings/modules Fehler');
-                res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
-            }
-        }
-    );
-
-    router.post(
-        '/license/modules',
-        requireAuth,
-        requireRole('admin'),
-        validate(anyObjectSchema),
-        async (req, res) => {
-            try {
-                const { modules } = req.body;
-                if (!modules || typeof modules !== 'object')
-                    return res
-                        .status(400)
-                        .json({ success: false, reason: 'Ungültige Module-Daten.' });
-
-                // Validate: only allow enabling modules that are in the current license plan
-                const domain = extractDomain(req);
-                const currentLic = await getCurrentLicense(DB, domain);
-                const allowedByLicense = currentLic.modules || {};
-                const invalidModules = Object.entries(modules)
-                    .filter(([key, val]) => val === true && !allowedByLicense[key])
-                    .map(([key]) => key);
-                if (invalidModules.length > 0) {
-                    return res.status(403).json({
-                        success: false,
-                        reason: `Folgende Module sind in Ihrem ${currentLic.label || currentLic.type}-Plan nicht enthalten: ${invalidModules.join(', ')}`,
-                    });
-                }
-
-                const settings = await DB.getKV('settings', {});
-                if (!settings.license) settings.license = {};
-                settings.license.modules = { ...(settings.license.modules || {}), ...modules };
-                await DB.setKV('settings', settings);
-                res.json({ success: true, modules: settings.license.modules });
-            } catch (e) {
-                logger.error({ err: e }, 'POST /license/modules Fehler');
                 res.status(500).json({ success: false, reason: 'Interner Serverfehler.' });
             }
         }

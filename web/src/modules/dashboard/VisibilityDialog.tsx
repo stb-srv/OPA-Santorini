@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { SettingsSection } from '@/components/shared/SettingsSection';
 import { DEFAULT_WIDGETS, WIDGET_META, type WidgetConfig } from './dashboard-data';
 import { cn } from '@/lib/utils';
 
@@ -68,7 +69,7 @@ export function VisibilityDialog({
                         <i className="fas fa-eye opacity-60" /> Widget-Sichtbarkeit
                     </DialogTitle>
                 </DialogHeader>
-                <div className="divide-y divide-border">
+                <SettingsSection>
                     {knownIds.map((id) => {
                         const meta = WIDGET_META[id];
                         const on = state[id];
@@ -82,7 +83,7 @@ export function VisibilityDialog({
                             </div>
                         );
                     })}
-                </div>
+                </SettingsSection>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         Abbrechen

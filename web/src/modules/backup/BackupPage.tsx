@@ -1,13 +1,10 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { CloudUpload, Download, Upload } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { apiGet, apiPost, getAuthToken } from '@/lib/api';
+import { apiGet, getAuthToken } from '@/lib/api';
 import { useViewTitle } from '@/hooks/useViewTitle';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface BackupInfo {
@@ -35,16 +32,6 @@ export function BackupPage() {
     const [importing, setImporting] = React.useState(false);
     const fileRef = React.useRef<HTMLInputElement>(null);
     const addLog = (m: string) => setLog((l) => [...l, m]);
-
-    // Cloud
-    const [s3, setS3] = React.useState({
-        s3_endpoint: '',
-        s3_bucket: '',
-        s3_access_key: '',
-        s3_secret_key: '',
-        s3_auto: false,
-        s3_time: '03:00',
-    });
 
     async function exportBackup() {
         try {
@@ -99,20 +86,6 @@ export function BackupPage() {
             toast.error('Restore fehlgeschlagen.');
         }
         setImporting(false);
-    }
-
-    async function saveCloud() {
-        const res = await apiPost('settings/backup-cloud', s3);
-        if (res.success !== false) toast.success('Cloud-Einstellungen gespeichert.');
-        else toast.error(res.reason || 'Fehler');
-    }
-    async function runCloud() {
-        const res = await apiPost<{ success?: boolean; filename?: string; message?: string }>(
-            'backup/cloud',
-            {}
-        );
-        if (res.success) toast.success(`Backup erfolgreich: ${res.filename || 'backup'}`);
-        else toast.error(res.message || 'Backup fehlgeschlagen.');
     }
 
     return (
@@ -192,81 +165,6 @@ export function BackupPage() {
                     )}
                 </CardContent>
             </Card>
-
-            <Card>
-                <CardContent className="space-y-4 pt-6">
-                    <div>
-                        <h3 className="flex items-center gap-2 font-semibold">
-                            <CloudUpload className="size-4 text-primary" /> Cloud-Backup (S3 /
-                            Hetzner)
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                            Automatisches tägliches Backup in S3-kompatiblen Speicher.
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <Field label="S3 Endpoint">
-                            <Input
-                                value={s3.s3_endpoint}
-                                onChange={(e) => setS3((s) => ({ ...s, s3_endpoint: e.target.value }))}
-                                placeholder="fsn1.your-objectstorage.com"
-                            />
-                        </Field>
-                        <Field label="Bucket-Name">
-                            <Input
-                                value={s3.s3_bucket}
-                                onChange={(e) => setS3((s) => ({ ...s, s3_bucket: e.target.value }))}
-                                placeholder="meraki-backups"
-                            />
-                        </Field>
-                        <Field label="Access Key">
-                            <Input
-                                value={s3.s3_access_key}
-                                onChange={(e) =>
-                                    setS3((s) => ({ ...s, s3_access_key: e.target.value }))
-                                }
-                            />
-                        </Field>
-                        <Field label="Secret Key">
-                            <Input
-                                type="password"
-                                value={s3.s3_secret_key}
-                                onChange={(e) =>
-                                    setS3((s) => ({ ...s, s3_secret_key: e.target.value }))
-                                }
-                            />
-                        </Field>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Switch
-                            checked={s3.s3_auto}
-                            onCheckedChange={(c) => setS3((s) => ({ ...s, s3_auto: c }))}
-                        />
-                        <span className="text-sm">Auto-Backup täglich um</span>
-                        <Input
-                            type="time"
-                            value={s3.s3_time}
-                            onChange={(e) => setS3((s) => ({ ...s, s3_time: e.target.value }))}
-                            className="w-28"
-                        />
-                    </div>
-                    <div className="flex gap-2">
-                        <Button onClick={saveCloud}>Einstellungen speichern</Button>
-                        <Button variant="outline" onClick={runCloud}>
-                            <CloudUpload /> Jetzt sichern
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="space-y-1">
-            <Label>{label}</Label>
-            {children}
         </div>
     );
 }

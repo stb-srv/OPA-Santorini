@@ -1,13 +1,14 @@
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, MailOpen } from 'lucide-react';
+import * as React from 'react';
 import { useViewTitle } from '@/hooks/useViewTitle';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import type { LicenseInfo } from '@/hooks/useLicense';
 import {
     useBranding,
     useLicenseInfo,
     useSettings,
     useUsers,
+    type SettingsData,
 } from './settings-api';
 import { BrandingTab } from './BrandingTab';
 import { UsersTab } from './UsersTab';
@@ -17,26 +18,63 @@ import { PlanModulesTab } from './PlanModulesTab';
 import { ReservationsTab } from './ReservationsTab';
 import { ImageAiTab } from './ImageAiTab';
 
-type Tab =
-    | 'branding'
-    | 'users'
-    | 'smtp'
-    | 'license'
-    | 'plan_modules'
-    | 'reservations'
-    | 'image-ai'
-    | 'order-emails';
+type Tab = 'branding' | 'users' | 'smtp' | 'license' | 'reservations' | 'image-ai';
 
 const TITLES: Record<Tab, string> = {
     branding: 'Profil & Branding',
     users: 'Mitarbeiter & Zugänge',
     smtp: 'E-Mail & SMTP',
-    license: 'Lizenz & Module',
-    plan_modules: 'Module aktivieren',
+    license: 'Module & Lizenz',
     reservations: 'Reservierungs-Einstellungen',
     'image-ai': 'KI-Bildgenerierung',
-    'order-emails': 'Bestell-E-Mail Vorlagen',
 };
+
+type LicenseSubTab = 'overview' | 'modules';
+
+/**
+ * Fuehrt die vormals getrennten Nav-Eintraege "Lizenz & Module" und
+ * "Module aktivieren" zu einer Seite mit 2 internen Tabs zusammen
+ * (Plan-Schritt #12). LicenseTab/PlanModulesTab bleiben unveraendert,
+ * nur die Nav-Struktur/Container aendert sich.
+ */
+function LicenseAndModulesPage({
+    settings,
+    licInfo,
+}: {
+    settings: SettingsData;
+    licInfo: LicenseInfo;
+}) {
+    const [subTab, setSubTab] = React.useState<LicenseSubTab>('overview');
+    const subTabs: { id: LicenseSubTab; label: string }[] = [
+        { id: 'overview', label: 'Übersicht & Lizenz' },
+        { id: 'modules', label: 'Module verwalten' },
+    ];
+    return (
+        <div className="space-y-5">
+            <div className="flex flex-wrap gap-1.5 border-b pb-3">
+                {subTabs.map((t) => (
+                    <button
+                        key={t.id}
+                        onClick={() => setSubTab(t.id)}
+                        className={cn(
+                            'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                            subTab === t.id
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-accent'
+                        )}
+                    >
+                        {t.label}
+                    </button>
+                ))}
+            </div>
+            {subTab === 'overview' ? (
+                <LicenseTab settings={settings} licInfo={licInfo} />
+            ) : (
+                <PlanModulesTab settings={settings} licInfo={licInfo} />
+            )}
+        </div>
+    );
+}
 
 function Skeleton() {
     return (
@@ -49,32 +87,11 @@ function Skeleton() {
 
 function SettingsPage({ tab }: { tab: Tab }) {
     useViewTitle(TITLES[tab]);
-    const navigate = useNavigate();
 
     const settingsQ = useSettings();
     const brandingQ = useBranding();
     const usersQ = useUsers();
     const licInfoQ = useLicenseInfo();
-
-    if (tab === 'order-emails') {
-        return (
-            <Card>
-                <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
-                    <MailOpen className="size-10 text-secondary" />
-                    <div>
-                        <h3 className="font-semibold">E-Mail Templates (Bestellungen)</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Die Bestellungs-E-Mail-Templates findest du unter
-                            Bestellungen → Bestelleinstellungen.
-                        </p>
-                    </div>
-                    <Button onClick={() => navigate('/order-settings')}>
-                        <ArrowRight /> Zu den Bestelleinstellungen
-                    </Button>
-                </CardContent>
-            </Card>
-        );
-    }
 
     switch (tab) {
         case 'branding':
@@ -89,13 +106,7 @@ function SettingsPage({ tab }: { tab: Tab }) {
             return settingsQ.data ? <ImageAiTab settings={settingsQ.data} /> : <Skeleton />;
         case 'license':
             return settingsQ.data && licInfoQ.data ? (
-                <LicenseTab settings={settingsQ.data} licInfo={licInfoQ.data} />
-            ) : (
-                <Skeleton />
-            );
-        case 'plan_modules':
-            return settingsQ.data && licInfoQ.data ? (
-                <PlanModulesTab settings={settingsQ.data} licInfo={licInfoQ.data} />
+                <LicenseAndModulesPage settings={settingsQ.data} licInfo={licInfoQ.data} />
             ) : (
                 <Skeleton />
             );
@@ -108,7 +119,5 @@ export const SettingsBrandingPage = () => <SettingsPage tab="branding" />;
 export const SettingsUsersPage = () => <SettingsPage tab="users" />;
 export const SettingsSmtpPage = () => <SettingsPage tab="smtp" />;
 export const SettingsLicensePage = () => <SettingsPage tab="license" />;
-export const SettingsPlanModulesPage = () => <SettingsPage tab="plan_modules" />;
 export const SettingsReservationsPage = () => <SettingsPage tab="reservations" />;
 export const SettingsImageAiPage = () => <SettingsPage tab="image-ai" />;
-export const SettingsOrderEmailsPage = () => <SettingsPage tab="order-emails" />;

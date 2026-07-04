@@ -18,7 +18,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { CookiesTab } from './CookiesTab';
 
 interface CustomPage {
     id: string;
@@ -44,7 +43,7 @@ interface HomeData {
     [k: string]: unknown;
 }
 
-type Tab = 'visuals' | 'location' | 'pages' | 'promo' | 'vacation' | 'holiday' | 'legal' | 'cookies';
+type Tab = 'visuals' | 'location' | 'pages' | 'promo' | 'vacation' | 'holiday';
 const TABS: { id: Tab; label: string }[] = [
     { id: 'visuals', label: 'Design & Bilder' },
     { id: 'location', label: 'Standort & Karte' },
@@ -52,8 +51,6 @@ const TABS: { id: Tab; label: string }[] = [
     { id: 'promo', label: 'Promo' },
     { id: 'vacation', label: 'Urlaub' },
     { id: 'holiday', label: 'Feiertage' },
-    { id: 'legal', label: 'Impressum' },
-    { id: 'cookies', label: 'Cookies' },
 ];
 
 function DesignerPage({ initialTab }: { initialTab: Tab }) {
@@ -240,7 +237,8 @@ function DesignerPage({ initialTab }: { initialTab: Tab }) {
 
                     {tab === 'vacation' && (
                         <PeriodForm
-                            label="Urlaubs-Sperre aktiv (Reservierungen & Online-Bestellungen deaktiviert)"
+                            label="Urlaubs-Hinweis auf der Website anzeigen"
+                            description="Zeigt einen Hinweis-Banner für den angegebenen Zeitraum. Reservierungen und Online-Bestellungen bleiben weiterhin möglich."
                             data={home.vacation || {}}
                             onChange={(p) => setNested('vacation', p)}
                         />
@@ -253,36 +251,14 @@ function DesignerPage({ initialTab }: { initialTab: Tab }) {
                         />
                     )}
 
-                    {tab === 'legal' && (
-                        <>
-                            <Field label="Impressum">
-                                <Textarea
-                                    className="h-48"
-                                    value={home.legal?.impressum || ''}
-                                    onChange={(e) => setNested('legal', { impressum: e.target.value })}
-                                />
-                            </Field>
-                            <Field label="Datenschutzerklärung">
-                                <Textarea
-                                    className="h-48"
-                                    value={home.legal?.privacy || ''}
-                                    onChange={(e) => setNested('legal', { privacy: e.target.value })}
-                                />
-                            </Field>
-                        </>
-                    )}
-
-                    {tab === 'cookies' && <CookiesTab />}
                 </CardContent>
             </Card>
 
-            {tab !== 'cookies' && (
-                <div className="flex justify-end">
-                    <Button onClick={save} disabled={saving}>
-                        {saving ? 'Speichern…' : 'Änderungen speichern'}
-                    </Button>
-                </div>
-            )}
+            <div className="flex justify-end">
+                <Button onClick={save} disabled={saving}>
+                    {saving ? 'Speichern…' : 'Änderungen speichern'}
+                </Button>
+            </div>
 
             {editPage && (
                 <PageEditDialog page={editPage} onClose={() => setEditPage(null)} onSave={savePage} />
@@ -320,16 +296,23 @@ function ImgField({ label, src, onPick }: { label: string; src?: string; onPick:
 
 function PeriodForm({
     label,
+    description,
     data,
     onChange,
 }: {
     label: string;
+    description?: string;
     data: { enabled?: boolean; title?: string; text?: string; start?: string; end?: string };
     onChange: (p: Record<string, unknown>) => void;
 }) {
     return (
         <>
-            <SwitchRow label={label} checked={!!data.enabled} onChange={(c) => onChange({ enabled: c })} />
+            <SwitchRow
+                label={label}
+                description={description}
+                checked={!!data.enabled}
+                onChange={(c) => onChange({ enabled: c })}
+            />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Titel">
                     <Input value={data.title || ''} onChange={(e) => onChange({ title: e.target.value })} />

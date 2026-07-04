@@ -180,7 +180,7 @@ export function OrderSettingsPage() {
             {moduleLicensed && !moduleEnabled && (
                 <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
                     Online-Bestellungen sind derzeit deaktiviert.{' '}
-                    <Link to="/settings/modules" className="font-medium underline underline-offset-2">
+                    <Link to="/settings/license" className="font-medium underline underline-offset-2">
                         Module aktivieren →
                     </Link>
                 </div>

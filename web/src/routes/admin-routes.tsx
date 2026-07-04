@@ -21,6 +21,9 @@ import { OpeningPage } from '@/modules/opening/OpeningPage';
 import { AuditLogPage } from '@/modules/audit-log/AuditLogPage';
 import { FeedbackPage } from '@/modules/feedback/FeedbackPage';
 import { BackupPage } from '@/modules/backup/BackupPage';
+import { PluginsPage } from '@/modules/plugins/PluginsPage';
+import { LegalCookiesPage } from '@/modules/legal/LegalCookiesPage';
+import { LegalTextsPage } from '@/modules/legal/LegalTextsPage';
 import { QrCodesPage } from '@/modules/qrcodes/QrCodesPage';
 import { ShiftsPage } from '@/modules/shifts/ShiftsPage';
 import { ReservationsPage } from '@/modules/reservations/ReservationsPage';
@@ -37,10 +40,8 @@ import {
     SettingsUsersPage,
     SettingsSmtpPage,
     SettingsLicensePage,
-    SettingsPlanModulesPage,
     SettingsReservationsPage,
     SettingsImageAiPage,
-    SettingsOrderEmailsPage,
 } from '@/modules/settings/SettingsPage';
 import { flattenNav } from '@/config/navigation';
 
@@ -55,6 +56,9 @@ const PAGES: Record<string, React.ComponentType> = {
     'audit-log': AuditLogPage,
     feedback: FeedbackPage,
     backup: BackupPage,
+    plugins: PluginsPage,
+    'legal-cookies': LegalCookiesPage,
+    'legal-texts': LegalTextsPage,
     qrcodes: QrCodesPage,
     shifts: ShiftsPage,
     reservations: ReservationsPage,
@@ -74,10 +78,8 @@ const PAGES: Record<string, React.ComponentType> = {
     users: SettingsUsersPage,
     smtp: SettingsSmtpPage,
     license: SettingsLicensePage,
-    plan_modules: SettingsPlanModulesPage,
     'res-settings': SettingsReservationsPage,
     'image-ai': SettingsImageAiPage,
-    'order-emails': SettingsOrderEmailsPage,
 };
 
 // Routen werden aus der NAV_CONFIG generiert → keine doppelte Navigationsquelle.
