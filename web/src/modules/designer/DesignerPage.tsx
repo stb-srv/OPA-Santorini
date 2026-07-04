@@ -237,7 +237,8 @@ function DesignerPage({ initialTab }: { initialTab: Tab }) {
 
                     {tab === 'vacation' && (
                         <PeriodForm
-                            label="Urlaubs-Sperre aktiv (Reservierungen & Online-Bestellungen deaktiviert)"
+                            label="Urlaubs-Hinweis auf der Website anzeigen"
+                            description="Zeigt einen Hinweis-Banner für den angegebenen Zeitraum. Reservierungen und Online-Bestellungen bleiben weiterhin möglich."
                             data={home.vacation || {}}
                             onChange={(p) => setNested('vacation', p)}
                         />
@@ -295,16 +296,23 @@ function ImgField({ label, src, onPick }: { label: string; src?: string; onPick:
 
 function PeriodForm({
     label,
+    description,
     data,
     onChange,
 }: {
     label: string;
+    description?: string;
     data: { enabled?: boolean; title?: string; text?: string; start?: string; end?: string };
     onChange: (p: Record<string, unknown>) => void;
 }) {
     return (
         <>
-            <SwitchRow label={label} checked={!!data.enabled} onChange={(c) => onChange({ enabled: c })} />
+            <SwitchRow
+                label={label}
+                description={description}
+                checked={!!data.enabled}
+                onChange={(c) => onChange({ enabled: c })}
+            />
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Titel">
                     <Input value={data.title || ''} onChange={(e) => onChange({ title: e.target.value })} />
