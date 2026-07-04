@@ -304,13 +304,6 @@ export const NAV_CONFIG: NavGroup[] = [
                         description: 'E-Mail-Server und Versandeinstellungen',
                     },
                     {
-                        id: 'order-emails',
-                        label: 'Bestell-E-Mail Vorlagen',
-                        icon: 'fa-file-alt',
-                        path: '/settings/order-emails',
-                        description: 'E-Mail-Vorlagen für Bestellbestätigungen anpassen',
-                    },
-                    {
                         id: 'image-ai',
                         label: 'KI-Bildgenerierung',
                         icon: 'fa-robot',

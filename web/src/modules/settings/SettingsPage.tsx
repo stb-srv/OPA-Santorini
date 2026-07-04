@@ -1,9 +1,6 @@
 import * as React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowRight, MailOpen } from 'lucide-react';
 import { useViewTitle } from '@/hooks/useViewTitle';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { LicenseInfo } from '@/hooks/useLicense';
 import {
@@ -21,14 +18,7 @@ import { PlanModulesTab } from './PlanModulesTab';
 import { ReservationsTab } from './ReservationsTab';
 import { ImageAiTab } from './ImageAiTab';
 
-type Tab =
-    | 'branding'
-    | 'users'
-    | 'smtp'
-    | 'license'
-    | 'reservations'
-    | 'image-ai'
-    | 'order-emails';
+type Tab = 'branding' | 'users' | 'smtp' | 'license' | 'reservations' | 'image-ai';
 
 const TITLES: Record<Tab, string> = {
     branding: 'Profil & Branding',
@@ -37,7 +27,6 @@ const TITLES: Record<Tab, string> = {
     license: 'Module & Lizenz',
     reservations: 'Reservierungs-Einstellungen',
     'image-ai': 'KI-Bildgenerierung',
-    'order-emails': 'Bestell-E-Mail Vorlagen',
 };
 
 type LicenseSubTab = 'overview' | 'modules';
@@ -98,32 +87,11 @@ function Skeleton() {
 
 function SettingsPage({ tab }: { tab: Tab }) {
     useViewTitle(TITLES[tab]);
-    const navigate = useNavigate();
 
     const settingsQ = useSettings();
     const brandingQ = useBranding();
     const usersQ = useUsers();
     const licInfoQ = useLicenseInfo();
-
-    if (tab === 'order-emails') {
-        return (
-            <Card>
-                <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
-                    <MailOpen className="size-10 text-secondary" />
-                    <div>
-                        <h3 className="font-semibold">E-Mail Templates (Bestellungen)</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Die Bestellungs-E-Mail-Templates findest du unter
-                            Bestellungen → Bestelleinstellungen.
-                        </p>
-                    </div>
-                    <Button onClick={() => navigate('/order-settings')}>
-                        <ArrowRight /> Zu den Bestelleinstellungen
-                    </Button>
-                </CardContent>
-            </Card>
-        );
-    }
 
     switch (tab) {
         case 'branding':
@@ -153,4 +121,3 @@ export const SettingsSmtpPage = () => <SettingsPage tab="smtp" />;
 export const SettingsLicensePage = () => <SettingsPage tab="license" />;
 export const SettingsReservationsPage = () => <SettingsPage tab="reservations" />;
 export const SettingsImageAiPage = () => <SettingsPage tab="image-ai" />;
-export const SettingsOrderEmailsPage = () => <SettingsPage tab="order-emails" />;

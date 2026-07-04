@@ -42,7 +42,6 @@ import {
     SettingsLicensePage,
     SettingsReservationsPage,
     SettingsImageAiPage,
-    SettingsOrderEmailsPage,
 } from '@/modules/settings/SettingsPage';
 import { flattenNav } from '@/config/navigation';
 
@@ -81,7 +80,6 @@ const PAGES: Record<string, React.ComponentType> = {
     license: SettingsLicensePage,
     'res-settings': SettingsReservationsPage,
     'image-ai': SettingsImageAiPage,
-    'order-emails': SettingsOrderEmailsPage,
 };
 
 // Routen werden aus der NAV_CONFIG generiert → keine doppelte Navigationsquelle.
