@@ -10,7 +10,7 @@ const {
     getPlan,
     mergeModules,
 } = require('../services/license.js');
-const { FEATURE_MAP } = require('@meraki/plans');
+const { getLicenseKeyForFeature } = require('../registry/settings-registry.js');
 const { sanitizeText, extractDomain } = require('../helpers.js');
 const logger = require('../core/logger.js');
 const validate = require('../validation/validate.js');
@@ -372,7 +372,7 @@ module.exports = (requireAuth, requireLicense, LICENSE_SERVER) => {
                 const blockedModules = Object.entries(enabledModules)
                     .filter(([featureId, val]) => {
                         if (val !== true) return false;
-                        const licenseKey = FEATURE_MAP[featureId];
+                        const licenseKey = getLicenseKeyForFeature(featureId);
                         if (licenseKey === null || licenseKey === undefined) return false;
                         return !licModules[licenseKey];
                     })
