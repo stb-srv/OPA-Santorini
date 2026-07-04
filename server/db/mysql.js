@@ -636,7 +636,14 @@ const DB = {
     updateCategory: async (id, update) => {
         const rows = await q('SELECT * FROM categories WHERE id = ?', [id]);
         if (!rows[0]) return null;
-        const merged = { ...rows[0], ...update };
+        const existing = rows[0];
+        const merged = { ...existing, ...update };
+        const translations = safeJsonParse(
+            typeof update.translations !== 'undefined'
+                ? JSON.stringify(update.translations)
+                : existing.translations,
+            {}
+        );
         await q(
             'UPDATE categories SET label=?, icon=?, active=?, sort_order=?, translations=? WHERE id=?',
             [
@@ -644,14 +651,14 @@ const DB = {
                 merged.icon || '',
                 merged.active !== false ? 1 : 0,
                 merged.sort_order || 0,
-                JSON.stringify(merged.translations || {}),
+                JSON.stringify(translations),
                 id,
             ]
         );
         return {
             ...merged,
             active: merged.active !== 0,
-            translations: safeJsonParse(merged.translations, {}),
+            translations,
         };
     },
     deleteCategory: async (id) => q('DELETE FROM categories WHERE id = ?', [id]),

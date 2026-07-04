@@ -573,18 +573,24 @@ if (dbType === 'mysql' || dbType === 'mariadb') {
             const existing = stmts.getCategoryById.get(id);
             if (!existing) return null;
             const merged = { ...existing, ...update };
+            const translations = safeJsonParse(
+                typeof update.translations !== 'undefined'
+                    ? JSON.stringify(update.translations)
+                    : existing.translations,
+                {}
+            );
             stmts.updateCategory.run(
                 merged.label,
                 merged.icon || '',
                 merged.active !== false ? 1 : 0,
                 merged.sort_order || 0,
-                JSON.stringify(merged.translations || {}),
+                JSON.stringify(translations),
                 id
             );
             return {
                 ...merged,
                 active: merged.active !== 0,
-                translations: safeJsonParse(merged.translations, {}),
+                translations,
             };
         },
         deleteCategory: (id) => stmts.deleteCategory.run(id),
